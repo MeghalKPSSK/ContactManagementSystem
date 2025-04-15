@@ -2,7 +2,9 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
-const initDB = require('./db'); // Import the database initialization function
+const initDB = require('./db'); 
+const userRoutes = require('./Routes/userRoutes');
+const ensureAppUserTable = require('./Schemas/userSchema');
 
 const app = express();
 const port = 5000;
@@ -28,6 +30,7 @@ app.use(express.json());
 
 // Async function to initialize the DB connection before starting the server
 const startServer = async () => {
+
     try {
         // Initialize the database connection and wait for it to complete
         const pool = await initDB();  // Initialize the database connection
@@ -35,19 +38,16 @@ const startServer = async () => {
         // Test route to check DB connection
         app.get('/api/test', async (req, res) => {
             try {
-                const [result] = await pool.execute('SELECT 1 + 1 AS solution', []);
-                console.log(`Database connection successful: ${result[0].solution}`);
-                res.status(200).json({ message: 'Database connection successful', solution: result[0].solution });
+                const [result] = await pool.execute('SELECT encryptID(1) AS encryptedID', []);
+                console.log(`Database connection successful: ${result[0].encryptedID}`);
+                res.status(200).json({ message: 'Database connection successful', encryptedID: result[0].encryptedID });
             } catch (error) {
                 console.error(`Database connection error: ${error}`);
                 res.status(500).json({ message: 'Database connection error', error: error.message });
             }
         });
 
-        // Start the server after DB is initialized
-        app.listen(port, () => {
-            console.log(`Server is running on http://localhost:${port}`);
-        });
+
 
     } catch (error) {
         console.error(`Error initializing DB: ${error}`);
@@ -55,4 +55,15 @@ const startServer = async () => {
 };
 
 // Start the server
+app.listen(port, async () => {
+    console.log(`Server is running on port ${port}`);
+    await ensureAppUserTable();
+});
+// Initialize the database and start the server
+// Import user routes
+
+// Use user routes
+app.use('/api/users', userRoutes);
+
+// Initialize the database and start the server
 startServer();
