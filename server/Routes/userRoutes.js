@@ -19,8 +19,7 @@ let encryptionInstance;
 router.get('/user/:id', async (req, res) => {
     try {
         console.log(`User UID: ${req.params.id}`);
-        const decryptedId = await encryptionInstance.dbDecryptID(req.params.id);
-        const user = await userModelInstance.getUserById(decryptedId);
+        const user = await userModelInstance.getUserById(req.params.id);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }

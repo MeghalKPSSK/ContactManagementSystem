@@ -21,7 +21,7 @@ const userModel = async () => {
     const getUserById = async (userId) => {
         try {
             const [rows] = await pool.execute(`SELECT (select encryptId(pk_id)) uid, firstName, lastName, phone, email, 
-                username, status, registeredOn, modifiedOn FROM app_user WHERE pk_id = ? AND is_deleted = 0`, [userId]);
+                username, status, registeredOn, modifiedOn FROM app_user WHERE pk_id in (select decryptId(?)) AND is_deleted = 0`, [userId]);
             return rows[0];
         } catch (error) {
             console.error(`Error fetching user: ${error}`);
