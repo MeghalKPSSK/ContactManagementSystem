@@ -33,7 +33,7 @@ router.post('/login', async (req, res) => {
     try {
         const user = await userModelInstance.loginUser(req.body);
         console.log(`User Session details: ${JSON.stringify(user)}`);
-        res.status(201).json({ success: true, message: 'User Logged In successfully', user: user });
+        res.status(200).json({ success: true, message: 'User Logged In successfully', user: user });
     } catch (error) {
         console.error(`Invalid User: ${error.message}`);
         res.status(500).json({ success: false, message: 'Invalid User'});
