@@ -37,11 +37,11 @@ module.exports = {
 
 // Test section (can be commented out in production)
 if (require.main === module) {
-    const password = "a@der3Se3edT"; // Example password
-    const encrypted = encrypt16Bit(password);
-    const decrypted = decrypt16Bit(encrypted);
+    // const password = "a@der3Se3edTuiu"; // Example password
+    const encrypted = encrypt16Bit('');
+    const decrypted = decrypt16Bit('');
 
-    console.log("Original:  ", password);
+    // console.log("Original:  ", password);
     console.log("Encrypted: ", encrypted); // always 16 chars
     console.log("Decrypted: ", decrypted);
 }
