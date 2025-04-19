@@ -39,7 +39,7 @@ module.exports = {
 if (require.main === module) {
     // const password = "a@der3Se3edTuiu"; // Example password
     const encrypted = encrypt16Bit('');
-    const decrypted = decrypt16Bit('');
+    const decrypted = decrypt16Bit('===============');
 
     // console.log("Original:  ", password);
     console.log("Encrypted: ", encrypted); // always 16 chars

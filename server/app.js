@@ -4,7 +4,9 @@ const path = require('path');
 const cors = require('cors');
 const initDB = require('./db'); 
 const userRoutes = require('./Routes/userRoutes');
+const contactRoutes = require('./Routes/contactRoutes');
 const ensureAppUserTable = require('./Schemas/userSchema');
+const ensureContactsTable = require('./Schemas/contactScehma');
 
 const app = express();
 const port = 5000;
@@ -58,12 +60,16 @@ const startServer = async () => {
 app.listen(port, async () => {
     console.log(`Server is running on port ${port}`);
     await ensureAppUserTable();
+    await ensureContactsTable();
 });
 // Initialize the database and start the server
 // Import user routes
 
 // Use user routes
 app.use('/api/users', userRoutes);
+
+// Use user routes
+app.use('/api/contacts', contactRoutes);
 
 // Initialize the database and start the server
 startServer();

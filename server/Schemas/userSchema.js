@@ -29,7 +29,7 @@ const ensureAppUserTable = async () => {
                     status ENUM('Active', 'Inactive') DEFAULT 'Active',
                     is_deleted BOOLEAN DEFAULT FALSE,
                     registeredOn DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    modifiedOn DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    modifiedOn DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     role VARCHAR(50) DEFAULT 'User'
                 )
             `);
