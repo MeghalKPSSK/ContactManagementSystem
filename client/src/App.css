@@ -1,18 +1,62 @@
-#root {
-  --primary-bg: #0d0c0c;
-  --primary-text: #333;
-  --secondary-bg: #fff;
-  --secondary-text: #555;
-  --highlight-border: #61dafbaa;
+:root {
+  /* Theme colors */
+  --primary-bg: #ffffff;
+  --primary-text: #000000;
+  --secondary-bg: #b794f4;
+  --terinary-bg: #f9f4ff;
+  --secondary-text: #000000;
+  --highlight-text: #ffffff;
+  --highlight-border: #d6bcfa;
   --highlight-bg: #ffffff;
-  --highlight-text: #000000;
   --unselected-bg: #000000;
-  --unselected-text: #61dafbaa;
+  --unselected-text: #b794f4;
   --box-shadow-color: rgba(0, 0, 0, 0.1);
   --hover-box-shadow-color: rgba(0, 0, 0, 0.15);
+}
+
+#root {
   width: 100vw;
   height: 100vh;
   margin: 0;
   padding: 0;
   text-align: center;
+}
+
+/* Add new layout styles */
+.app-container {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-layout {
+  display: flex;
+  height: 100vh;
+  background-color: var(--secondary-bg);
+}
+
+.content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  /* padding: 1rem; */
+  /* background-color: var(--secondary-bg); */
+}
+
+/* Ensure sidebar and header use existing theme variables */
+.sidebar {
+  background-color: var(--primary-bg);
+  color: var(--unselected-text);
+}
+
+.header {
+  background-color: var(--secondary-bg);
+  color: var(--primary-text);
+  box-shadow: 0 2px 4px var(--box-shadow-color);
 }

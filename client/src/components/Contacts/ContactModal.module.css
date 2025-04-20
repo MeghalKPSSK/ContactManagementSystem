@@ -1,0 +1,117 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modalContent {
+  background-color: var(--primary-bg);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px var(--box-shadow-color);
+  width: 100%;
+  max-width: 500px;
+  margin: 2rem;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--highlight-border);
+}
+
+.modalHeader h2 {
+  margin: 0;
+  color: var(--primary-text);
+  font-size: 1.25rem;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  color: var(--unselected-text);
+  cursor: pointer;
+  padding: 0.5rem;
+  font-size: 1.25rem;
+  transition: color 0.2s ease;
+}
+
+.closeButton:hover {
+  color: var(--primary-text);
+}
+
+.formGroup {
+  margin: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--primary-text);
+  font-weight: 500;
+}
+
+.formGroup input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--highlight-border);
+  border-radius: 4px;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.formGroup input:focus {
+  border-color: var(--secondary-bg);
+  box-shadow: 0 0 0 3px rgba(183, 148, 244, 0.1);
+}
+
+.formGroup input:disabled {
+  background-color: var(--terinary-bg);
+  cursor: not-allowed;
+}
+
+.buttonGroup {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-top: 1px solid var(--highlight-border);
+}
+
+.submitButton {
+  background-color: var(--secondary-bg);
+  color: var(--highlight-text);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submitButton:hover {
+  background-color: var(--highlight-border);
+}
+
+.cancelButton {
+  background-color: transparent;
+  border: 1px solid var(--secondary-bg);
+  color: var(--secondary-bg);
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelButton:hover {
+  background-color: var(--terinary-bg);
+}
