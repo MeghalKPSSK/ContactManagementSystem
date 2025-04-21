@@ -43,7 +43,7 @@ const Login = () => {
             }
 
             const user = await response.json();
-            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('user', JSON.stringify(user.user));
             toast.success('Login successful!');
         } catch (err) {
             toast.error(err.message);

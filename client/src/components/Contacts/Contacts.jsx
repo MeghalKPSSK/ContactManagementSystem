@@ -20,11 +20,18 @@ export default function Contacts() {
   useEffect(() => {
     const handleList = async (searchTerm) => {
         const config = await fetch('/config.json').then((res) => res.json());
-        const response = await fetch(`${config.apiUrl}/contacts/contactsList`, {
+        const userId = JSON.parse(localStorage.getItem('user')).uid;
+        const params = new URLSearchParams({
+            ...(searchTerm && { filter: searchTerm }),
+            userId: userId
+        });
+        const response = await fetch(`${config.apiUrl}/contacts/contactsList?${params}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
-            params: { filter: searchTerm },
         });
+        const resData = await response.json();
+        setContacts(resData.contacts);
+        // console.log(rows);
         if (!response.ok) {
             const errorData = response.json();
             throw new Error(errorData.message || 'Failed to fetch contacts');
@@ -97,8 +104,8 @@ export default function Contacts() {
           </thead>
           <tbody>
             {contacts.map(contact => (
-              <tr key={contact.id}>
-                <td>{contact.name}</td>
+              <tr key={contact.uid}>
+                <td>{`${contact.firstName} ${contact.lastName || ''}`}</td>
                 <td>{contact.email}</td>
                 <td>{contact.phone}</td>
                 <td className={styles.actions}>
