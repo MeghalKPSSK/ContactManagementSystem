@@ -87,7 +87,7 @@ export default function Contacts() {
             />
         </div>
         <button className={styles.addButton} onClick={handleAdd}>
-          <FontAwesomeIcon icon={faPlus} /> Add Contact
+          <FontAwesomeIcon icon={faPlus} /> &nbsp; Add Contact
         </button>
         </div>
       </div>
@@ -99,7 +99,7 @@ export default function Contacts() {
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
-              <th>Actions</th>
+              <th style={{textAlign:"end"}}>Actions</th>
             </tr>
           </thead>
           <tbody>
