@@ -8,8 +8,8 @@ export default function Main() {
 
   const renderComponent = () => {
     switch (location.pathname) {
-      case '/contacts':
-        return <Contacts />;
+      // case '/contacts':
+      //   return <Contacts />;
       case '/home':
       case '/':
       case '/dashboard':

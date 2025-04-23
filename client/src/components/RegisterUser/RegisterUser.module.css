@@ -3,7 +3,7 @@
     justify-content: space-between;
     align-items: center;
     height: 100vh;
-    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+    background: linear-gradient(135deg, var(--accent-bg) 0%, var(--accent-border) 100%);
     padding: 1rem;
     box-sizing: border-box;
     overflow: hidden; /* Prevent horizontal scrolling */
@@ -32,11 +32,11 @@
 }
 
 .registerBox {
-    background-color: #ffffff;
+    background-color: var(--primary-bg);
     padding: 2rem;
     width: 40%; /* Take 40% of the width */
     border-radius: 0; /* Remove rounded corners */
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 24px var(--box-shadow);
     text-align: center;
     box-sizing: border-box;
     overflow-y: auto; /* Enable vertical scrolling */
@@ -63,11 +63,11 @@
 .input {
     width: 100%;
     padding: 0.75rem;
-    border: 1.5px solid #e2e8f0;
+    border: 1.5px solid var(--accent-border);
     border-radius: 6px;
     font-size: 1rem;
-    background-color: #ffffff;
-    color: #2d3748;
+    background-color: var(--primary-bg);
+    color: var(--text-primary);
     outline: none;
     transition: all 0.2s ease;
     box-sizing: border-box;
@@ -75,8 +75,8 @@
 }
 
 .input:focus {
-    border-color: #3182ce;
-    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+    border-color: var(--secondary-bg);
+    box-shadow: 0 0 0 3px var(--box-shadow);
 }
 
 .showPassword {
@@ -88,26 +88,26 @@
     border: none; /* Remove border */
     cursor: pointer;
     font-size: 1rem; /* Adjust icon size */
-    color: #4a5568; /* Match the input text color */
+    color: var(--text-secondary);
     outline: none;
     padding: 0;
 }
 
 .showPassword:hover {
-    color: #3182ce; /* Change color on hover */
+    color: var(--secondary-bg); /* Change color on hover */
 }
 
 .label {
     font-size: 0.875rem;
-    color: #4a5568;
+    color: var(--text-secondary);
     margin-bottom: 0.5rem;
     display: block;
     font-weight: 500;
 }
 
 .submitButton {
-    background-color: #d6bcfa; /* Light purple color */
-    color: #ffffff;
+    background-color: var(--secondary-bg);
+    color: var(--text-light);
     padding: 0.75rem;
     border: none;
     border-radius: 0; /* Remove rounded corners */
@@ -121,7 +121,7 @@
 }
 
 .submitButton:hover {
-    background-color: #b794f4; /* Slightly darker purple on hover */
+    background-color: var(--secondary-light); /* Slightly darker purple on hover */
     transform: translateY(-1px);
 }
 
@@ -137,20 +137,24 @@
 }
 
 .fieldError {
-    color: #ff4d4f;
+    color: var(--error-color);
     font-size: 0.875rem;
     margin-top: 0.25rem;
 }
 
-.loginLink{
-    color: #3182ce;
+.loginLink {
+    color: var(--secondary-bg);
     text-decoration: none;
-    font-weight: 60
+    font-weight: 600;
+}
+
+.loginLink:hover {
+    color: var(--secondary-light);
 }
 
 .registerText {
     font-size: 0.875rem;
-    color: #4a5568;
+    color: var(--text-secondary);
     margin-top: 1rem;
     text-align: center;
 }

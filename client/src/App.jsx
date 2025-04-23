@@ -68,7 +68,7 @@ function App() {
             <Route path="/home" element={<Main />} />
             <Route path="/dashboard" element={<Main />} />
             {/* Separate routes for contacts list and contact details */}
-            <Route path="/contacts" element={<Main />} />
+            <Route path="/contacts" element={<Contacts />} />
             {/* <Route path="/contacts/:id" element={<Contacts />} /> */}
             <Route path="/settings" element={<Main />} />
           </Route>

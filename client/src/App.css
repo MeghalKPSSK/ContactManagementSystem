@@ -1,17 +1,33 @@
 :root {
-  /* Theme colors */
+  /* Primary Colors */
   --primary-bg: #ffffff;
-  --primary-text: #000000;
-  --secondary-bg: #b794f4;
-  --terinary-bg: #f9f4ff;
-  --secondary-text: #000000;
-  --highlight-text: #ffffff;
-  --highlight-border: #d6bcfa;
-  --highlight-bg: #ffffff;
-  --unselected-bg: #000000;
-  --unselected-text: #b794f4;
-  --box-shadow-color: rgba(0, 0, 0, 0.1);
-  --hover-box-shadow-color: rgba(0, 0, 0, 0.15);
+  --primary-text: #2d3748;
+  
+  /* Secondary Colors */
+  --secondary-bg: #1d42ab;
+  --secondary-light: #2650c9;
+  --secondary-dark: #153287;
+  
+  /* Accent Colors */
+  --accent-bg: #f7f9fc;
+  --accent-border: #e2e8f0;
+  
+  /* Interactive Colors */
+  --hover-bg: #edf2ff;
+  --hover-text: #1d42ab;
+  
+  /* Status Colors */
+  --error-color: #dc2626;
+  --success-color: #059669;
+  
+  /* Utility Colors */
+  --box-shadow: rgba(29, 66, 171, 0.1);
+  --overlay-bg: rgba(45, 55, 72, 0.6);
+  
+  /* Text Colors */
+  --text-primary: #2d3748;
+  --text-secondary: #4a5568;
+  --text-light: #ffffff;
 }
 
 #root {

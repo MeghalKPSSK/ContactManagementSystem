@@ -1,7 +1,7 @@
 .contactsContainer {
   padding: 1rem;
   height: 100%;
-  background-color: var(--terinary-bg);
+  background-color: var(--accent-bg);
 }
 
 .header {
@@ -22,7 +22,7 @@
 
 .addButton {
   background-color: var(--secondary-bg);
-  color: var(--highlight-text);
+  color: var(--text-light);
   border: none;
   margin-left: 5px;
   border-radius: 4px;
@@ -33,7 +33,7 @@
 }
 
 .addButton:hover {
-  background-color: var(--highlight-border);
+  background-color: var(--secondary-light);
 }
 
 .searchBar {
@@ -83,7 +83,7 @@
 
 .contactTable th {
   background-color: var(--secondary-bg);
-  color: var(--highlight-text);
+  color: var(--text-light);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -105,7 +105,7 @@
 }
 
 .contactTable tbody tr:hover {
-  background-color: var(--terinary-bg);
+  background-color: var(--hover-bg);
 }
 
 .actions {
@@ -121,6 +121,12 @@
   transition: all 0.2s ease;
   background: transparent;
   border-radius: 4px;
+  color: var(--secondary-bg);
+}
+
+.actionButton:hover {
+  color: var(--secondary-light);
+  transform: translateY(-1px);
 }
 
 .viewButton {
@@ -132,10 +138,5 @@
 }
 
 .deleteButton {
-  color: #ff4d4f;
-}
-
-.actionButton:hover {
-  background-color: var(--highlight-border);
-  transform: translateY(-1px);
+  color: var(--error-color);
 }

@@ -11,6 +11,7 @@
     position: relative;
     height: 100vh;
     background-color: var(--primary-bg);
+    border-right: 1px solid var(--accent-border);
     transition: width 0.3s ease;
     overflow: hidden;
 }
@@ -58,7 +59,7 @@
     display: flex;
     align-items: center;
     padding: 1rem;
-    color: var(--unselected-text);
+    color: var(--text-secondary);
     text-decoration: none;
     transition: all 0.2s ease;
     gap: 1rem;
@@ -71,14 +72,14 @@
 }
 
 .menuItem:hover, .logoutButton:hover {
-    background-color: var(--secondary-bg);
-    color: var(--highlight-text);
+    background-color: var(--hover-bg);
+    color: var(--hover-text);
 }
 
 .menuItem.active {
-    background-color: var(--secondary-bg);
-    color: var(--highlight-text);
-    border-left: 4px solid var(--highlight-border);
+    background-color: var(--hover-bg);
+    color: var(--secondary-bg);
+    border-left: 4px solid var(--secondary-bg);
 }
 
 .icon {

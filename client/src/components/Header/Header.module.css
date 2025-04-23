@@ -5,7 +5,7 @@
     padding: 0.5rem 1.5rem;
     height: 64px;
     background-color: var(--primary-bg);
-    box-shadow: 0 2px 4px var(--box-shadow-color);
+    box-shadow: 0 2px 4px var(--box-shadow);
 }
 
 .brand {
@@ -23,6 +23,6 @@
 .title {
     margin: 0;
     font-size: 1.25rem;
-    font-weight: 600;    font-weight: 600;
-    color: var(--secondary-text);    color: var(--secondary-text);
+    font-weight: 600;
+    color: var(--secondary-bg);
 }
