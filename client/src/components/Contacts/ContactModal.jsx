@@ -141,17 +141,17 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
     const value = e.target.value;
     setTagInput(value);
     if (value) {
-      const filtered = allTags.filter(tag => 
-        tag.name.toLowerCase().includes(value.toLowerCase()) && 
-        !selectedTags.includes(tag.id)
-      );
-      setFilteredTags(filtered);
-      setShowSuggestions(true);
+        const filtered = allTags.filter(tag => 
+            tag.name.toLowerCase().includes(value.toLowerCase()) && 
+            !selectedTags.includes(tag.id)
+        );
+        setFilteredTags(filtered);
+        setShowSuggestions(true);
     } else {
-      setFilteredTags([]);
-      setShowSuggestions(false);
+        setFilteredTags([]);
+        setShowSuggestions(false);
     }
-  };
+};
 
   const handleTagSelect = (tag) => {
     setSelectedTags(prev => [...prev, tag.id]);
@@ -178,17 +178,16 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
         const data = await response.json();
         if (data.success) {
             const newTag = {
-                id: data.tag.uid || data.tag.id, // Handle both uid and id
+                id: data.tag.uid,
                 name: data.tag.name
             };
             setAllTags(prev => [...prev, newTag]);
             setSelectedTags(prev => [...prev, newTag.id]);
             setTagInput('');
-            setFilteredTags([]);
+            setShowSuggestions(false);
         }
     } catch (error) {
-        toast.error('Error creating tag');
-        console.error('Error:', error);
+        toast.error('Error creating tag: '+error.message);
     }
 };
 
@@ -202,7 +201,7 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
         const config = await fetch('/config.json').then((res) => res.json());
         const submitData = {
             ...formData,
-            tags: selectedTags // Your API expects tags array
+            tags: selectedTags
         };
 
         const url = mode === 'add' 
@@ -215,19 +214,13 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
             body: JSON.stringify(submitData)
         });
 
-        if (!response.ok) {
-            const data = await response.json();
-            throw new Error(data.message || `Failed to ${mode === 'add' ? 'save' : 'update'} contact`);
-        }
-
         const data = await response.json();
         if (data.success) {
             toast.success(data.message);
             onSubmit();
         }
     } catch (error) {
-        toast.error(error.message || `Error ${mode === 'add' ? 'saving' : 'updating'} contact`);
-        console.error('Error:', error);
+        toast.error(`Error ${mode === 'add' ? 'saving' : 'updating'} contact: ${error.message}`);
     }
 };
 

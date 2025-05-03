@@ -177,63 +177,14 @@ const contactModel = async () => {
         }
     };
 
-    const getAttributes = async (userId) => {
-        try {
-            const [rows] = await pool.execute(
-                'SELECT pk_id, name, color FROM contact_attributes WHERE user_id = ?',
-                [userId]
-            );
-            return rows;
-        } catch (error) {
-            console.error('Error fetching attributes:', error);
-            throw error;
-        }
-    };
-
-    const createAttribute = async (name, color, userId) => {
-        try {
-            const [result] = await pool.execute(
-                'INSERT INTO contact_attributes (name, color, user_id) VALUES (?, ?, ?)',
-                [name, color, userId]
-            );
-            return { id: result.insertId, name, color };
-        } catch (error) {
-            console.error('Error creating attribute:', error);
-            throw error;
-        }
-    };
-
-    const addContactAttributes = async (contactId, attributeIds) => {
-        try {
-            // First remove existing attributes
-            await pool.execute(
-                'DELETE FROM contact_attribute_mapping WHERE contact_id = ?',
-                [contactId]
-            );
-
-            // Then add new ones if any
-            if (attributeIds.length > 0) {
-                const values = attributeIds.map(attrId => [contactId, attrId]);
-                await pool.query(
-                    'INSERT INTO contact_attribute_mapping (contact_id, attribute_id) VALUES ?',
-                    [values]
-                );
-            }
-            return true;
-        } catch (error) {
-            console.error('Error updating contact attributes:', error);
-            throw error;
-        }
-    };
-
     const getTags = async (userId) => {
         try {
             const [rows] = await pool.execute(`
-                SELECT encryptId(pk_id) as id, name 
+                SELECT encryptId(pk_id) as uid, name 
                 FROM contact_tags 
                 WHERE user_id = decryptId(?)
-                ORDER BY name
-            `, [userId]);
+                ORDER BY name`, [userId]
+            );
             return rows;
         } catch (error) {
             console.error('Error fetching tags:', error);
@@ -247,11 +198,11 @@ const contactModel = async () => {
                 'INSERT INTO contact_tags (name, user_id) VALUES (?, decryptId(?))',
                 [name, userId]
             );
-            return {
-                id: await pool.execute('SELECT encryptId(?) as id', [result.insertId])
-                    .then(([rows]) => rows[0].id),
-                name
-            };
+            const [row] = await pool.execute(
+                'SELECT encryptId(pk_id) as uid, name FROM contact_tags WHERE pk_id = ?', 
+                [result.insertId]
+            );
+            return row[0];
         } catch (error) {
             console.error('Error creating tag:', error);
             throw error;
@@ -261,11 +212,11 @@ const contactModel = async () => {
     const getContactTags = async (contactId) => {
         try {
             const [rows] = await pool.execute(`
-                SELECT t.pk_id, t.name
+                SELECT encryptId(t.pk_id) as uid, t.name
                 FROM contact_tags t
                 JOIN contact_tag_mapping ctm ON t.pk_id = ctm.tag_id
-                WHERE ctm.contact_id IN (SELECT decryptId(?))
-            `, [contactId]);
+                WHERE ctm.contact_id = decryptId(?)`, [contactId]
+            );
             return rows;
         } catch (error) {
             console.error('Error fetching contact tags:', error);
@@ -301,9 +252,6 @@ const contactModel = async () => {
         deleteContact,
         updateContact,
         toggleFavorite,
-        getAttributes,
-        createAttribute,
-        addContactAttributes,
         getTags,
         createTag,
         getContactTags,

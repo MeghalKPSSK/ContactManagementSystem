@@ -78,7 +78,7 @@ router.put('/updateContact/:id', async (req, res) => {
         const { tag_ids, ...contactData } = req.body;
         await contactModelInstance.updateContact(req.params.id, contactData);
         
-        if (tag_ids) {
+        if (tag_ids?.length) {
             await contactModelInstance.updateContactTags(req.params.id, tag_ids);
         }
         
@@ -109,58 +109,7 @@ router.put('/toggleFavorite/:id', async (req, res) => {
     }
 });
 
-// Get all attributes for a user
-router.get('/attributes', async (req, res) => {
-    try {
-        const userId = await encryptionInstance.dbDecryptID(req.query.userId);
-        const attributes = await contactModelInstance.getAttributes(userId);
-        res.status(200).json({ 
-            success: true, 
-            attributes: attributes.map(attr => ({
-                id: encryptionInstance.dbEncryptID(attr.pk_id),
-                name: attr.name,
-                color: attr.color
-            }))
-        });
-    } catch (error) {
-        console.error('Error fetching attributes:', error);
-        res.status(500).json({ success: false, message: 'Error fetching attributes' });
-    }
-});
-
-// Create new attribute
-router.post('/attributes', async (req, res) => {
-    try {
-        const { name, color } = req.body;
-        const userId = await encryptionInstance.dbDecryptID(req.body.userId);
-        const attribute = await contactModelInstance.createAttribute(name, color, userId);
-        res.status(201).json({ 
-            success: true, 
-            attribute: {
-                id: encryptionInstance.dbEncryptID(attribute.id),
-                name: attribute.name,
-                color: attribute.color
-            }
-        });
-    } catch (error) {
-        console.error('Error creating attribute:', error);
-        res.status(500).json({ success: false, message: 'Error creating attribute' });
-    }
-});
-
-// Add attributes to contact
-router.post('/contact/:id/attributes', async (req, res) => {
-    try {
-        const { attributes } = req.body;
-        await contactModelInstance.addContactAttributes(req.params.id, attributes);
-        res.status(200).json({ success: true, message: 'Attributes added successfully' });
-    } catch (error) {
-        console.error('Error adding attributes:', error);
-        res.status(500).json({ success: false, message: 'Error adding attributes' });
-    }
-});
-
-// Get all tags for a user
+// Tags routes
 router.get('/tags', async (req, res) => {
     try {
         const tags = await contactModelInstance.getTags(req.query.userId);
@@ -171,7 +120,6 @@ router.get('/tags', async (req, res) => {
     }
 });
 
-// Create new tag
 router.post('/tags', async (req, res) => {
     try {
         const { name, userId } = req.body;
