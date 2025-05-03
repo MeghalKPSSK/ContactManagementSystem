@@ -67,7 +67,7 @@ function App() {
           {/* Protected routes */}
           <Route element={user ? <Layout /> : <Navigate to="/login" replace />}>
             <Route index element={<Navigate to="/home" />} />
-            <Route path="/home" element={<Main />} />
+            <Route path="/home" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/contacts" element={<Contacts />}>
               <Route path=":id" element={<Contacts />} />
