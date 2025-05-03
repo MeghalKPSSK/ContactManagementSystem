@@ -200,6 +200,10 @@ textarea.input {
   border: none;
 }
 
+.buttonIcon {
+  margin-right: 0.5rem;
+}
+
 .submitButton:hover {
   background-color: var(--secondary-light);
   transform: translateY(-1px);

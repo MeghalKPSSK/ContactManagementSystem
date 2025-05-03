@@ -11,6 +11,7 @@ import Header from './components/Header/Header';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import PageNotFound from './pageNotFound';
 import Contacts from './components/Contacts/Contacts';
+import Profile from './components/Profile/profile';
 
 // Authenticated Layout
 const Layout = () => (
@@ -70,7 +71,7 @@ function App() {
             <Route path="/contacts" element={<Contacts />}>
               <Route path=":id" element={<Contacts />} />
             </Route>
-            <Route path="/profile" element={<Main />} />
+            <Route path="/profile" element={<Profile />} />
           </Route>
 
           {/* Fallback */}

@@ -71,6 +71,46 @@ const userModel = async () => {
         }
     };
 
+    const updateUser = async (userId, userData) => {
+        try {
+            console.log(`userData: ${JSON.stringify(userData)}`);
+            const { firstName, lastName, phone, email, username } = userData;
+            
+            // Check for existing user with same username, phone, or email excluding current user
+            const [existingUser] = await pool.execute(
+                `SELECT username, phone, email FROM app_user 
+                 WHERE (username = ? OR phone = ? OR email = ?) 
+                 AND pk_id != (SELECT decryptId(?))
+                 AND is_deleted = 0`,
+                [username, phone, email, userId]
+            );
+
+            if (existingUser.length > 0) {
+                const duplicate = existingUser[0];
+                if (duplicate.username === username) throw new Error("Username already exists");
+                if (duplicate.phone === phone) throw new Error("Phone number already exists");
+                if (duplicate.email === email) throw new Error("Email already exists");
+            }
+            
+            const [result] = await pool.execute(
+                `UPDATE app_user 
+                 SET firstName = ?,
+                     lastName = ?,
+                     phone = ?,
+                     email = ?,
+                     username = ?,
+                     modifiedOn = NOW()
+                 WHERE pk_id = (SELECT decryptId(?))`,
+                [firstName, lastName, phone, email, username, userId]
+            );
+            
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error(`Error updating user: ${error}`);
+            throw error;
+        }
+    };
+
     const getUsersList = async () => {
         try {
             const [rows] = await pool.execute(`SELECT (select encryptId(pk_id)) uid, firstName, lastName, phone, email, 
@@ -93,12 +133,43 @@ const userModel = async () => {
         }
     };
 
+    const changePassword = async (userId, currentPassword, newPassword) => {
+        try {
+            const hashedCurrentPass = passCrypto.encrypt16Bit(currentPassword);
+            const [user] = await pool.execute(
+                'SELECT pk_id FROM app_user WHERE pk_id = (SELECT decryptId(?)) AND password = ?',
+                [userId, hashedCurrentPass]
+            );
+
+            if (user.length === 0) {
+                return false;
+            }
+
+            if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{6,12}$/.test(newPassword)) {
+                throw new Error("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character");
+            }
+
+            const hashedNewPass = passCrypto.encrypt16Bit(newPassword);
+            const [result] = await pool.execute(
+                'UPDATE app_user SET password = ? WHERE pk_id = (SELECT decryptId(?))',
+                [hashedNewPass, userId]
+            );
+
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error(`Error changing password: ${error}`);
+            throw error;
+        }
+    };
+
     return {
         getUserById,
         registerUser,
+        updateUser,
         getUsersList,
         loginUser,
-        deleteUser
+        deleteUser,
+        changePassword
     };
 };
 module.exports = userModel;
