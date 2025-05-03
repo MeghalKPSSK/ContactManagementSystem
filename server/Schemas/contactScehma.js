@@ -17,23 +17,6 @@ const ensureContactsTable = async () => {
 };
 
 const createTablesIfNotExist = async (pool) => {
-    // Create contact_attributes table
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS contact_attributes (
-            pk_id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(50) NOT NULL,
-            code VARCHAR(50) GENERATED ALWAYS AS (
-                REPLACE(REPLACE(REPLACE(REPLACE(LOWER(name), '!', '_'), '#', '_'), '@', '_'), ' ', '_')
-            ) STORED,
-            color VARCHAR(7) DEFAULT '#1d42ab',
-            user_id INT NOT NULL DEFAULT 1,
-            createdOn DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES app_user(pk_id) ON DELETE CASCADE,
-            UNIQUE KEY unique_attribute (name, user_id),
-            INDEX idx_user_attributes (user_id)
-        );
-    `);
-    console.log('contact_attributes table checked/created.');
 
     // Create contacts table
     await pool.query(`
@@ -61,29 +44,37 @@ const createTablesIfNotExist = async (pool) => {
             modifiedOn DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES app_user(pk_id) ON DELETE CASCADE,
             INDEX idx_user_id (user_id),
-            INDEX idx_firstName (firstName),
-            INDEX idx_lastName (lastName),
-            INDEX idx_email (email),
-            INDEX idx_mobile (mobile),
-            INDEX idx_favorite (is_favorite),
-            INDEX idx_name_combined (firstName, lastName)
+            INDEX idx_name_combined (firstName, lastName),
+            INDEX idx_favorite (is_favorite)
         )
     `);
     console.log('contacts table checked/created.');
 
-    // Create contact_attribute_mapping table
+    // Create tags table
     await pool.query(`
-        CREATE TABLE IF NOT EXISTS contact_attribute_mapping (
-            contact_id INT,
-            attribute_id INT,
+        CREATE TABLE IF NOT EXISTS contact_tags (
+            pk_id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL,
+            user_id INT NOT NULL,
             createdOn DATETIME DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (contact_id, attribute_id),
-            FOREIGN KEY (contact_id) REFERENCES contacts(pk_id) ON DELETE CASCADE,
-            FOREIGN KEY (attribute_id) REFERENCES contact_attributes(pk_id) ON DELETE CASCADE,
-            INDEX idx_contact_attributes (contact_id)
+            FOREIGN KEY (user_id) REFERENCES app_user(pk_id) ON DELETE CASCADE,
+            UNIQUE KEY unique_tag (name, user_id),
+            INDEX idx_user_tags (user_id)
         )
     `);
-    console.log('contact_attribute_mapping table checked/created.');
+
+    // Create contact_tag_mapping table
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS contact_tag_mapping (
+            contact_id INT,
+            tag_id INT,
+            createdOn DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (contact_id, tag_id),
+            FOREIGN KEY (contact_id) REFERENCES contacts(pk_id) ON DELETE CASCADE,
+            FOREIGN KEY (tag_id) REFERENCES contact_tags(pk_id) ON DELETE CASCADE,
+            INDEX idx_contact_tags (contact_id)
+        )
+    `);
 };
 
 const validateAndUpdateSchema = async (pool) => {
