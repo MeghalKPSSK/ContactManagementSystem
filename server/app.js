@@ -60,7 +60,7 @@ const startServer = async () => {
 app.listen(port, async () => {
     console.log(`Server is running on port ${port}`);
     // await ensureAppUserTable();
-    await ensureContactsTable();
+    // await ensureContactsTable();
 });
 // Initialize the database and start the server
 // Import user routes
