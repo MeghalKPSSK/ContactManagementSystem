@@ -135,6 +135,17 @@ textarea.input {
   resize: vertical;
 }
 
+.inputError {
+  border-color: var(--error-color) !important;
+}
+
+.errorText {
+  color: var(--error-color);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
 .favoriteCheck {
   margin: 1.5rem 0;
   padding: 1rem;

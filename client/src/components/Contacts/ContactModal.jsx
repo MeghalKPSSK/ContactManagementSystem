@@ -30,6 +30,11 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [showSuggestions, setShowSuggestions] = useState(false);
   const tagInputRef = useRef(null);
+  const [phoneErrors, setPhoneErrors] = useState({
+    phone: '',
+    alt_phone: '',
+    mobile: ''
+  });
 
   useEffect(() => {
     if (mode !== 'add' && contact) {
@@ -124,10 +129,40 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    
+    // For phone fields, validate length
+    if (['phone', 'mobile', 'alt_phone'].includes(name)) {
+      // Only allow numbers
+      const numbersOnly = value.replace(/[^\d]/g, '');
+      
+      if (numbersOnly.length > 10) {
+        return; // Don't update if more than 10 digits
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        [name]: numbersOnly
+      }));
+
+      // Validate length only if there's input
+      if (numbersOnly.length > 0 && numbersOnly.length !== 10) {
+        setPhoneErrors(prev => ({
+          ...prev,
+          [name]: 'Phone number must be 10 digits'
+        }));
+      } else {
+        setPhoneErrors(prev => ({
+          ...prev,
+          [name]: ''
+        }));
+      }
+    } else {
+      // Handle non-phone fields normally
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }));
+    }
   };
 
   const handleBlur = () => {
@@ -197,6 +232,16 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Check for phone validation errors
+    const hasPhoneErrors = Object.values(phoneErrors).some(error => error);
+    const hasIncompletePhone = formData.phone.length > 0 && formData.phone.length !== 10;
+
+    if (hasPhoneErrors || hasIncompletePhone) {
+      toast.error('Please fix phone number errors before submitting');
+      return;
+    }
+
     try {
         const config = await fetch('/config.json').then((res) => res.json());
         const submitData = {
@@ -268,48 +313,51 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
             </div>
           </div>
 
-          {/* Second row - Phone fields */}
+          {/* Phone fields */}
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label data-required="true">Primary Phone</label>
               <input
                 type="tel"
                 name="phone"
-                className={styles.input}
-                placeholder="Enter primary phone"
+                className={`${styles.input} ${phoneErrors.phone ? styles.inputError : ''}`}
+                placeholder="Enter 10 digit phone number"
                 value={formData.phone}
                 onChange={handleChange}
                 disabled={mode === 'view'}
                 required
               />
+              {phoneErrors.phone && <span className={styles.errorText}>{phoneErrors.phone}</span>}
             </div>
             <div className={styles.formGroup}>
               <label>Alternate Phone</label>
               <input
                 type="tel"
                 name="alt_phone"
-                className={styles.input}
-                placeholder="Enter alternate phone"
+                className={`${styles.input} ${phoneErrors.alt_phone ? styles.inputError : ''}`}
+                placeholder="Enter 10 digit phone number"
                 value={formData.alt_phone}
                 onChange={handleChange}
                 disabled={mode === 'view'}
               />
+              {phoneErrors.alt_phone && <span className={styles.errorText}>{phoneErrors.alt_phone}</span>}
             </div>
           </div>
 
-          {/* Third row - Mobile and Email */}
+          {/* Mobile field */}
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label>Mobile</label>
               <input
                 type="tel"
                 name="mobile"
-                className={styles.input}
-                placeholder="Enter mobile number"
+                className={`${styles.input} ${phoneErrors.mobile ? styles.inputError : ''}`}
+                placeholder="Enter 10 digit mobile number"
                 value={formData.mobile}
                 onChange={handleChange}
                 disabled={mode === 'view'}
               />
+              {phoneErrors.mobile && <span className={styles.errorText}>{phoneErrors.mobile}</span>}
             </div>
             <div className={styles.formGroup}>
               <label data-required="true">Email</label>
@@ -336,6 +384,7 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
               placeholder="Enter street address"
               value={formData.address_line}
               onChange={handleChange}
+              rows={5}
               disabled={mode === 'view'}
             />
           </div>
