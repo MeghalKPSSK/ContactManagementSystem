@@ -12,6 +12,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import PageNotFound from './pageNotFound';
 import Contacts from './components/Contacts/Contacts';
 import Profile from './components/Profile/profile';
+import Dashboard from './components/Dashboards/Dashboard';
 
 // Authenticated Layout
 const Layout = () => (
@@ -67,7 +68,7 @@ function App() {
           <Route element={user ? <Layout /> : <Navigate to="/login" replace />}>
             <Route index element={<Navigate to="/home" />} />
             <Route path="/home" element={<Main />} />
-            <Route path="/dashboard" element={<Main />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/contacts" element={<Contacts />}>
               <Route path=":id" element={<Contacts />} />
             </Route>
