@@ -4,114 +4,256 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--overlay-bg);
+  background-color: rgba(45, 55, 72, 0.7);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   z-index: 1000;
+  padding: 2rem;
+  overflow-y: auto;
   backdrop-filter: blur(4px);
 }
 
 .modalContent {
   background-color: var(--primary-bg);
-  border-radius: 4px;
-  box-shadow: 0 4px 20px var(--box-shadow);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(29, 66, 171, 0.15);
   width: 100%;
-  max-width: 500px;
-  margin: 2rem;
+  max-width: 800px;
+  margin: auto;
+  transform: translateY(0);
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modalHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--highlight-border);
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--accent-border);
+  background-color: var(--accent-bg);
+  border-radius: 8px 8px 0 0;
 }
 
 .modalHeader h2 {
   margin: 0;
-  color: var(--primary-text);
-  font-size: 1.25rem;
+  color: var(--secondary-bg);
+  font-size: 1.5rem;
+  font-weight: 600;
 }
 
 .closeButton {
   background: transparent;
   border: none;
-  color: var(--unselected-text);
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 0.5rem;
   font-size: 1.25rem;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  border-radius: 4px;
 }
 
 .closeButton:hover {
-  color: var(--primary-text);
+  color: var(--secondary-bg);
+  background-color: var(--hover-bg);
+}
+
+.contactForm {
+  padding: 2rem;
+}
+
+.formRow {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .formGroup {
-  margin: 1.5rem;
+  flex: 1;
+  margin-bottom: 1rem;
 }
 
 .formGroup label {
   display: block;
   margin-bottom: 0.5rem;
-  color: var(--primary-text);
+  color: var(--text-secondary);
   font-weight: 500;
+  font-size: 0.9rem;
 }
 
-.formGroup input {
+.formGroup label::after {
+  content: " *";
+  color: var(--error-color);
+  opacity: 0;
+}
+
+.formGroup label[data-required="true"]::after {
+  opacity: 1;
+}
+
+.input {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--highlight-border);
-  border-radius: 4px;
-  font-size: 1rem;
-  outline: none;
+  padding: 0.875rem 1rem;
+  border: 1.5px solid var(--accent-border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background-color: var(--primary-bg);
+  color: var(--text-primary);
   transition: all 0.2s ease;
 }
 
-.formGroup input:focus {
+.input:focus {
   border-color: var(--secondary-bg);
-  box-shadow: 0 0 0 3px rgba(183, 148, 244, 0.1);
+  box-shadow: 0 0 0 3px rgba(29, 66, 171, 0.1);
+  outline: none;
 }
 
-.formGroup input:disabled {
-  background-color: var(--terinary-bg);
+.input:disabled {
+  background-color: var(--accent-bg);
   cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+textarea.input {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.favoriteCheck {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background-color: var(--accent-bg);
+  border-radius: 6px;
+  border: 1px solid var(--accent-border);
+}
+
+.favoriteCheck label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.favoriteCheck input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.favoriteCheck .icon {
+  color: #f59e0b;
+  font-size: 1.1rem;
 }
 
 .buttonGroup {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  padding: 1.5rem;
-  border-top: 1px solid var(--highlight-border);
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--accent-border);
+}
+
+.submitButton, 
+.cancelButton {
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+  min-width: 120px;
 }
 
 .submitButton {
   background-color: var(--secondary-bg);
   color: var(--text-light);
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
 }
 
 .submitButton:hover {
   background-color: var(--secondary-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(29, 66, 171, 0.15);
 }
 
 .cancelButton {
   background-color: transparent;
-  border: 1px solid var(--secondary-bg);
+  border: 1.5px solid var(--secondary-bg);
   color: var(--secondary-bg);
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
 }
 
 .cancelButton:hover {
+  background-color: var(--hover-bg);
+  transform: translateY(-1px);
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.attributesSection {
+  margin: 1.5rem 0;
+}
+
+.attributesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.attributeTag {
+  padding: 0.25rem 0.75rem;
+  border-radius: 16px;
+  color: white;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.attributeTag.selected {
+  opacity: 1;
+}
+
+.addAttributeButton {
+  padding: 0.25rem 0.75rem;
+  border-radius: 16px;
+  border: 1px dashed var(--secondary-bg);
+  background: transparent;
+  color: var(--secondary-bg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.addAttributeButton:hover {
   background-color: var(--hover-bg);
 }

@@ -38,14 +38,8 @@
 
 .searchBar {
   position: relative;
-}
-
-.searchIcon {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--unselected-text);
+  border: 1px solid var(--hover-text);
+  border-radius: 4px 0px 0px 4px;
 }
 
 .searchInput {
@@ -57,6 +51,16 @@
   outline: none;
   background-color: var(--primary-bg);
   color: #000000;
+}
+
+.searchButton{
+  cursor: pointer;
+  background-color: var(--hover-text);
+  border-radius: 0px 4px 4px 0px;
+}
+
+.searchButton:hover {
+  background-color: var(--secondary-light);
 }
 
 .tableContainer {
@@ -88,6 +92,32 @@
   white-space: nowrap;
 }
 
+/* Set column widths */
+.contactTable th:nth-child(1),
+.contactTable td:nth-child(1) {
+  width: 30%;
+}
+
+.contactTable th:nth-child(2),
+.contactTable td:nth-child(2) {
+  width: 25%;
+}
+
+.contactTable th:nth-child(3),
+.contactTable td:nth-child(3) {
+  width: 15%;
+}
+
+.contactTable th:nth-child(4),
+.contactTable td:nth-child(4) {
+  width: 15%;
+}
+
+.contactTable th:nth-child(5),
+.contactTable td:nth-child(5) {
+  width: 15%;
+}
+
 .contactTable th:first-child {
   border-top-left-radius: 4px;
 }
@@ -110,8 +140,7 @@
 
 .actions {
   display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .actionButton {
@@ -133,10 +162,78 @@
   color: var(--secondary-bg);
 }
 
+.favoriteIcon {
+  color: goldenrod;
+  margin-left: 0.5rem;
+}
+
 .editButton {
   color: var(--secondary-bg);
 }
 
 .deleteButton {
   color: var(--error-color);
+}
+
+/* Reload button styles */
+.reloadContainer {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.reloadButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  color: var(--secondary-bg);
+  border: 1px solid var(--highlight-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.reloadButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reloadIcon {
+  font-size: 1rem;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.favoriteButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-right: 0.5rem;
+}
+
+.favoriteIcon {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    opacity: 0.3;
+    transition: all 0.2s ease;
+}
+
+.favoriteIcon.favorite {
+    color: #f59e0b;
+    opacity: 1;
+}
+
+.favoriteButton:hover .favoriteIcon {
+    transform: scale(1.1);
+    opacity: 1;
 }

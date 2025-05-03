@@ -6,64 +6,121 @@ import {
   faSearch, 
   faEdit, 
   faTrash, 
-  faEye 
+  faEye, 
+  faStar,
+  faSync
 } from '@fortawesome/free-solid-svg-icons';
 import ContactModal from './ContactModal';
+import { toast } from 'react-toastify';
 
 export default function Contacts() {
   const [contacts, setContacts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('add'); // 'add', 'edit', 'view'
   const [contactUid, setSelectedContact] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const fetchContacts = async (searchTerm) => {
+    setIsLoading(true);
+    try {
+      const config = await fetch('/config.json').then((res) => res.json());
+      const userId = JSON.parse(localStorage.getItem('user')).uid;
+      const params = new URLSearchParams({
+          ...(searchTerm && { filter: searchTerm }),
+          userId: userId
+      });
+      const response = await fetch(`${config.apiUrl}/contacts/contactsList?${params}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+      });
+      const resData = await response.json();
+      
+      if (!response.ok) {
+          const errorData = response.json();
+          throw new Error(errorData.message || 'Failed to fetch contacts');
+      }
+      
+      setContacts(resData.contacts);
+    } catch (error) {
+      console.error('Error fetching contacts:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }; 
+
   useEffect(() => {
-    const handleList = async (searchTerm) => {
-        const config = await fetch('/config.json').then((res) => res.json());
-        const userId = JSON.parse(localStorage.getItem('user')).uid;
-        const params = new URLSearchParams({
-            ...(searchTerm && { filter: searchTerm }),
-            userId: userId
-        });
-        const response = await fetch(`${config.apiUrl}/contacts/contactsList?${params}`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-        });
-        const resData = await response.json();
-        setContacts(resData.contacts);
-        // console.log(rows);
-        if (!response.ok) {
-            const errorData = response.json();
-            throw new Error(errorData.message || 'Failed to fetch contacts');
-        }
-    }; 
-    handleList(searchTerm);
-  },[searchTerm]);
+    fetchContacts(searchTerm);
+  }, []);
   
+  const handleReload = () => {
+    fetchContacts(searchTerm);
+  };
 
   const handleAdd = () => {
     setModalMode('add');
-    setSelectedContact(null);
+    setSelectedContact(null); // Don't pass UID for add mode
     setShowModal(true);
   };
 
   const handleEdit = (contact) => {
     setModalMode('edit');
-    setSelectedContact(contact);
+    setSelectedContact(contact.uid); // Pass the UID from the row
     setShowModal(true);
   };
 
   const handleView = (contact) => {
     setModalMode('view');
-    setSelectedContact(contact);
+    setSelectedContact(contact.uid); // Pass the UID from the row
     setShowModal(true);
   };
 
-  const handleDelete = (contactId) => {
-    // Add confirmation dialog
+  const handleDelete = async (contactId) => {
     if (window.confirm('Are you sure you want to delete this contact?')) {
-      // API call will go here
-      setContacts(contacts.filter(contact => contact.id !== contactId));
+      try {
+        const config = await fetch('/config.json').then((res) => res.json());
+        const response = await fetch(`${config.apiUrl}/contacts/deleteContact/${contactId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete contact');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          toast.success(data.message);
+          fetchContacts(searchTerm);
+        }
+      } catch (error) {
+        toast.error('Error deleting contact');
+        console.error('Error:', error);
+      }
+    }
+  };
+
+  const handleFavoriteToggle = async (contact) => {
+    try {
+      const config = await fetch('/config.json').then((res) => res.json());
+      const response = await fetch(`${config.apiUrl}/contacts/toggleFavorite/${contact.uid}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_favorite: !contact.is_favorite })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update favorite status');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(data.message);
+        fetchContacts(searchTerm);
+      }
+    } catch (error) {
+      toast.error('Error updating favorite status');
+      console.error('Error:', error);
     }
   };
 
@@ -73,22 +130,30 @@ export default function Contacts() {
       <div className={styles.header}>
         <h2>Contacts</h2>
         <div className={styles.headerActions}>
-        <div className={styles.searchBar}>
-            <FontAwesomeIcon icon={faSearch} className={styles.searchIcon} />
+          <div className={styles.searchBar}>
             <input
-            type="text"
-            placeholder="Search contacts..."
-            className={styles.searchInput}
-            onKeyDown={(e) => {
+              type="text"
+              placeholder="Search contacts..."
+              className={styles.searchInput}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+              }}
+              onKeyUp={(e) => {
                 if (e.key === 'Enter') {
-                    setSearchTerm(e.target.value);
+                  fetchContacts(searchTerm);
                 }
-            }}
+              }}
             />
-        </div>
-        <button className={styles.addButton} onClick={handleAdd}>
-          <FontAwesomeIcon icon={faPlus} /> &nbsp; Add Contact
-        </button>
+          </div>
+          <button 
+              className={styles.searchButton} 
+              onClick={()=>fetchContacts(searchTerm)}
+            >
+              <FontAwesomeIcon icon={faSearch} />
+            </button>
+          <button className={styles.addButton} onClick={handleAdd}>
+            <FontAwesomeIcon icon={faPlus} /> &nbsp; Add Contact
+          </button>
         </div>
       </div>
 
@@ -99,15 +164,28 @@ export default function Contacts() {
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
+              <th>Status</th>
               <th style={{textAlign:"end"}}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {contacts.map(contact => (
+            {contacts.length>0 ? contacts.map(contact => (
               <tr key={contact.uid}>
-                <td>{`${contact.firstName} ${contact.lastName || ''}`}</td>
+                <td>
+                  <button 
+                    className={styles.favoriteButton}
+                    onClick={() => handleFavoriteToggle(contact)}
+                  >
+                    <FontAwesomeIcon 
+                      icon={faStar} 
+                      className={`${styles.favoriteIcon} ${contact.is_favorite ? styles.favorite : ''}`}
+                    />
+                  </button>
+                  {contact.firstName} {contact.lastName || ''}
+                </td>
                 <td>{contact.email}</td>
                 <td>{contact.phone}</td>
+                <td>{contact.status}</td>
                 <td className={styles.actions}>
                   <button 
                     className={`${styles.actionButton} ${styles.viewButton}`}
@@ -123,24 +201,39 @@ export default function Contacts() {
                   </button>
                   <button 
                     className={`${styles.actionButton} ${styles.deleteButton}`}
-                    onClick={() => handleDelete(contact.id)}
+                    onClick={() => handleDelete(contact.uid)} // Use uid instead of id
                   >
                     <FontAwesomeIcon icon={faTrash} />
                   </button>
                 </td>
               </tr>
-            ))}
+            )): (
+              <tr><td colSpan="5" style={{ textAlign: "center" }}>No Records Found</td></tr>
+            )}
           </tbody>
         </table>
+      </div>
+      
+      <div className={styles.reloadContainer}>
+        <button 
+          className={styles.reloadButton} 
+          onClick={handleReload}
+          disabled={isLoading}
+        >
+          <FontAwesomeIcon 
+            icon={faSync} 
+            className={`${styles.reloadIcon} ${isLoading ? styles.spinning : ''}`} 
+          />
+        </button>
       </div>
 
       {showModal && (
         <ContactModal
           mode={modalMode}
-          contact={contactUid}
+          contact={contactUid} // This will be null for add, uid for edit/view
           onClose={() => setShowModal(false)}
           onSubmit={() => {
-            // Handle submit based on mode
+            fetchContacts(searchTerm); // Refresh the list after submit
             setShowModal(false);
           }}
         />

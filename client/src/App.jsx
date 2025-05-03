@@ -11,80 +11,74 @@ import Header from './components/Header/Header';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import PageNotFound from './pageNotFound';
 import Contacts from './components/Contacts/Contacts';
-// import ContactDetails from './components/Contacts/ContactDetails';
 
-// Layout component for authenticated routes
-const Layout = () => {
-  return (
-    <div className="app-layout">
-      <SideBar />
-      <div className="content-wrapper">
-        <Header />
-        <main className="main-content">
-          <Outlet />
-        </main>
-      </div>
+// Authenticated Layout
+const Layout = () => (
+  <div className="app-layout">
+    <SideBar />
+    <div className="content-wrapper">
+      <Header />
+      <main className="main-content">
+        <Outlet />
+      </main>
     </div>
-  );
-};
+  </div>
+);
 
 function App() {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  // Load user on mount
   useEffect(() => {
-    const loggedInUser = localStorage.getItem('user');
-    if (loggedInUser) {
-      setUser(JSON.parse(loggedInUser));
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
     }
+    setLoading(false);
   }, []);
 
-  // Check for session expiry
+  // Detect login via localStorage and trigger state update
   useEffect(() => {
-    const checkSession = () => {
-      const loggedInUser = localStorage.getItem('user');
-      if (!loggedInUser && user) {
-        setUser(null);
-        toast.error('Session expired. Please login again.'); // Directly show the toast message
+    const interval = setInterval(() => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser && !user) {
+        setUser(JSON.parse(storedUser)); // user just logged in
+      } else if (!storedUser && user) {
+        setUser(null); // session cleared or logged out
+        toast.error('Session expired. Please login again.');
       }
-      if (loggedInUser && (window.location.pathname === "/login" || window.location.pathname === "/register")) {
-        window.location.href = "/home";
-      }
-    };
-
-    const interval = setInterval(checkSession, 500);
+    }, 500);
     return () => clearInterval(interval);
   }, [user]);
+
+  if (loading) return <div>Loading...</div>;
 
   return (
     <div className="app-container">
       <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
-          <Route path="/registerUser" element={user ? <Navigate to="/" replace /> : <RegisterUser />} />
-          
-          {/* Protected routes using Layout */}
+        <Routes key={user ? 'auth' : 'guest'}>
+          {/* Public routes */}
+          <Route path="/login" element={user ? <Navigate to="/home" replace /> : <Login />} />
+          <Route path="/registerUser" element={user ? <Navigate to="/home" replace /> : <RegisterUser />} />
+
+          {/* Protected routes */}
           <Route element={user ? <Layout /> : <Navigate to="/login" replace />}>
-            <Route path="/" element={<Main />} />
+            <Route index element={<Navigate to="/home" />} />
             <Route path="/home" element={<Main />} />
             <Route path="/dashboard" element={<Main />} />
-            {/* Separate routes for contacts list and contact details */}
-            <Route path="/contacts" element={<Contacts />} />
-            {/* <Route path="/contacts/:id" element={<Contacts />} /> */}
+            <Route path="/contacts" element={<Contacts />}>
+              <Route path=":id" element={<Contacts />} />
+            </Route>
             <Route path="/settings" element={<Main />} />
           </Route>
 
-          {/* 404 Route */}
+          {/* Fallback */}
           <Route path="*" element={<PageNotFound />} />
         </Routes>
       </BrowserRouter>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        closeOnClick
-        pauseOnHover
-        draggable
-      />
+
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} closeOnClick pauseOnHover draggable />
     </div>
   );
 }
