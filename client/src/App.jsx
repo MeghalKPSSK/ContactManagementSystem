@@ -70,7 +70,7 @@ function App() {
             <Route path="/contacts" element={<Contacts />}>
               <Route path=":id" element={<Contacts />} />
             </Route>
-            <Route path="/settings" element={<Main />} />
+            <Route path="/profile" element={<Main />} />
           </Route>
 
           {/* Fallback */}

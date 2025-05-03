@@ -14,8 +14,8 @@ export default function Main() {
       case '/':
       case '/dashboard':
         return <div className={styles.dashboard}>Welcome to Dashboard</div>;
-      case '/settings':
-        return <div className={styles.settings}>Settings Page</div>;
+      case '/profile':
+        return <div className={styles.profile}>Profile Page</div>;
       default:
         return <div className={styles.defaultMessage}>Please select a menu item</div>;
     }
