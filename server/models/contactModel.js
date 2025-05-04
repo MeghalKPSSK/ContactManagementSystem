@@ -91,18 +91,58 @@ const contactModel = async () => {
         }
     };
 
-    const getContactsList = async (userId, filter) => {
+    const getContactsList = async (userId, filter, page = 1) => {
         try {
-            console.log(`userId: ${userId}`);
+            const pageSize = 10;
+            const offset = (page - 1) * pageSize;
             const filterCheck = filter ? filter : '';
-            const [rows] = await pool.execute(`SELECT (select encryptId(pk_id)) uid, firstName, lastName, phone, email, 
-                status, createdOn, is_favorite, modifiedOn, (select encryptId(user_id)) \`user.uid\` FROM contacts WHERE user_id in (select decryptId(?)) 
-                AND CASE WHEN IFNULL(?,'') != '' THEN ( firstName LIKE ? OR lastName LIKE ? OR phone LIKE ? OR email LIKE ? ) ELSE 1=1 END
-                AND is_deleted = 0 ORDER BY pk_id DESC`, [userId, filterCheck, `%${filterCheck}%`, `%${filterCheck}%`, `%${filterCheck}%`, `%${filterCheck}%`]);
-            console.log(`rows: ${JSON.stringify(rows)}`);
-            return rows;
+
+            // Get total count using pool.query
+            const [totalRows] = await pool.query(`
+                SELECT COUNT(*) as total 
+                FROM contacts 
+                WHERE user_id = decryptId(?) 
+                AND CASE 
+                    WHEN IFNULL(?,'') != '' 
+                    THEN (firstName LIKE ? OR lastName LIKE ? OR phone LIKE ? OR email LIKE ?) 
+                    ELSE 1=1 
+                END
+                AND is_deleted = 0
+            `, [userId, filterCheck, `%${filterCheck}%`, `%${filterCheck}%`, `%${filterCheck}%`, `%${filterCheck}%`]);
+
+            // Get paginated data using pool.query
+            const [rows] = await pool.query(`
+                SELECT 
+                    (select encryptId(pk_id)) uid, 
+                    firstName, 
+                    lastName, 
+                    phone, 
+                    email,
+                    status, 
+                    createdOn, 
+                    is_favorite, 
+                    modifiedOn, 
+                    (select encryptId(user_id)) \`user.uid\` 
+                FROM contacts 
+                WHERE user_id = decryptId(?) 
+                AND CASE 
+                    WHEN IFNULL(?,'') != '' 
+                    THEN (firstName LIKE ? OR lastName LIKE ? OR phone LIKE ? OR email LIKE ?) 
+                    ELSE 1=1 
+                END
+                AND is_deleted = 0 
+                ORDER BY pk_id DESC
+                LIMIT ? OFFSET ?
+            `, [userId, filterCheck, `%${filterCheck}%`, `%${filterCheck}%`, `%${filterCheck}%`, `%${filterCheck}%`, pageSize, offset]);
+
+            return {
+                contacts: rows,
+                total: totalRows[0].total,
+                page,
+                pageSize
+            };
         } catch (error) {
-            console.error(`Error fetching contats list: ${error}`);
+            console.error(`Error fetching contacts list: ${error}`);
             throw error;
         }
     };

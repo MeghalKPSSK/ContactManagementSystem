@@ -237,3 +237,65 @@
     transform: scale(1.1);
     opacity: 1;
 }
+
+/* Add pagination styles */
+.paginationContainer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 16px;
+  border-top: 1px solid var(--highlight-border);
+  background: var(--primary-bg);
+  gap: 16px;
+}
+
+.paginationInfo {
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: right;
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.paginationButton {
+  padding: 6px 12px;
+  border: 1px solid var(--highlight-border);
+  border-radius: 4px;
+  background: var(--primary-bg);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+  min-width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.paginationButton.iconButton {
+  padding: 6px 8px;
+  min-width: 32px;
+}
+
+.paginationButton:hover:not(:disabled) {
+  border-color: var(--secondary-bg);
+  color: var(--secondary-bg);
+}
+
+.paginationButton:disabled {
+  cursor: not-allowed;
+  color: var(--text-disabled);
+  background: var(--disabled-bg);
+}
+
+.paginationButton.active {
+  background: var(--secondary-bg);
+  color: var(--text-light);
+  border-color: var(--secondary-bg);
+}

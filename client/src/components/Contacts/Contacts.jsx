@@ -8,10 +8,34 @@ import {
   faTrash, 
   faEye, 
   faStar,
-  faSync
+  faSync,
+  faAngleLeft,
+  faAngleRight,
+  faAnglesLeft,
+  faAnglesRight
 } from '@fortawesome/free-solid-svg-icons';
 import ContactModal from './ContactModal';
 import { toast } from 'react-toastify';
+
+// Add this constant at the top of the file
+const MAX_PAGES_SHOWN = 5;
+
+// Add this helper function
+const getPageNumbers = (current, total, pageSize) => {
+  const totalPages = Math.ceil(total / pageSize);
+  const pages = [];
+  let startPage = Math.max(1, current - Math.floor(MAX_PAGES_SHOWN / 2));
+  let endPage = Math.min(totalPages, startPage + MAX_PAGES_SHOWN - 1);
+
+  if (endPage - startPage + 1 < MAX_PAGES_SHOWN) {
+    startPage = Math.max(1, endPage - MAX_PAGES_SHOWN + 1);
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    pages.push(i);
+  }
+  return pages;
+};
 
 export default function Contacts() {
   const [contacts, setContacts] = useState([]);
@@ -21,40 +45,64 @@ export default function Contacts() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchContacts = async (searchTerm) => {
+  // Add pagination state
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10, // Fixed at 10 rows per page
+    total: 0
+  });
+
+  // Update the fetchContacts function
+  const fetchContacts = async (searchTerm, page = 1) => {
     setIsLoading(true);
     try {
       const config = await fetch('/config.json').then((res) => res.json());
       const userId = JSON.parse(localStorage.getItem('user')).uid;
       const params = new URLSearchParams({
-          ...(searchTerm && { filter: searchTerm }),
-          userId: userId
+        ...(searchTerm && { filter: searchTerm }),
+        userId,
+        page,
+        pageSize: pagination.pageSize
       });
+      
       const response = await fetch(`${config.apiUrl}/contacts/contactsList?${params}`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
       });
       const resData = await response.json();
       
       if (!response.ok) {
-          const errorData = response.json();
-          throw new Error(errorData.message || 'Failed to fetch contacts');
+        const errorData = response.json();
+        throw new Error(errorData.message || 'Failed to fetch contacts');
       }
       
       setContacts(resData.contacts);
+      setPagination(prev => ({
+        ...prev,
+        current: page,
+        total: resData.pagination.total
+      }));
     } catch (error) {
       console.error('Error fetching contacts:', error);
     } finally {
       setIsLoading(false);
     }
-  }; 
+  };
 
+  // Update useEffect
   useEffect(() => {
-    fetchContacts(searchTerm);
+    fetchContacts(searchTerm, 1);
   }, []);
   
+  // Update search handler
+  const handleSearch = () => {
+    setPagination(prev => ({ ...prev, current: 1 })); // Reset to first page
+    fetchContacts(searchTerm, 1);
+  };
+
+  // Update reload handler
   const handleReload = () => {
-    fetchContacts(searchTerm);
+    fetchContacts(searchTerm, pagination.current);
   };
 
   const handleAdd = () => {
@@ -91,7 +139,7 @@ export default function Contacts() {
         const data = await response.json();
         if (data.success) {
           toast.success(data.message);
-          fetchContacts(searchTerm);
+          fetchContacts(searchTerm, pagination.current);
         }
       } catch (error) {
         toast.error('Error deleting contact');
@@ -116,12 +164,17 @@ export default function Contacts() {
       const data = await response.json();
       if (data.success) {
         toast.success(data.message);
-        fetchContacts(searchTerm);
+        fetchContacts(searchTerm, pagination.current);
       }
     } catch (error) {
       toast.error('Error updating favorite status');
       console.error('Error:', error);
     }
+  };
+
+  // Add pagination handler
+  const handlePageChange = (newPage) => {
+    fetchContacts(searchTerm, newPage);
   };
 
   return (
@@ -140,14 +193,14 @@ export default function Contacts() {
               }}
               onKeyUp={(e) => {
                 if (e.key === 'Enter') {
-                  fetchContacts(searchTerm);
+                  handleSearch();
                 }
               }}
             />
           </div>
           <button 
               className={styles.searchButton} 
-              onClick={()=>fetchContacts(searchTerm)}
+              onClick={handleSearch}
             >
               <FontAwesomeIcon icon={faSearch} />
             </button>
@@ -212,6 +265,59 @@ export default function Contacts() {
             )}
           </tbody>
         </table>
+        
+        {/* Replace the existing pagination controls */}
+        <div className={styles.paginationContainer}>
+          <div className={styles.paginationControls}>
+            <button
+              className={`${styles.paginationButton} ${styles.iconButton}`}
+              onClick={() => handlePageChange(1)}
+              disabled={pagination.current === 1 || isLoading}
+              title="First Page"
+            >
+              <FontAwesomeIcon icon={faAnglesLeft} />
+            </button>
+            <button
+              className={`${styles.paginationButton} ${styles.iconButton}`}
+              onClick={() => handlePageChange(pagination.current - 1)}
+              disabled={pagination.current === 1 || isLoading}
+              title="Previous Page"
+            >
+              <FontAwesomeIcon icon={faAngleLeft} />
+            </button>
+            {getPageNumbers(pagination.current, pagination.total, pagination.pageSize).map(pageNum => (
+              <button
+                key={pageNum}
+                className={`${styles.paginationButton} ${pageNum === pagination.current ? styles.active : ''}`}
+                onClick={() => handlePageChange(pageNum)}
+                disabled={isLoading}
+              >
+                {pageNum}
+              </button>
+            ))}
+            <button
+              className={`${styles.paginationButton} ${styles.iconButton}`}
+              onClick={() => handlePageChange(pagination.current + 1)}
+              disabled={pagination.current * pagination.pageSize >= pagination.total || isLoading}
+              title="Next Page"
+            >
+              <FontAwesomeIcon icon={faAngleRight} />
+            </button>
+            <button
+              className={`${styles.paginationButton} ${styles.iconButton}`}
+              onClick={() => handlePageChange(Math.ceil(pagination.total / pagination.pageSize))}
+              disabled={pagination.current * pagination.pageSize >= pagination.total || isLoading}
+              title="Last Page"
+            >
+              <FontAwesomeIcon icon={faAnglesRight} />
+            </button>
+          </div>
+          <div className={styles.paginationInfo}>
+            Showing {contacts.length ? (pagination.current - 1) * pagination.pageSize + 1 : 0} 
+            - {Math.min(pagination.current * pagination.pageSize, pagination.total)} 
+            &nbsp; of {pagination.total} entries
+          </div>
+        </div>
       </div>
       
       <div className={styles.reloadContainer}>
@@ -233,7 +339,7 @@ export default function Contacts() {
           contact={contactUid} // This will be null for add, uid for edit/view
           onClose={() => setShowModal(false)}
           onSubmit={() => {
-            fetchContacts(searchTerm); // Refresh the list after submit
+            fetchContacts(searchTerm, pagination.current);
             setShowModal(false);
           }}
         />

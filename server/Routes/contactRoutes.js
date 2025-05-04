@@ -30,9 +30,18 @@ router.post('/addContact', async (req, res) => {
 // Get list of contacts
 router.get('/contactsList', async (req, res) => {
     try {
-        console.log(`User ID: ${req.query.userId}, Filter: ${req.query.filter}`);
-        const contacts = await contactModelInstance.getContactsList(req.query.userId, req.query.filter);
-        res.status(200).json({success: true, contacts: contacts, message: 'Contacts list retrieved successfully'});
+        const { userId, filter, page = 1 } = req.query;
+        const result = await contactModelInstance.getContactsList(userId, filter, parseInt(page));
+        res.status(200).json({
+            success: true, 
+            contacts: result.contacts,
+            pagination: {
+                current: result.page,
+                pageSize: result.pageSize,
+                total: result.total
+            },
+            message: 'Contacts list retrieved successfully'
+        });
     } catch (error) {
         console.error('Error retrieving contacts:', error);
         res.status(500).json({ success: false, message: 'Error retrieving contacts' });
