@@ -16,6 +16,8 @@ export default function Main() {
         return <div className={styles.dashboard}>Welcome to Dashboard</div>;
       case '/profile':
         return <div className={styles.profile}>Profile Page</div>;
+      case '/groups':
+          return <div className={styles.profile}>Groups Page</div>;
       default:
         return <div className={styles.defaultMessage}>Please select a menu item</div>;
     }

@@ -71,6 +71,7 @@ function App() {
               <Route path=":id" element={<Contacts />} />
             </Route>
             <Route path="/profile" element={<Main />} />
+            <Route path="/groups" element={<Main />} />
           </Route>
 
           {/* Fallback */}

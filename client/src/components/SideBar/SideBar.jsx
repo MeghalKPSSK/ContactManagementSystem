@@ -8,7 +8,8 @@ import {
   faHome,
   faAddressBook,
   faSignOut,
-  faUser
+  faUser,
+  faUsers
 } from '@fortawesome/free-solid-svg-icons';
 
 export default function SideBar() {
@@ -33,7 +34,8 @@ export default function SideBar() {
   const menuItems = [
     { path: homepath, icon: faHome, label: 'Dashboard' },
     { path: '/contacts', icon: faAddressBook, label: 'Contacts' },
-    { path: '/profile', icon: faUser, label: 'Profile' }
+    { path: '/profile', icon: faUser, label: 'Profile' },
+    { path: '/groups', icon: faUsers, label: 'Groups' }
   ];
 
   return (
