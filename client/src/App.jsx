@@ -13,6 +13,7 @@ import PageNotFound from './pageNotFound';
 import Contacts from './components/Contacts/Contacts';
 import Profile from './components/Profile/profile';
 import Dashboard from './components/Dashboards/Dashboard';
+import Dragon from './components/Dragon/Dragon';
 
 // Authenticated Layout
 const Layout = () => (
@@ -67,6 +68,7 @@ function App() {
           {/* Protected routes */}
           <Route element={user ? <Layout /> : <Navigate to="/login" replace />}>
             <Route index element={<Navigate to="/home" />} />
+            <Route path="/dragon" element={<Dragon />} />
             <Route path="/home" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/contacts" element={<Contacts />}>

@@ -1,138 +1,526 @@
-import React, { Suspense, useRef, useEffect } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Environment, useGLTF, useAnimations } from '@react-three/drei';
-import * as THREE from 'three';
+import React, { useState, useEffect } from 'react';
+import ReactApexChart from 'react-apexcharts';
+import { Card, List, Tag, Space, Select, Typography, Spin } from 'antd';
+import { StarFilled, StarOutlined } from '@ant-design/icons';
 import styles from './Dashboard.module.css';
 
-function DragonModel() {
-  const groupRef = useRef();
-  const { scene, animations } = useGLTF('/models/dragon.glb');
-  const { actions, mixer } = useAnimations(animations, groupRef);
+const { Title } = Typography;
 
-  useEffect(() => {
-    if (groupRef.current) {
-      // Keep the same rotation
-      groupRef.current.rotation.x = Math.PI / 2.2;
-      groupRef.current.rotation.y = Math.PI;
-      groupRef.current.rotation.z = Math.PI / 12;
-    }
+const chartColors = {
+  pie: [
+    '#4B70DD',  // Royal Blue
+    '#8E54E9',  // Purple
+    '#E94584',  // Pink Red
+    '#4B9EFF',  // Light Blue
+    '#B4CEFF',  // Softer Blue
+    '#FFB3B3',  // Light Red
+  ],
+  bar: [
+    '#8E54E9',  // Purple for favorites
+    '#4B70DD'   // Royal Blue for regular
+  ]
+};
 
-    // Play model animations if any
-    if (animations && animations.length > 0) {
-      Object.values(actions).forEach(action => {
-        action.play();
-        action.setLoop(THREE.LoopRepeat);  // Ensure continuous animation
-        action.timeScale = 1;            // Slightly slower animation speed
-      });
-    }
-  }, [actions, animations]);
+function Dashboard() {
+  const [contacts, setContacts] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [tags, setTags] = useState([]);
+  const [loading, setLoading] = useState({
+    contacts: false,
+    charts: false
+  });
 
-  useFrame(({ clock }) => {
-    if (groupRef.current) {
-      mixer?.update(clock.getDelta());
-      
-      // Lowered Y position and adjusted other coordinates
-      groupRef.current.position.set(-2, -4, -7); // Changed Y from -2 to -4
-      
-      // Keep same rotation
-      groupRef.current.rotation.x = Math.PI;
-      groupRef.current.rotation.y = 350;
-      groupRef.current.rotation.z = Math.PI;
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 9,
+    total: 0
+  });
 
-      // Reduced breathing amplitude for lower position
-      const breathe = Math.sin(clock.getElapsedTime() * 2) * 0.03; // Reduced from 0.05
-      groupRef.current.position.y += breathe;
+  const [pieOptions, setPieOptions] = useState({
+    series: [],
+    options: {
+      chart: { 
+        type: 'pie',
+        background: 'transparent',
+        toolbar: {
+          show: true,
+          tools: {
+            download: true,
+            selection: true,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true
+          },
+          export: {
+            svg: true,
+            csv: true,
+            png: true
+          },
+          autoSelected: 'zoom'
+        },
+        animations: {
+          enabled: true,
+          speed: 800,
+          animateGradually: {
+            enabled: true,
+            delay: 150
+          },
+          dynamicAnimation: {
+            enabled: true,
+            speed: 350
+          }
+        }
+      },
+      labels: [],
+      colors: chartColors.pie,
+      legend: {
+        position: 'bottom',
+        markers: {
+          fillColors: chartColors.pie
+        },
+        labels: {
+          colors: 'var(--text-secondary)'
+        }
+      },
+      responsive: [{
+        breakpoint: 480,
+        options: {
+          chart: { width: 200 },
+          legend: { position: 'bottom' }
+        }
+      }],
+      theme: {
+        mode: 'light',
+        palette: 'palette1'
+      },
+      stroke: {
+        width: 1,
+        colors: ['#fff']
+      },
+      plotOptions: {
+        pie: {
+          donut: {
+            size: '0%'
+          },
+          expandOnClick: true
+        }
+      },
+      states: {
+        hover: {
+          filter: {
+            type: 'lighten',
+            value: 0.15
+          }
+        },
+        active: {
+          filter: {
+            type: 'darken',
+            value: 0.15
+          }
+        }
+      },
+      tooltip: {
+        style: {
+          fontSize: '14px'
+        },
+        y: {
+          formatter: (value) => `${value} contacts`,
+          title: {
+            formatter: (seriesName) => seriesName
+          }
+        },
+        theme: 'light',
+        fillSeriesColor: false
+      }
     }
   });
 
-  return (
-    <primitive
-      ref={groupRef}
-      object={scene}
-      scale={0.025}
-      castShadow
-      receiveShadow
-    />
-  );
-}
-
-function Dashboard() {
-  return (
-    <div className={`${styles.container} ${styles.starryBackground}`}>
-      <Canvas 
-        shadows
-        camera={{ 
-          position: [-40, 35, 70], // Adjusted for better static viewing angle
-          fov: 40,                 // Narrower FOV for more focused view
-          near: 1,
-          far: 1000
-        }}
-        gl={{ 
-          antialias: true,
-          alpha: true,
-          physicallyCorrectLights: true,
-          shadowMap: {
-            type: THREE.PCFSoftShadowMap
+  const [barOptions, setBarOptions] = useState({
+    series: [{
+      name: 'Contacts',
+      data: [0, 0]
+    }],
+    options: {
+      chart: {
+        type: 'bar',
+        toolbar: {
+          show: true,
+          tools: {
+            download: true,
+            selection: true,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true
+          },
+          export: {
+            svg: true,
+            csv: true,
+            png: true
           }
-        }}
-      >
-        <fog attach="fog" args={['#000', 35, 100]} /> {/* Pushed fog back slightly */}
-        
-        {/* Enhanced lighting setup */}
-        <ambientLight intensity={4} /> {/* Increased from 0.2 */}
-        
-        {/* Main directional light */}
-        <directionalLight 
-          intensity={1.5}          // Increased from 1.0
-          position={[10, 15, 10]}   // Adjusted for better dragon illumination
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-          shadow-camera-far={50}
-          shadow-camera-near={1}
-          shadow-camera-left={-30}
-          shadow-camera-right={30}
-          shadow-camera-top={30}
-          shadow-camera-bottom={-30}
-        />
+        },
+        background: 'transparent',
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 800,
+          animateGradually: {
+            enabled: true,
+            delay: 150
+          }
+        }
+      },
+      colors: chartColors.bar,
+      plotOptions: {
+        bar: {
+          borderRadius: 6,
+          columnWidth: '60%',
+          distributed: true,
+          dataLabels: {
+            position: 'top'
+          },
+          hover: {
+            color: '#8E54E9'
+          }
+        }
+      },
+      dataLabels: {
+        enabled: true,
+        style: {
+          fontSize: '14px',
+          fontWeight: 500,
+          colors: ['#fff', '#fff']  // White text for both columns
+        },
+        offsetY: -20
+      },
+      xaxis: {
+        categories: ['Favorite', 'Regular'],
+        labels: {
+          style: {
+            colors: ['var(--text-secondary)', 'var(--text-secondary)'],
+            fontSize: '14px'
+          }
+        }
+      },
+      fill: {
+        opacity: 0.9
+      },
+      grid: {
+        borderColor: '#e2e8f0',
+        strokeDashArray: 4
+      },
+      yaxis: {
+        labels: {
+          style: {
+            colors: 'var(--text-secondary)'
+          }
+        }
+      },
+      legend: {
+        show: false
+      },
+      theme: {
+        mode: 'light'
+      },
+      states: {
+        hover: {
+          filter: {
+            type: 'lighten',
+            value: 0.15
+          }
+        },
+        active: {
+          filter: {
+            type: 'darken',
+            value: 0.15
+          }
+        }
+      },
+      tooltip: {
+        shared: true,
+        intersect: false,
+        y: {
+          formatter: (value) => `${value} contacts`
+        },
+        theme: 'light'
+      }
+    }
+  });
 
-        {/* Added spotlight focused on dragon */}
-        <spotLight
-          intensity={1}
-          position={[-10, 15, -5]}
-          angle={0.4}
-          penumbra={0.5}
-          castShadow
-          color="#ffffff"
-        />
+  const fetchContactsData = async (page = 1) => {
+    setLoading(prev => ({ ...prev, contacts: true }));
+    try {
+      const config = await fetch('/config.json').then(res => res.json());
+      const userId = JSON.parse(localStorage.getItem('user')).uid;
+      
+      // Fetch tags for dropdown only if tags array is empty
+      if (tags.length === 0) {
+        const tagsResponse = await fetch(`${config.apiUrl}/contacts/tags?userId=${userId}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const tagsData = await tagsResponse.json();
+        if (tagsData.success) {
+          setTags(tagsData.tags);
+        }
+      }
+      
+      // Fetch filtered contacts
+      const contactsResponse = await fetch(
+        `${config.apiUrl}/dashboard/contacts?` + 
+        new URLSearchParams({
+          userId,
+          tags: selectedTags.length > 0 ? selectedTags.join(',') : '',
+          page,
+          pageSize: pagination.pageSize
+        }).toString(),
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+      
+      const contactsData = await contactsResponse.json();
 
-        {/* Added rim light for better definition */}
-        <pointLight
-          intensity={2}
-          position={[10, 10, -10]}
-          color="#ffffff"
-        />
+      if (contactsData.success) {
+        setContacts(contactsData.contacts);
+        setPagination(prev => ({
+          ...prev,
+          current: page,
+          total: contactsData.total
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, contacts: false }));
+    }
+  };
 
-        <Suspense fallback={null}>
-          <DragonModel />
-          <Environment 
-            preset="sunset"
-            intensity={0.3} // Reduced environment intensity
+  const fetchChartData = async () => {
+    try {
+      setLoading(prev => ({ ...prev, charts: true }));
+      const config = await fetch('/config.json').then(res => res.json());
+      const userId = JSON.parse(localStorage.getItem('user')).uid;
+
+      const tagsResponse = await fetch(`${config.apiUrl}/dashboard/tags-distribution?userId=${userId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const favoritesResponse = await fetch(`${config.apiUrl}/dashboard/favorites-count?userId=${userId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const [tagsData, favoritesData] = await Promise.all([
+        tagsResponse.json(),
+        favoritesResponse.json()
+      ]);
+
+      if (tagsData.success && favoritesData.success) {
+        updateChartOptions(tagsData, favoritesData);
+      }
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, charts: false }));
+    }
+  };
+
+  // Helper function to update chart options
+  const updateChartOptions = (tagsData, favoritesData) => {
+    setPieOptions(prev => ({
+      ...prev,
+      series: tagsData.counts,
+      options: {
+        ...prev.options,
+        labels: tagsData.labels,
+        tooltip: {
+          y: { formatter: (value) => `${value} contacts` },
+          theme: 'light'
+        }
+      }
+    }));
+
+    setBarOptions(prev => ({
+      ...prev,
+      series: [{
+        name: 'Contacts',
+        data: [favoritesData.favorite, favoritesData.regular]
+      }],
+      options: {
+        ...prev.options,
+        plotOptions: {
+          bar: {
+            borderRadius: 4,
+            columnWidth: '50%',
+            distributed: true,
+            dataLabels: {
+              position: 'top'
+            }
+          }
+        },
+        dataLabels: {
+          enabled: true,
+          formatter: (val) => `${val}`,
+          style: {
+            colors: ['#fff']
+          }
+        }
+      }
+    }));
+  };
+
+  const handlePageChange = (page) => {
+    fetchContactsData(page);
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchContactsData();
+  }, []);
+
+  // Remove the contacts dependency for chart data
+  useEffect(() => {
+    fetchChartData();
+  }, []); // Only fetch chart data once on component mount
+
+  // Update the tag filtering effect to include pagination
+  useEffect(() => {
+    setPagination(prev => ({
+      ...prev,
+      current: 1 // Reset to first page when filters change
+    }));
+    fetchContactsData(1);
+  }, [selectedTags]);
+
+  return (
+    <div className={styles.dashboard}>
+      <div className={styles.chartsContainer}>
+        <Card className={styles.chartCard}>
+          <Title level={4}>Contacts by Tags</Title>
+          {loading.charts ? (
+            <div className={styles.chartLoader}>
+              <Spin size="large" />
+            </div>
+          ) : (
+            <ReactApexChart 
+              options={pieOptions.options}
+              series={pieOptions.series}
+              type="pie"
+              height={350}
+            />
+          )}
+        </Card>
+        <Card className={styles.chartCard}>
+          <Title level={4}>Favorite vs Regular Contacts</Title>
+          {loading.charts ? (
+            <div className={styles.chartLoader}>
+              <Spin size="large" />
+            </div>
+          ) : (
+            <ReactApexChart 
+              options={barOptions.options}
+              series={barOptions.series}
+              type="bar"
+              height={350}
+            />
+          )}
+        </Card>
+      </div>
+      <Card className={styles.contactsList}>
+        <Space className={styles.filterContainer}>
+          <Title level={4}>Contacts List</Title>
+          <Select
+            mode="multiple"
+            placeholder="Filter by tags"
+            value={selectedTags}
+            onChange={setSelectedTags}
+            options={tags.map(tag => ({ 
+              label: tag.name, 
+              value: tag.name,
+              key: tag.uid // Add key for better performance
+            }))}
+            style={{ minWidth: 200 }}
+            className={styles.tagFilter}
+            allowClear
+            loading={loading.contacts}
           />
-        </Suspense>
-        
-        <OrbitControls 
-          enabled={false}          // Disable all camera controls
-          enableZoom={false}       // Disable zoom
-          enablePan={false}        // Disable panning
-          enableRotate={false}     // Disable rotation
-          target={[0, 8, 0]}      // Fixed look-at point
+        </Space>
+
+        <List
+          loading={loading.contacts}
+          grid={{ 
+            gutter: 16,
+            xs: 1,
+            sm: 1,
+            md: 2,
+            lg: 2,
+            xl: 3,
+            xxl: 3,
+          }}
+          dataSource={contacts}
+          pagination={{
+            ...pagination,
+            onChange: handlePageChange
+          }}
+          renderItem={contact => (
+            <List.Item key={contact.uid}>
+              <Card 
+                className={styles.contactCard}
+              >
+                <div className={styles.favoriteIndicator}>
+                  {contact.is_favorite ? 
+                    <StarFilled className={styles.starFilled} /> : 
+                    <StarOutlined className={styles.starOutlined} />
+                  }
+                </div>
+                <Card.Meta
+                  title={
+                    <div className={styles.contactTitle}>
+                      {contact.firstName}
+                      {contact.lastName && ` ${contact.lastName}`}
+                    </div>
+                  }
+                  description={
+                    <div className={styles.contactCardContent}>
+                      <div className={styles.contactDetails}>
+                        {contact.phone && (
+                          <div className={styles.contactField}>
+                            📞 {contact.phone}
+                          </div>
+                        )}
+                        {contact.email && (
+                          <div className={styles.contactField}>
+                            ✉️ {contact.email}
+                          </div>
+                        )}
+                      </div>
+                      <div className={styles.tagContainer}>
+                        {contact.tags?.map(tag => (
+                          <Tag 
+                            key={tag.uid} 
+                            color="processing"           // Ant Design's blue processing color
+                            className={styles.contactTag}
+                          >
+                            {tag.name}
+                          </Tag>
+                        ))}
+                      </div>
+                    </div>
+                  }
+                />
+              </Card>
+            </List.Item>
+          )}
         />
-      </Canvas>
+      </Card>
     </div>
   );
 }
 
-// Preload the model
-useGLTF.preload('/models/dragon.glb');
 export default Dashboard;

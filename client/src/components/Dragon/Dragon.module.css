@@ -1,0 +1,35 @@
+.container {
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, #001122, #000000 90%);
+    background-repeat: no-repeat;
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    perspective: 1000px;
+  }
+  
+  .starryBackground::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: repeating-radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.1) 0,
+      rgba(255, 255, 255, 0.1) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    background-size: 3px 3px;
+    animation: twinkle 8s linear infinite;
+    z-index: -1;
+    top: -50%;
+    left: -50%;
+  }
+  
+  
+  

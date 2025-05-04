@@ -245,6 +245,8 @@ const contactModel = async () => {
         }
     };
 
+    
+
     return {
         getContactById,
         contactSave,
