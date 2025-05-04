@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faStar,  } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faStar, faSave } from '@fortawesome/free-solid-svg-icons';
 import styles from './ContactModal.module.css';
 import { toast } from 'react-toastify';
 
@@ -575,6 +575,7 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
           <div className={styles.buttonGroup}>
             {mode !== 'view' && (
               <button type="submit" className={styles.submitButton}>
+                <FontAwesomeIcon icon={faSave} className={styles.buttonIcon} />
                 {mode === 'add' ? 'Add Contact' : 'Save Changes'}
               </button>
             )}

@@ -1,0 +1,250 @@
+.profileContainer {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.profileCard {
+    background: var(--primary-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+}
+
+.profileForm {
+    margin-top: 1.5rem;
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.formGroup {
+    margin-bottom: 1rem;
+}
+
+.textInput input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 1.5px solid var(--accent-border);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background-color: var(--primary-bg);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.textInput input.error {
+    border-color: var(--error-color);
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.formGroup input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--accent-border);
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.buttonGroup {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.updateButton,
+.submitButton,
+.cancelButton {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.updateButton,
+.submitButton {
+    background-color: var(--secondary-dark);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.cancelButton {
+    background-color: var(--error-color);
+    color: white;
+}
+
+.buttonIcon {
+    margin-right: 0.5rem;
+}
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modalContent {
+    background: var(--primary-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 500px;
+}
+
+.modalContent form {
+    padding: 1.5rem;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--accent-border);
+}
+
+.modalHeader h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+}
+
+.closeButton:hover {
+    background-color: var(--hover-bg);
+    color: var(--text-primary);
+}
+
+.passwordInput {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.passwordInput input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    padding-right: 2.5rem;  /* Space for the eye icon */
+    border: 1.5px solid var(--accent-border);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background-color: var(--primary-bg);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.passwordInput button {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.passwordInput button:hover {
+    color: var(--text-primary);
+}
+
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+}
+
+.errorText {
+    color: var(--error-color);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.iconButton {
+    padding: 0.75rem;
+    border: 2px solid var(--primary-color);
+    border-radius: 50%;
+    background-color: white;
+    color: var(--primary-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+}
+
+.iconButton:hover {
+    background-color: var(--hover-bg);
+    color: var(--text-primary-dark);
+    border-color: var(--text-primary-dark);
+    transform: scale(1.05);
+}
+
+.profileHeader {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background-color: var(--primary-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid var(--secondary-bg);
+}
+
+.headerContent {
+    max-width: 800px;
+}
+
+.headerContent h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}

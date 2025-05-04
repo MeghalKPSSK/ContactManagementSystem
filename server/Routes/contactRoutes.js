@@ -16,26 +16,35 @@ let encryptionInstance;
 })();
 
 // Add a new contact
-router.post('/contactSave', async (req, res) => {
+router.post('/addContact', async (req, res) => {
     try {
         const contactId = await encryptionInstance.dbEncryptID(await contactModelInstance.contactSave(req.body));
         console.log(`Contacts created with ID: ${contactId}`);
         res.status(201).json({ success: true, uid: contactId, message: 'Contact added successfully' });
     } catch (error) {
-        console.error(`Error adding contact: ${error.message}`);
-        res.status(500).json({ success: false, message: 'Error adding contact', error: `${error.message}` });
+        console.error('Error adding contact:', error);
+        res.status(500).json({ success: false, message: 'Error adding contact' });
     }
 });
 
 // Get list of contacts
 router.get('/contactsList', async (req, res) => {
     try {
-        console.log(`User ID: ${req.query.userId}, Filter: ${req.query.filter}`);
-        const contacts = await contactModelInstance.getContactsList(req.query.userId, req.query.filter);
-        res.status(200).json({success: true, contacts: contacts, message: 'Contacts list retrieved successfully'});
+        const { userId, filter, page = 1 } = req.query;
+        const result = await contactModelInstance.getContactsList(userId, filter, parseInt(page));
+        res.status(200).json({
+            success: true, 
+            contacts: result.contacts,
+            pagination: {
+                current: result.page,
+                pageSize: result.pageSize,
+                total: result.total
+            },
+            message: 'Contacts list retrieved successfully'
+        });
     } catch (error) {
-        console.error(`Error retrieving Contacts list: ${error.message}`);
-        res.status(500).json({ success: false, message: 'Error retrieving Contacts list', error: error.message });
+        console.error('Error retrieving contacts:', error);
+        res.status(500).json({ success: false, message: 'Error retrieving contacts' });
     }
 });
 
@@ -50,8 +59,8 @@ router.get('/contact/:id', async (req, res) => {
         
         res.status(200).json({ success: true, contact });
     } catch (error) {
-        console.error('Error fetching contact:', error);
-        res.status(500).json({ success: false, message: 'Error fetching contact' });
+        console.error('Error retrieving contact:', error);
+        res.status(500).json({ success: false, message: 'Error retrieving contact' });
     }
 });
 
@@ -67,8 +76,8 @@ router.delete('/deleteContact/:id', async (req, res) => {
             res.status(404).json({ success: false, message: 'Contact not found' });
         }
     } catch (error) {
-        console.error(`Error deleting contact: ${error.message}`);
-        res.status(500).json({ success: false, message: 'Error deleting contact', error: error.message });
+        console.error('Error deleting contact:', error);
+        res.status(500).json({ success: false, message: 'Error deleting contact' });
     }
 });
 
@@ -104,8 +113,8 @@ router.put('/toggleFavorite/:id', async (req, res) => {
             res.status(404).json({ success: false, message: 'Contact not found' });
         }
     } catch (error) {
-        console.error(`Error toggling favorite: ${error.message}`);
-        res.status(500).json({ success: false, message: 'Error updating favorite status', error: error.message });
+        console.error('Error toggling favorite status:', error);
+        res.status(500).json({ success: false, message: 'Error toggling favorite status' });
     }
 });
 
@@ -113,10 +122,14 @@ router.put('/toggleFavorite/:id', async (req, res) => {
 router.get('/tags', async (req, res) => {
     try {
         const tags = await contactModelInstance.getTags(req.query.userId);
-        res.status(200).json({ success: true, tags });
+        res.status(200).json({ 
+            success: true, 
+            tags,
+            message: 'Tags retrieved successfully' 
+        });
     } catch (error) {
-        console.error('Error fetching tags:', error);
-        res.status(500).json({ success: false, message: 'Error fetching tags' });
+        console.error('Error retrieving tags:', error);
+        res.status(500).json({ success: false, message: 'Error retrieving tags' });
     }
 });
 

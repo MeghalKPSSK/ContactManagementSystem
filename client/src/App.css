@@ -11,6 +11,7 @@
   /* Accent Colors */
   --accent-bg: #f7f9fc;
   --accent-border: #e2e8f0;
+  --accent-bg-2: #e5e7ea;
   
   /* Interactive Colors */
   --hover-bg: #edf2ff;
@@ -62,7 +63,7 @@
   flex: 1;
   overflow-y: auto;
   /* padding: 1rem; */
-  /* background-color: var(--secondary-bg); */
+  background-color: var(--accent-bg);
 }
 
 /* Ensure sidebar and header use existing theme variables */

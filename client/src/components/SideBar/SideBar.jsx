@@ -9,7 +9,8 @@ import {
   faAddressBook,
   faSignOut,
   faUser,
-  faUsers
+  faUsers,
+  faDragon
 } from '@fortawesome/free-solid-svg-icons';
 
 export default function SideBar() {
@@ -32,6 +33,7 @@ export default function SideBar() {
     homepath = '/dashboard'
   };
   const menuItems = [
+    { path: '/dragon', icon: faDragon, label: 'Dragon' },
     { path: homepath, icon: faHome, label: 'Dashboard' },
     { path: '/contacts', icon: faAddressBook, label: 'Contacts' },
     { path: '/profile', icon: faUser, label: 'Profile' },

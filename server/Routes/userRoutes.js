@@ -40,6 +40,21 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// Update user
+router.put('/updateUser/:id', async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const updatedUser = await userModelInstance.updateUser(userId, req.body);
+        if (!updatedUser) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        res.status(200).json({ success: true, user: updatedUser, message: 'User updated successfully' });
+    } catch (error) {
+        console.error(`Error updating user: ${error.message}`);
+        res.status(500).json({ success: false, message: 'Error updating user', error: error.message });
+    }
+});
+
 // Get list of users
 router.get('/usersList', async (req, res) => {
     try {
@@ -81,6 +96,24 @@ router.delete('/deleteUser/:id', async (req, res) => {
     } catch (error) {
         console.error(`Error deleting user: ${error.message}`);
         res.status(500).json({ success: false, message: 'Error deleting user', error: error.message });
+    }
+});
+
+// Add this new route for password change
+router.put('/changePassword/:id', async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const { currentPassword, newPassword } = req.body;
+        const result = await userModelInstance.changePassword(userId, currentPassword, newPassword);
+        
+        if (result) {
+            res.status(200).json({ success: true, message: 'Password changed successfully' });
+        } else {
+            res.status(400).json({ success: false, message: 'Current password is incorrect' });
+        }
+    } catch (error) {
+        console.error(`Error changing password: ${error.message}`);
+        res.status(500).json({ success: false, message: error.message });
     }
 });
 

@@ -1,0 +1,129 @@
+.dashboard {
+  padding: 24px;
+  background: #f0f2f5;
+  min-height: 100vh;
+}
+
+.chartsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.chartCard {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  height: 100%;
+}
+
+.contactsList {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filterContainer {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.tagFilter {
+  min-width: 200px;
+}
+
+.chartLoader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 350px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+}
+
+.contactCard {
+  position: relative;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.contactTitle {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.contactCardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contactDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contactField {
+  color: #595959;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tagContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.contactTag {
+  margin: 0;
+}
+
+.favoriteIndicator {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  pointer-events: none;
+}
+
+.starFilled {
+  color: #FFD700 !important; /* Gold color */
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.starOutlined {
+  color: #d9d9d9 !important;
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 16px;
+  }
+
+  .chartsContainer {
+    grid-template-columns: 1fr;
+  }
+
+  .filterContainer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .tagFilter {
+    width: 100%;
+  }
+
+  .contactCard {
+    margin-bottom: 12px;
+  }
+}

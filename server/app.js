@@ -5,6 +5,7 @@ const cors = require('cors');
 const initDB = require('./db'); 
 const userRoutes = require('./Routes/userRoutes');
 const contactRoutes = require('./Routes/contactRoutes');
+const dashboardRoutes = require('./Routes/dashboardRoutes');
 const ensureAppUserTable = require('./Schemas/userSchema');
 const ensureContactsTable = require('./Schemas/contactScehma');
 
@@ -70,6 +71,9 @@ app.use('/api/users', userRoutes);
 
 // Use user routes
 app.use('/api/contacts', contactRoutes);
+
+// Use dashboard routes
+app.use('/api/dashboard', dashboardRoutes);
 
 // Initialize the database and start the server
 startServer();
