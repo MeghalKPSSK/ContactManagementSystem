@@ -469,7 +469,7 @@ function Dashboard() {
             onChange: handlePageChange
           }}
           renderItem={contact => (
-            <List.Item key={contact.uid}>
+            <List.Item key={contact.uid} style={{ borderRadius: '7px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
               <Card 
                 className={styles.contactCard}
               >
