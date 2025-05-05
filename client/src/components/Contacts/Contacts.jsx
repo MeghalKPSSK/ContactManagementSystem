@@ -48,7 +48,7 @@ export default function Contacts() {
   // Add pagination state
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 10, // Fixed at 10 rows per page
+    pageSize: 5, // Fixed at 10 rows per page
     total: 0
   });
 

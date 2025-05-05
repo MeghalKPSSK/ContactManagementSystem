@@ -30,8 +30,8 @@ router.post('/contactSave', async (req, res) => {
 // Get list of contacts
 router.get('/contactsList', async (req, res) => {
     try {
-        const { userId, filter, page = 1 } = req.query;
-        const result = await contactModelInstance.getContactsList(userId, filter, parseInt(page));
+        const { userId, filter, page = 1, pageSize = 10 } = req.query;
+        const result = await contactModelInstance.getContactsList(userId, filter, parseInt(page), parseInt(pageSize));
         res.status(200).json({
             success: true, 
             contacts: result.contacts,
