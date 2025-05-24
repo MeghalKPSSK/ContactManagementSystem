@@ -1,0 +1,366 @@
+.contactsContainer {
+  padding: 1rem;
+  background-color: var(--accent-bg);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px var(--box-shadow-color);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--primary-text);
+}
+
+.groupNameInput {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1.5px solid var(--accent-border);
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: var(--primary-bg);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.groupNameInput:focus {
+  border-color: var(--secondary-bg);
+  box-shadow: 0 0 0 3px rgba(29, 66, 171, 0.1);
+  outline: none;
+}
+
+.memberList {
+  margin-top: 1rem;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background-color: var(--primary-bg);
+}
+
+.memberItem {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.memberItem:hover {
+  background-color: var(--hover-bg);
+}
+
+.selectedMember {
+  background-color: var(--secondary-bg);
+  color: var(--text-light);
+}
+
+.buttonGroup {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.submitButton {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  background-color: var(--secondary-bg);
+  color: var(--text-light);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submitButton:hover {
+  background-color: var(--secondary-light);
+}
+
+.cancelButton {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  background-color: transparent;
+  border: 1.5px solid var(--secondary-bg);
+  color: var(--secondary-bg);
+  cursor: pointer;
+  margin-left: 0.5rem;
+}
+
+.cancelButton:hover {
+  background-color: var(--hover-bg);
+}
+
+.groupsContainer {
+  padding: 2rem;
+  background-color: var(--primary-bg);
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.headerActions {
+  display: flex;
+  gap: 1rem;
+}
+
+.addButton {
+  background-color: var(--secondary-bg);
+  color: var(--text-light);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.addButton:hover {
+  background-color: var(--secondary-light);
+  transform: translateY(-2px);
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.searchInput {
+  padding: 0.75rem 1rem;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  flex: 1;
+  background-color: var(--primary-bg);
+  color: var(--text-primary);
+}
+
+.searchButton {
+  background-color: var(--secondary-bg);
+  color: var(--text-light);
+  padding: 0.75rem 1rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.searchButton:hover {
+  background-color: var(--secondary-light);
+}
+
+.cardContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Adjusted for fixed card width */
+  gap: 1.5rem;
+  justify-content: center; /* Center the cards */
+}
+
+.card {
+  background-color: var(--primary-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  width: 300px; /* Fixed card width */
+  margin: 0 auto; /* Center the card horizontally */
+  position: relative; /* Enable positioning for child elements */
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.cardHeader {
+  background-color: var(--secondary-bg);
+  padding: 2rem;
+  border-bottom-left-radius: 50% 20%;
+  border-bottom-right-radius: 50% 20%;
+}
+
+.groupIconContainer {
+  width: 100px;
+  height: 100px;
+  background-color: var(--primary-bg);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.groupIcon {
+  font-size: 2.5rem;
+  color: var(--secondary-bg);
+}
+
+.cardBody {
+  padding: 1.5rem;
+}
+
+.groupName {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--primary-text);
+  margin-bottom: 0.5rem;
+}
+
+.groupDescription {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.cardActions {
+  position: absolute; /* Position the actions relative to the card */
+  top: 11.5rem; /* Align to the top */
+  right: 1rem; /* Align to the right */
+  display: flex;
+  gap: 0.5rem;
+}
+
+.cardActions button {
+  background-color: var(--secondary-bg);
+  color: var(--text-light);
+  padding: 0.2rem;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.cardActions button:hover {
+  background-color: var(--secondary-light);
+  transform: translateY(-2px);
+}
+
+.deleteButton {
+  background-color: var(--error-color);
+}
+
+.deleteButton:hover {
+  background-color: var(--error-hover-color);
+}
+
+.memberCount {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.reloadContainer {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 1.5rem;
+}
+
+.reloadButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: transparent;
+  color: var(--secondary-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.reloadButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reloadIcon {
+  font-size: 1rem;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.noGroups {
+  text-align: center;
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+/* Add pagination styles */
+.paginationContainer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 16px;
+  border-top: 1px solid var(--highlight-border);
+  background: var(--primary-bg);
+  gap: 16px;
+}
+
+.paginationInfo {
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: right;
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.paginationButton {
+  padding: 6px 12px;
+  border: 1px solid var(--highlight-border);
+  border-radius: 4px;
+  background: var(--primary-bg);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+  min-width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.paginationButton.iconButton {
+  padding: 6px 8px;
+  min-width: 32px;
+}
+
+.paginationButton:hover:not(:disabled) {
+  border-color: var(--secondary-bg);
+  color: var (--secondary-bg);
+}
+
+.paginationButton:disabled {
+  cursor: not-allowed;
+  color: var(--text-disabled);
+  background: var(--disabled-bg);
+}
+
+.paginationButton.active {
+  background: var(--secondary-bg);
+  color: var(--text-light);
+  border-color: var(--secondary-bg);
+}

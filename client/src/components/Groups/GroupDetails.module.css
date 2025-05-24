@@ -1,0 +1,176 @@
+.detailsContainer {
+  width: 100%;
+  max-width: 98vw; /* Use almost full viewport width */
+  /* margin: 2rem auto 0 auto; Reduce left and right space */
+  padding: 1px; /* Added 1px padding */
+  background: var(--primary-bg);
+  /* border-radius: 16px; */
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: var(--secondary-bg);
+  font-size: 1rem;
+  cursor: pointer;
+  margin: 0.5rem 2rem 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  align-self: flex-end;
+  position: absolute;
+  top: 2px;
+  right: -17px;
+}
+
+
+
+.headerStrip {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: var(--secondary-bg);
+  /* border-radius: 16px 16px 0 0; */
+  padding: 2rem 2rem 1.5rem 2rem;
+}
+
+.groupIconContainer {
+  width: 80px;
+  height: 80px;
+  background-color: var(--primary-bg);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+.groupIcon {
+  font-size: 2.5rem;
+  color: var(--secondary-bg);
+}
+
+.groupInfo {
+  flex: 1;
+}
+
+.groupName {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--text-light);
+}
+
+.groupDescription {
+  color: var(--text-light);
+  opacity: 0.85;
+  margin-bottom: 0;
+}
+
+.membersSection {
+  padding: 2rem;
+}
+
+.membersHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.addButton {
+  background-color: var(--secondary-bg);
+  color: var(--text-light);
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.2s;
+}
+.addButton:hover {
+  background-color: var(--secondary-light);
+}
+
+.tableContainer {
+  background: var(--primary-bg);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  overflow-x: auto;
+}
+
+.membersTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--primary-bg);
+}
+
+.membersTable th,
+.membersTable td {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.membersTable th {
+  background: #f5f7fa;
+  color: #222;
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent-border);
+}
+
+.membersTable tr {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.membersTable tr:not(:last-child) {
+  margin-bottom: 0.5rem;
+}
+
+.membersTable td {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.membersTable tr:last-child td {
+  border-bottom: none;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  color: var(--secondary-bg);
+  font-size: 1rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.actionButton:hover {
+  color: var(--secondary-light);
+}
+
+.deleteButton {
+  color: var(--error-color);
+}
+
+.deleteButton:hover {
+  color: var(--error-hover-color);
+}
+
+.noMembers {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 1rem 0;
+}
+
+.loading, .notFound {
+  text-align: center;
+  margin: 2rem 0;
+}

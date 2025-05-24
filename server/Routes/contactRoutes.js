@@ -16,7 +16,7 @@ let encryptionInstance;
 })();
 
 // Add a new contact
-router.post('/addContact', async (req, res) => {
+router.post('/contactSave', async (req, res) => {
     try {
         const contactId = await encryptionInstance.dbEncryptID(await contactModelInstance.contactSave(req.body));
         console.log(`Contacts created with ID: ${contactId}`);

@@ -14,6 +14,8 @@ import Contacts from './components/Contacts/Contacts';
 import Profile from './components/Profile/profile';
 import Dashboard from './components/Dashboards/Dashboard';
 import Dragon from './components/Dragon/Dragon';
+import Groups from './components/Groups/Groups';
+import GroupDetails from './components/Groups/GroupDetails';
 
 // Authenticated Layout
 const Layout = () => (
@@ -75,7 +77,10 @@ function App() {
               <Route path=":id" element={<Contacts />} />
             </Route>
             <Route path="/profile" element={<Profile />} />
-            <Route path="/groups" element={<Main />} />
+            <Route path="/groups" element={<Groups />}>
+              <Route path=":id" element={<Groups />} />
+            </Route>
+            <Route path="/groupDetails/:groupId" element={<GroupDetails />} />
           </Route>
 
           {/* Fallback */}

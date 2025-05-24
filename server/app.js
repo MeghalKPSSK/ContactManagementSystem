@@ -6,8 +6,10 @@ const initDB = require('./db');
 const userRoutes = require('./Routes/userRoutes');
 const contactRoutes = require('./Routes/contactRoutes');
 const dashboardRoutes = require('./Routes/dashboardRoutes');
+const groupRoutes = require('./Routes/groupRoutes');
 const ensureAppUserTable = require('./Schemas/userSchema');
 const ensureContactsTable = require('./Schemas/contactScehma');
+const ensureGroupsTable = require('./Schemas/groupSchema');
 
 const app = express();
 const port = 5000;
@@ -62,6 +64,7 @@ app.listen(port, async () => {
     console.log(`Server is running on port ${port}`);
     // await ensureAppUserTable();
     // await ensureContactsTable();
+    await ensureGroupsTable();
 });
 // Initialize the database and start the server
 // Import user routes
@@ -71,6 +74,9 @@ app.use('/api/users', userRoutes);
 
 // Use user routes
 app.use('/api/contacts', contactRoutes);
+
+// Use user routes
+app.use('/api/groups', groupRoutes);
 
 // Use dashboard routes
 app.use('/api/dashboard', dashboardRoutes);
