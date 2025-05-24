@@ -91,9 +91,8 @@ const contactModel = async () => {
         }
     };
 
-    const getContactsList = async (userId, filter, page = 1) => {
+    const getContactsList = async (userId, filter, page = 1, pageSize = 10) => {
         try {
-            const pageSize = 10;
             const offset = (page - 1) * pageSize;
             const filterCheck = filter ? filter : '';
 

@@ -78,10 +78,18 @@ function Dashboard() {
       legend: {
         position: 'bottom',
         markers: {
-          fillColors: chartColors.pie
+          fillColors: chartColors.pie,
+          radius: 4,
+          strokeWidth: 0
         },
         labels: {
           colors: 'var(--text-secondary)'
+        },
+        onItemClick: {
+          toggleDataSeries: true
+        },
+        onItemHover: {
+          highlightDataSeries: true
         }
       },
       responsive: [{
@@ -116,8 +124,7 @@ function Dashboard() {
         },
         active: {
           filter: {
-            type: 'darken',
-            value: 0.15
+            type: 'none'
           }
         }
       },
@@ -184,6 +191,17 @@ function Dashboard() {
           },
           hover: {
             color: '#8E54E9'
+          },
+          colors: {
+            ranges: [{
+              from: 0,
+              to: 0,
+              color: chartColors.bar[0]
+            }, {
+              from: 1,
+              to: 1,
+              color: chartColors.bar[1]
+            }]
           }
         }
       },
@@ -220,7 +238,22 @@ function Dashboard() {
         }
       },
       legend: {
-        show: false
+        show: true,
+        position: 'bottom',
+        markers: {
+          fillColors: chartColors.bar,
+          radius: 4,
+          strokeWidth: 0
+        },
+        labels: {
+          colors: 'var(--text-secondary)'
+        },
+        onItemClick: {
+          toggleDataSeries: true
+        },
+        onItemHover: {
+          highlightDataSeries: true
+        }
       },
       theme: {
         mode: 'light'
@@ -234,8 +267,7 @@ function Dashboard() {
         },
         active: {
           filter: {
-            type: 'darken',
-            value: 0.15
+            type: 'none'
           }
         }
       },
@@ -339,9 +371,13 @@ function Dashboard() {
       options: {
         ...prev.options,
         labels: tagsData.labels,
-        tooltip: {
-          y: { formatter: (value) => `${value} contacts` },
-          theme: 'light'
+        colors: chartColors.pie.slice(0, tagsData.labels.length), // Only use as many colors as needed
+        legend: {
+          ...prev.options.legend,
+          markers: {
+            ...prev.options.legend.markers,
+            fillColors: chartColors.pie.slice(0, tagsData.labels.length)
+          }
         }
       }
     }));
@@ -354,21 +390,22 @@ function Dashboard() {
       }],
       options: {
         ...prev.options,
+        colors: chartColors.bar,
         plotOptions: {
+          ...prev.options.plotOptions,
           bar: {
-            borderRadius: 4,
-            columnWidth: '50%',
-            distributed: true,
-            dataLabels: {
-              position: 'top'
+            ...prev.options.plotOptions.bar,
+            colors: {
+              ranges: [{
+                from: 0,
+                to: 0,
+                color: chartColors.bar[0]
+              }, {
+                from: 1,
+                to: 1,
+                color: chartColors.bar[1]
+              }]
             }
-          }
-        },
-        dataLabels: {
-          enabled: true,
-          formatter: (val) => `${val}`,
-          style: {
-            colors: ['#fff']
           }
         }
       }
