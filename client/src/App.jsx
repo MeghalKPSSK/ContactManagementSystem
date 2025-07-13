@@ -107,7 +107,17 @@ function App() {
         </Routes>
       </BrowserRouter>
 
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} closeOnClick pauseOnHover draggable />
+      <ToastContainer 
+        position="top-right" 
+        autoClose={3000} 
+        hideProgressBar={false} 
+        closeOnClick 
+        pauseOnHover 
+        draggable 
+        newestOnTop
+        theme="light"
+        style={{ zIndex: 9999 }}
+      />
     </div>
   );
 }

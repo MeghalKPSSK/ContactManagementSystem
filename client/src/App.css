@@ -64,6 +64,7 @@
   overflow-y: auto;
   /* padding: 1rem; */
   background-color: var(--accent-bg);
+  position: relative;
 }
 
 /* Ensure sidebar and header use existing theme variables */
@@ -76,4 +77,35 @@
   background-color: var(--secondary-bg);
   color: var(--primary-text);
   box-shadow: 0 2px 4px var(--box-shadow-color);
+}
+
+/* Toast Container Styling */
+.Toastify__toast-container {
+  z-index: 9999 !important;
+  position: fixed !important;
+}
+
+.Toastify__toast {
+  font-family: inherit;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.Toastify__toast--success {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.Toastify__toast--error {
+  background-color: var(--error-color);
+  color: white;
+}
+
+.Toastify__toast--info {
+  background-color: var(--secondary-bg);
+  color: white;
+}
+
+.Toastify__progress-bar {
+  background: rgba(255, 255, 255, 0.3);
 }

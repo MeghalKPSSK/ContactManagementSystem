@@ -4,6 +4,7 @@ import { faEye, faEyeSlash, faKey, faSave, faTimes, faCamera } from '@fortawesom
 import { toast } from 'react-toastify';
 import styles from './profile.module.css';
 import apiService from '../../services/apiService';
+import { dispatchProfileUpdate } from '../../utils/eventUtils';
 
 const Profile = () => {
     const [user, setUser] = useState(null);
@@ -149,6 +150,9 @@ const Profile = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
+        // Test toast to verify it's working
+        console.log('Form submitted, testing toast'); // Debug log
+        
         // Check for valid phone number
         if (formData.phone.length !== 10) {
             toast.error('Please enter a valid 10-digit phone number');
@@ -171,7 +175,10 @@ const Profile = () => {
 
             const data = await apiService.updateUser(user.uid, userData);
             
+            console.log('Profile update response:', data); // Debug log
+            
             if (data.success) {
+                console.log('Profile update successful, showing toast'); // Debug log
                 toast.success('Profile updated successfully');
                 // Update local storage and state
                 const localUserData = JSON.parse(localStorage.getItem('user'));
@@ -196,6 +203,9 @@ const Profile = () => {
                 
                 // Clear selected file
                 setSelectedFile(null);
+                
+                // Dispatch custom event to notify sidebar of profile update
+                dispatchProfileUpdate(data.user);
             } else {
                 toast.error(data.message);
             }
