@@ -33,6 +33,9 @@ console.warn = (...args) => logMessage(args.join(' '), 'WARNING');
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Async function to initialize the DB connection before starting the server
 const startServer = async () => {
 
@@ -64,7 +67,7 @@ app.listen(port, async () => {
     console.log(`Server is running on port ${port}`);
     // await ensureAppUserTable();
     // await ensureContactsTable();
-    await ensureGroupsTable();
+    // await ensureGroupsTable();
 });
 // Initialize the database and start the server
 // Import user routes

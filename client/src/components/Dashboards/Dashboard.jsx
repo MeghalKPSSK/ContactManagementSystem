@@ -3,6 +3,7 @@ import ReactApexChart from 'react-apexcharts';
 import { Card, List, Tag, Space, Select, Typography, Spin } from 'antd';
 import { StarFilled, StarOutlined } from '@ant-design/icons';
 import styles from './Dashboard.module.css';
+import apiService from '../../services/apiService';
 
 const { Title } = Typography;
 
@@ -285,24 +286,21 @@ function Dashboard() {
   const fetchContactsData = async (page = 1) => {
     setLoading(prev => ({ ...prev, contacts: true }));
     try {
-      const config = await fetch('/config.json').then(res => res.json());
       const userId = JSON.parse(localStorage.getItem('user')).uid;
       
       // Fetch tags for dropdown only if tags array is empty
       if (tags.length === 0) {
-        const tagsResponse = await fetch(`${config.apiUrl}/contacts/tags?userId=${userId}`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
+        const tagsData = await apiService.fetch(`/contacts/tags?userId=${userId}`, {
+          method: 'GET'
         });
-        const tagsData = await tagsResponse.json();
         if (tagsData.success) {
           setTags(tagsData.tags);
         }
       }
       
       // Fetch filtered contacts
-      const contactsResponse = await fetch(
-        `${config.apiUrl}/dashboard/contacts?` + 
+      const contactsData = await apiService.fetch(
+        `/dashboard/contacts?` + 
         new URLSearchParams({
           userId,
           tags: selectedTags.length > 0 ? selectedTags.join(',') : '',
@@ -310,12 +308,9 @@ function Dashboard() {
           pageSize: pagination.pageSize
         }).toString(),
         {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
+          method: 'GET'
         }
       );
-      
-      const contactsData = await contactsResponse.json();
 
       if (contactsData.success) {
         setContacts(contactsData.contacts);
@@ -335,22 +330,15 @@ function Dashboard() {
   const fetchChartData = async () => {
     try {
       setLoading(prev => ({ ...prev, charts: true }));
-      const config = await fetch('/config.json').then(res => res.json());
       const userId = JSON.parse(localStorage.getItem('user')).uid;
 
-      const tagsResponse = await fetch(`${config.apiUrl}/dashboard/tags-distribution?userId=${userId}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      const favoritesResponse = await fetch(`${config.apiUrl}/dashboard/favorites-count?userId=${userId}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
       const [tagsData, favoritesData] = await Promise.all([
-        tagsResponse.json(),
-        favoritesResponse.json()
+        apiService.fetch(`/dashboard/tags-distribution?userId=${userId}`, {
+          method: 'GET'
+        }),
+        apiService.fetch(`/dashboard/favorites-count?userId=${userId}`, {
+          method: 'GET'
+        })
       ]);
 
       if (tagsData.success && favoritesData.success) {

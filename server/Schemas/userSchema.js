@@ -25,6 +25,7 @@ const ensureAppUserTable = async () => {
                     phone VARCHAR(255) NOT NULL,
                     email VARCHAR(255) NOT NULL,
                     password VARCHAR(255) NOT NULL,
+                    profileImage VARCHAR(500),
                     lastLogin DATETIME,
                     status ENUM('Active', 'Inactive') DEFAULT 'Active',
                     is_deleted BOOLEAN DEFAULT FALSE,
@@ -37,6 +38,24 @@ const ensureAppUserTable = async () => {
             return 1;
         } else {
             console.log('app_user table already exists.');
+            
+            // Check if profileImage column exists and add it if it doesn't
+            const [columns] = await pool.query(`
+                SELECT COLUMN_NAME 
+                FROM information_schema.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'app_user' 
+                AND COLUMN_NAME = 'profileImage'
+            `);
+            
+            if (columns.length === 0) {
+                await pool.query(`
+                    ALTER TABLE app_user 
+                    ADD COLUMN profileImage VARCHAR(500) AFTER password
+                `);
+                console.log('profileImage column added to app_user table.');
+            }
+            
             return 0;
         }
     } catch (error) {

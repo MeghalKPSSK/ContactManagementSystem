@@ -16,6 +16,7 @@ import Dashboard from './components/Dashboards/Dashboard';
 import Dragon from './components/Dragon/Dragon';
 import Groups from './components/Groups/Groups';
 import GroupDetails from './components/Groups/GroupDetails';
+import configService from './services/configService';
 
 // Authenticated Layout
 const Layout = () => (
@@ -33,6 +34,24 @@ const Layout = () => (
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [configLoading, setConfigLoading] = useState(true);
+
+  // Load config on app initialization
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        await configService.loadConfig();
+        console.log('Config loaded successfully');
+      } catch (error) {
+        console.error('Failed to load config:', error);
+        toast.error('Failed to load application configuration');
+      } finally {
+        setConfigLoading(false);
+      }
+    };
+
+    initializeApp();
+  }, []);
 
   // Load user on mount
   useEffect(() => {
@@ -57,7 +76,7 @@ function App() {
     return () => clearInterval(interval);
   }, [user]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading || configLoading) return <div>Loading...</div>;
 
   return (
     <div className="app-container">

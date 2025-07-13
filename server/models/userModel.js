@@ -48,7 +48,7 @@ const userModel = async () => {
             const hashedPassword = passCrypto.encrypt16Bit(loginPassword);
             
             const [rows] = await pool.execute(`SELECT (select encryptId(pk_id)) uid, firstName, lastName, phone, email, 
-                username, status, registeredOn, modifiedOn, now() lastLogin FROM app_user WHERE username = ? AND password = ? 
+                username, profileImage, status, registeredOn, modifiedOn, now() lastLogin FROM app_user WHERE username = ? AND password = ? 
                 AND status = 'Active' AND is_deleted = 0`, [loginUsername, hashedPassword]);
             if (rows.length === 0) {
                 throw new Error("Invalid username or password");
@@ -63,7 +63,7 @@ const userModel = async () => {
     const getUserById = async (userId) => {
         try {
             const [rows] = await pool.execute(`SELECT (select encryptId(pk_id)) uid, firstName, lastName, phone, email, 
-                username, status, registeredOn, modifiedOn FROM app_user WHERE pk_id in (select decryptId(?)) AND is_deleted = 0`, [userId]);
+                username, profileImage, status, registeredOn, modifiedOn FROM app_user WHERE pk_id in (select decryptId(?)) AND is_deleted = 0`, [userId]);
             return rows[0];
         } catch (error) {
             console.error(`Error fetching user: ${error}`);
@@ -74,7 +74,7 @@ const userModel = async () => {
     const updateUser = async (userId, userData) => {
         try {
             console.log(`userData: ${JSON.stringify(userData)}`);
-            const { firstName, lastName, phone, email, username } = userData;
+            const { firstName, lastName, phone, email, username, profileImage } = userData;
             
             // Check for existing user with same username, phone, or email excluding current user
             const [existingUser] = await pool.execute(
@@ -92,17 +92,24 @@ const userModel = async () => {
                 if (duplicate.email === email) throw new Error("Email already exists");
             }
             
-            const [result] = await pool.execute(
-                `UPDATE app_user 
+            // Build dynamic query based on whether profileImage is provided
+            let query = `UPDATE app_user 
                  SET firstName = ?,
                      lastName = ?,
                      phone = ?,
                      email = ?,
-                     username = ?,
-                     modifiedOn = NOW()
-                 WHERE pk_id = (SELECT decryptId(?))`,
-                [firstName, lastName, phone, email, username, userId]
-            );
+                     username = ?`;
+            let params = [firstName, lastName, phone, email, username];
+            
+            if (profileImage !== undefined) {
+                query += `, profileImage = ?`;
+                params.push(profileImage);
+            }
+            
+            query += `, modifiedOn = NOW() WHERE pk_id = (SELECT decryptId(?))`;
+            params.push(userId);
+            
+            const [result] = await pool.execute(query, params);
             
             return result.affectedRows > 0;
         } catch (error) {

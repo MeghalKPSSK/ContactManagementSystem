@@ -16,6 +16,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import ContactModal from './ContactModal';
 import { toast } from 'react-toastify';
+import apiService from '../../services/apiService';
 
 // Add this constant at the top of the file
 const MAX_PAGES_SHOWN = 5;
@@ -56,7 +57,6 @@ export default function Contacts() {
   const fetchContacts = async (searchTerm, page = 1) => {
     setIsLoading(true);
     try {
-      const config = await fetch('/config.json').then((res) => res.json());
       const userId = JSON.parse(localStorage.getItem('user')).uid;
       const params = new URLSearchParams({
         ...(searchTerm && { filter: searchTerm }),
@@ -65,23 +65,18 @@ export default function Contacts() {
         pageSize: pagination.pageSize
       });
       
-      const response = await fetch(`${config.apiUrl}/contacts/contactsList?${params}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const resData = await response.json();
+      const data = await apiService.fetch(`/contacts/contactsList?${params}`);
       
-      if (!response.ok) {
-        const errorData = response.json();
-        throw new Error(errorData.message || 'Failed to fetch contacts');
+      if (data.success) {
+        setContacts(data.contacts);
+        setPagination(prev => ({
+          ...prev,
+          current: page,
+          total: data.pagination?.total || 0
+        }));
+      } else {
+        throw new Error(data.message || 'Failed to fetch contacts');
       }
-      
-      setContacts(resData.contacts);
-      setPagination(prev => ({
-        ...prev,
-        current: page,
-        total: resData.pagination.total
-      }));
     } catch (error) {
       console.error('Error fetching contacts:', error);
     } finally {
@@ -126,20 +121,13 @@ export default function Contacts() {
   const handleDelete = async (contactId) => {
     if (window.confirm('Are you sure you want to delete this contact?')) {
       try {
-        const config = await fetch('/config.json').then((res) => res.json());
-        const response = await fetch(`${config.apiUrl}/contacts/deleteContact/${contactId}`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to delete contact');
-        }
-
-        const data = await response.json();
+        const data = await apiService.deleteContact(contactId);
+        
         if (data.success) {
           toast.success(data.message);
           fetchContacts(searchTerm, pagination.current);
+        } else {
+          toast.error(data.message || 'Failed to delete contact');
         }
       } catch (error) {
         toast.error('Error deleting contact');
@@ -150,21 +138,16 @@ export default function Contacts() {
 
   const handleFavoriteToggle = async (contact) => {
     try {
-      const config = await fetch('/config.json').then((res) => res.json());
-      const response = await fetch(`${config.apiUrl}/contacts/toggleFavorite/${contact.uid}`, {
+      const data = await apiService.fetch(`/contacts/toggleFavorite/${contact.uid}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_favorite: !contact.is_favorite })
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to update favorite status');
-      }
-
-      const data = await response.json();
       if (data.success) {
         toast.success(data.message);
         fetchContacts(searchTerm, pagination.current);
+      } else {
+        toast.error(data.message || 'Failed to update favorite status');
       }
     } catch (error) {
       toast.error('Error updating favorite status');

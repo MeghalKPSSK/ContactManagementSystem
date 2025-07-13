@@ -5,6 +5,7 @@ import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { Link, Navigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import apiService from '../../services/apiService';
 
 const RegisterUser = () => {
     const [formData, setFormData] = useState({
@@ -46,20 +47,14 @@ const RegisterUser = () => {
         if (!validateFields()) return;
 
         try {
-            const config = await fetch('/config.json').then((res) => res.json());
-            const response = await fetch(`${config.apiUrl}/users/registerUser`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Registration failed');
+            const response = await apiService.registerUser(formData);
+            
+            if (response.success) {
+                toast.success('Registration successful!');
+                setTimeout(()=>{window.location.href = '/login';},1000); // Redirect to login page after successful registration
+            } else {
+                toast.error(response.message || 'Registration failed');
             }
-
-            toast.success('Registration successful!');
-            setTimeout(()=>{window.location.href = '/login';},1000); // Redirect to login page after successful registration
         } catch (err) {
             toast.error(err.message);
         }

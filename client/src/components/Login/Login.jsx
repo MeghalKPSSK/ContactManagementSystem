@@ -4,7 +4,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'; // Import Font Awesome icons
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import apiService from '../../services/apiService';
 
 const Login = () => {
     const [loginUsername, setUsername] = useState('');
@@ -30,19 +31,7 @@ const Login = () => {
             return;
         }
         try {
-            const config = await fetch('/config.json').then((res) => res.json());
-            const response = await fetch(`${config.apiUrl}/users/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ loginUsername, loginPassword }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Login failed');
-            }
-
-            const user = await response.json();
+            const user = await apiService.loginUser({ loginUsername, loginPassword });
             localStorage.setItem('user', JSON.stringify(user.user));
             toast.success('Login successful!');
         } catch (err) {

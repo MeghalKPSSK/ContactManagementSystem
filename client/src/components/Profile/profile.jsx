@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faEyeSlash, faKey, faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faKey, faSave, faTimes, faCamera } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import styles from './profile.module.css';
+import apiService from '../../services/apiService';
 
 const Profile = () => {
     const [user, setUser] = useState(null);
@@ -13,8 +14,13 @@ const Profile = () => {
         lastName: '',
         phone: '',
         email: '',
-        username: ''
+        username: '',
+        profileImage: null
     });
+
+    // Add new state for image handling
+    const [profileImagePreview, setProfileImagePreview] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
 
     const [passwordData, setPasswordData] = useState({
         currentPassword: '',
@@ -38,9 +44,7 @@ const Profile = () => {
     const fetchUserDetails = async () => {
         try {
             const userData = JSON.parse(localStorage.getItem('user'));
-            const config = await fetch('/config.json').then(res => res.json());
-            const response = await fetch(`${config.apiUrl}/users/user/${userData.uid}`);
-            const data = await response.json();
+            const data = await apiService.getUserById(userData.uid);
 
             if (data.success) {
                 setUser(data.user);
@@ -49,8 +53,14 @@ const Profile = () => {
                     lastName: data.user.lastName,
                     phone: data.user.phone,
                     email: data.user.email,
-                    username: data.user.username
+                    username: data.user.username,
+                    profileImage: data.user.profileImage
                 });
+                
+                // Set profile image preview if user has one
+                if (data.user.profileImage) {
+                    setProfileImagePreview(apiService.getImageUrl(data.user.profileImage));
+                }
             }
         } catch (error) {
             toast.error(`Error fetching user details: ${error.message}`);
@@ -89,6 +99,44 @@ const Profile = () => {
         }
     };
 
+    // Handle image file selection
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                toast.error('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+                return;
+            }
+            
+            // Validate file size (5MB limit)
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Image size should be less than 5MB');
+                return;
+            }
+            
+            setSelectedFile(file);
+            
+            // Create preview URL
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setProfileImagePreview(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // Remove image
+    const handleRemoveImage = () => {
+        setSelectedFile(null);
+        setProfileImagePreview(null);
+        setFormData(prev => ({
+            ...prev,
+            profileImage: null
+        }));
+    };
+
     const handlePasswordChange = (e) => {
         const { name, value } = e.target;
         setPasswordData(prev => ({
@@ -97,7 +145,7 @@ const Profile = () => {
         }));
     };
 
-    // Update handleSubmit to check for phone validation
+    // Update handleSubmit to check for phone validation and handle file upload
     const handleSubmit = async (e) => {
         e.preventDefault();
         
@@ -108,19 +156,46 @@ const Profile = () => {
         }
 
         try {
-            const config = await fetch('/config.json').then(res => res.json());
-            const response = await fetch(`${config.apiUrl}/users/updateUser/${user.uid}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
+            const userData = {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                phone: formData.phone,
+                email: formData.email,
+                username: formData.username
+            };
+            
+            // Add profile image if selected
+            if (selectedFile) {
+                userData.profileImage = selectedFile;
+            }
 
-            const data = await response.json();
+            const data = await apiService.updateUser(user.uid, userData);
+            
             if (data.success) {
                 toast.success('Profile updated successfully');
-                // Update local storage
-                const userData = JSON.parse(localStorage.getItem('user'));
-                localStorage.setItem('user', JSON.stringify({ ...userData, ...formData }));
+                // Update local storage and state
+                const localUserData = JSON.parse(localStorage.getItem('user'));
+                const updatedUserData = { ...localUserData, ...data.user };
+                localStorage.setItem('user', JSON.stringify(updatedUserData));
+                
+                // Update local state
+                setUser(data.user);
+                setFormData({
+                    firstName: data.user.firstName,
+                    lastName: data.user.lastName,
+                    phone: data.user.phone,
+                    email: data.user.email,
+                    username: data.user.username,
+                    profileImage: data.user.profileImage
+                });
+                
+                // Update profile image preview
+                if (data.user.profileImage) {
+                    setProfileImagePreview(apiService.getImageUrl(data.user.profileImage));
+                }
+                
+                // Clear selected file
+                setSelectedFile(null);
             } else {
                 toast.error(data.message);
             }
@@ -137,14 +212,8 @@ const Profile = () => {
         }
 
         try {
-            const config = await fetch('/config.json').then(res => res.json());
-            const response = await fetch(`${config.apiUrl}/users/changePassword/${user.uid}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(passwordData)
-            });
-
-            const data = await response.json();
+            const data = await apiService.changePassword(user.uid, passwordData);
+            
             if (data.success) {
                 toast.success('Password changed successfully');
                 setShowPasswordModal(false);
@@ -174,6 +243,49 @@ const Profile = () => {
             </div>
             <div className={styles.profileCard}>
                 <form onSubmit={handleSubmit} className={styles.profileForm}>
+                    {/* Profile Image Section */}
+                    <div className={styles.profileImageSection}>
+                        <div className={styles.imageUploadContainer}>
+                            <div className={styles.imagePreview} onClick={() => document.getElementById('profileImageInput').click()}>
+                                {profileImagePreview ? (
+                                    <>
+                                        <img 
+                                            src={profileImagePreview} 
+                                            alt="Profile" 
+                                            className={styles.profileImage}
+                                        />
+                                        <div className={styles.imageOverlay}>
+                                            <FontAwesomeIcon icon={faCamera} className={styles.overlayIcon} />
+                                            <span className={styles.overlayText}>Change Photo</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className={styles.placeholderImage}>
+                                        <FontAwesomeIcon icon={faCamera} className={styles.placeholderIcon} />
+                                        <span className={styles.placeholderText}>Add Photo</span>
+                                    </div>
+                                )}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                    className={styles.fileInput}
+                                    id="profileImageInput"
+                                />
+                            </div>
+                            {profileImagePreview && (
+                                <button
+                                    type="button"
+                                    onClick={handleRemoveImage}
+                                    className={styles.removeButton}
+                                >
+                                    <FontAwesomeIcon icon={faTimes} className={styles.buttonIcon} />
+                                    Remove Photo
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    
                     <div className={styles.formRow}>
                         <div className={styles.formGroup}>
                             <label>First Name</label>
