@@ -25,11 +25,19 @@ class ApiService {
             ...options
         });
 
+        // Always try to parse JSON response, even for errors
+        const data = await response.json();
+
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            // If the response has a message, use it, otherwise use a generic error
+            const errorMessage = data.message || `HTTP error! status: ${response.status}`;
+            const error = new Error(errorMessage);
+            error.status = response.status;
+            error.data = data;
+            throw error;
         }
 
-        return response.json();
+        return data;
     }
 
     // User API methods
