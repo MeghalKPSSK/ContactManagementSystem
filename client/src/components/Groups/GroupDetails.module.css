@@ -66,6 +66,7 @@
   color: var(--text-light);
   opacity: 0.85;
   margin-bottom: 0;
+  text-align: left;
 }
 
 .membersSection {

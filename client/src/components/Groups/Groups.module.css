@@ -9,12 +9,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 10px;
 }
 
 .header h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
+  margin: 0px;
   color: var(--primary-text);
 }
 
@@ -96,10 +95,8 @@
 }
 
 .groupsContainer {
-  padding: 2rem;
-  background-color: var(--primary-bg);
-  border-radius: 12px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+ padding: 1rem;
+ background-color: var(--accent-bg);
 }
 
 .headerActions {
@@ -110,44 +107,45 @@
 .addButton {
   background-color: var(--secondary-bg);
   color: var(--text-light);
+  border: none;
+  margin-left: -12px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
   padding: 0.75rem 1rem;
-  border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
 .addButton:hover {
   background-color: var(--secondary-light);
-  transform: translateY(-2px);
 }
 
 .searchBar {
-  display: flex;
-  align-items: center;
-  border: 1px solid var(--accent-border);
-  border-radius: 8px;
-  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--hover-text);
+  border-radius: 4px 0px 0px 4px;
 }
 
 .searchInput {
-  padding: 0.75rem 1rem;
-  border: none;
-  outline: none;
+  width: 100%;
+  padding: 0.75rem 4rem 0.75rem 2.5rem;
+  border: 1px solid var(--highlight-border);
+  border-radius: 4px;
   font-size: 1rem;
-  flex: 1;
+  outline: none;
   background-color: var(--primary-bg);
-  color: var(--text-primary);
+  color: #000000;
 }
 
 .searchButton {
-  background-color: var(--secondary-bg);
-  color: var(--text-light);
-  padding: 0.75rem 1rem;
-  border: none;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  color: white;
+  background-color: var(--hover-text);
+  border-radius: 0px 4px 4px 0px;
+  margin-left: -17px;
 }
 
 .searchButton:hover {
@@ -163,7 +161,7 @@
 
 .card {
   background-color: var(--primary-bg);
-  border-radius: 12px;
+  border-radius: 30px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   text-align: center;
@@ -217,6 +215,7 @@
   font-size: 0.95rem;
   color: var(--text-secondary);
   margin-bottom: 1rem;
+  text-align: justify;
 }
 
 .cardActions {
@@ -230,11 +229,13 @@
 .cardActions button {
   background-color: var(--secondary-bg);
   color: var(--text-light);
-  padding: 0.2rem;
+  padding: 0px;
   border-radius: 5px;
-  font-size: 0.7rem;
+  font-size: 13px;
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.2s ease;
+  position: relative;
+  top: -173px;
 }
 
 .cardActions button:hover {
