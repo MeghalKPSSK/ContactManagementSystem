@@ -12,13 +12,8 @@ const groupModel = async () => {
 
     const groupSave = async (groupData) => {
         try {
-            let { user_id, name, description, members, group_icon } = groupData;
+            let { user_id, name, description,  group_icon } = groupData;
             const userId = await encryptionInstance.dbDecryptID(user_id);
-
-            // Parse members if it's a JSON string
-            if (typeof members === 'string') {
-                members = JSON.parse(members);
-            }
 
             const params = [
                 userId || null, 
@@ -35,11 +30,6 @@ const groupModel = async () => {
             const groupId = result.insertId;
             console.log(`Group created with ID: ${groupId}`);
 
-            if (Array.isArray(members)) {
-                members.forEach(async element => {
-                    await pool.execute(`INSERT INTO group_members (group_id, contact_id) VALUES (?, (SELECT decryptId(?)))`, [result.insertId, element]);
-                });  
-            }
 
             return groupId;
         } catch (error) {
@@ -155,7 +145,7 @@ const groupModel = async () => {
 
     const updateGroup = async (groupId, groupData) => {
         try {
-            const { name, members, description, group_icon } = groupData;
+            const { name, description, group_icon } = groupData;
 
             let query = 'UPDATE `groups` SET name = ?, modifiedOn = CURRENT_TIMESTAMP, description = ?';
             const params = [name, description];
@@ -169,24 +159,6 @@ const groupModel = async () => {
             params.push(groupId);
 
             const [result] = await pool.execute(query, params);
-
-            if (members && Array.isArray(members)) {
-                // Delete existing members
-                await pool.execute(
-                    `DELETE FROM group_members WHERE group_id = decryptId(?)`,
-                    [groupId]
-                );
-
-                // Insert new members one by one to avoid SQL injection
-                if (members.length > 0) {
-                    for (const memberId of members) {
-                        await pool.execute(
-                            `INSERT INTO group_members (group_id, contact_id) VALUES (decryptId(?), decryptId(?))`,
-                            [groupId, memberId]
-                        );
-                    }
-                }
-            }
 
             return result.affectedRows > 0;
         } catch (error) {

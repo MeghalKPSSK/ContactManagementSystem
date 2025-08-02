@@ -4,13 +4,13 @@ import { faTimes, faSave, faCamera } from '@fortawesome/free-solid-svg-icons';
 import styles from './GroupModal.module.css';
 import { toast } from 'react-toastify';
 
-const GroupModal = ({ mode, group, onClose, onSubmit, contacts }) => {
+const GroupModal = ({ mode, group, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    members: [],
     group_icon: null
   });
+  const [originalGroupName, setOriginalGroupName] = useState('');
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -21,10 +21,10 @@ const GroupModal = ({ mode, group, onClose, onSubmit, contacts }) => {
       setFormData({
         name: '',
         description: '',
-        members: [],
         group_icon: null,
         user_id: JSON.parse(localStorage.getItem('user')).uid,
       });
+      setOriginalGroupName('');
       setPreview(null);
     }
   }, [group, mode]);
@@ -39,10 +39,12 @@ const GroupModal = ({ mode, group, onClose, onSubmit, contacts }) => {
       console.log('Fetched group data:', data); // Debug log
 
       if (data.success) {
+        // Store the original group name for the header
+        setOriginalGroupName(data.group.name);
+        
         setFormData({
           name: data.group.name,
           description: data.group.description,
-          members: data.group.members.map((member) => member.uid),
           user_id: JSON.parse(localStorage.getItem('user')).uid,
           group_icon: null, // we don't re-submit the file, just show preview
         });
@@ -64,15 +66,6 @@ const GroupModal = ({ mode, group, onClose, onSubmit, contacts }) => {
       setLoading(false);
     }
   };
-
-const handleMemberToggle = (contactId) => {
-  setFormData((prev) => ({
-    ...prev,
-    members: prev.members.includes(contactId)
-      ? prev.members.filter((id) => id !== contactId)
-      : [...prev.members, contactId],
-  }));
-};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -101,7 +94,6 @@ const handleMemberToggle = (contactId) => {
       const payload = new FormData();
       payload.append('name', formData.name);
       payload.append('description', formData.description);
-      payload.append('members', JSON.stringify([])); // Send empty array since we removed members
       payload.append('user_id', formData.user_id);
       if (formData.group_icon) {
         payload.append('group_icon', formData.group_icon);
@@ -145,7 +137,7 @@ const handleMemberToggle = (contactId) => {
     <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
         <div className={styles.modalHeader}>
-          <h2>{mode === 'add' ? 'Add Group' : 'Edit Group'}</h2>
+          <h2>{mode === 'add' ? 'Add Group' : `Edit Group: ${originalGroupName}`}</h2>
           <button className={styles.closeButton} onClick={onClose}>
             <FontAwesomeIcon icon={faTimes} />
           </button>
