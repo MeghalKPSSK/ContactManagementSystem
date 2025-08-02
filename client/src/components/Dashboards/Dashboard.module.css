@@ -13,16 +13,24 @@
 
 .chartCard {
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   padding: 24px;
   height: 100%;
+  border: 1px solid #f0f0f0;
+  transition: box-shadow 0.3s ease;
+  position: relative;
+}
+
+.chartCard:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 .contactsList {
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f0f0;
 }
 
 .filterContainer {
@@ -41,9 +49,10 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 350px;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
+  height: 400px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  border: 2px dashed #e8e8e8;
 }
 
 .contactCard {

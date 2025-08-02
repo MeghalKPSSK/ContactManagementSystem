@@ -26,6 +26,8 @@ export default function GroupDetails() {
       if (data.success) setGroup(data.group);
     } catch (err) {
       setGroup(null);
+      console.error('Fetch group error:', err);
+      toast.error('Failed to fetch group details');
     } finally {
       setLoading(false);
     }
@@ -95,6 +97,8 @@ export default function GroupDetails() {
         }
       } catch (err) {
         toast.error('Failed to delete member');
+        console.error('Delete member error:', err);
+
       }
     }
   };
@@ -146,6 +150,7 @@ export default function GroupDetails() {
       }
     } catch (err) {
       toast.error('Failed to save member');
+      console.error('Save member error:', err);
     }
   };
 

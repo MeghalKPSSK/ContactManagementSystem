@@ -180,10 +180,100 @@ const dashboardModel = async () => {
         }
     };
 
+    const getGroupsStatistics = async (userId) => {
+        const endpoint = '[MODEL] getGroupsStatistics';
+        console.log(`${endpoint} - Request received for userId: ${userId.substring(0, 8)}...`);
+        
+        try {
+            let groupContactsData = [];
+            let tagContactsData = [];
+            
+            // Get group-wise contact counts (for line chart)
+            console.log(`${endpoint} - Fetching group-wise contact counts`);
+            try {
+                const [groupContactsResult] = await pool.execute(`
+                    SELECT 
+                        g.name as group_name,
+                        COUNT(DISTINCT gm.contact_id) as contact_count
+                    FROM \`groups\` g
+                    LEFT JOIN group_members gm ON g.pk_id = gm.group_id
+                    LEFT JOIN contacts c ON gm.contact_id = c.pk_id
+                    WHERE g.user_id = decryptId(?)
+                    AND g.is_deleted = 0
+                    AND (c.is_deleted = 0 OR c.is_deleted IS NULL)
+                    GROUP BY g.pk_id, g.name
+                    ORDER BY contact_count DESC
+                    LIMIT 10
+                `, [userId]);
+                
+                groupContactsData = groupContactsResult;
+                console.log(`${endpoint} - Group contacts query success: Found ${groupContactsData.length} groups with contacts`);
+                
+            } catch (groupContactsError) {
+                console.error(`${endpoint} - Group contacts query error:`, groupContactsError.message);
+                groupContactsData = [];
+            }
+
+            // Get tag-wise contact counts (for bar chart)
+            console.log(`${endpoint} - Fetching tag-wise contact counts`);
+            try {
+                const [tagContactsResult] = await pool.execute(`
+                    SELECT 
+                        t.name as tag_name,
+                        COUNT(DISTINCT ctm.contact_id) as contact_count
+                    FROM contact_tags t
+                    LEFT JOIN contact_tag_mapping ctm ON t.pk_id = ctm.tag_id
+                    LEFT JOIN contacts c ON ctm.contact_id = c.pk_id
+                    WHERE t.user_id = decryptId(?)
+                    AND c.is_deleted = 0
+                    GROUP BY t.pk_id, t.name
+                    ORDER BY contact_count DESC
+                    LIMIT 8
+                `, [userId]);
+                
+                tagContactsData = tagContactsResult;
+                console.log(`${endpoint} - Tag contacts query success: Found ${tagContactsData.length} tags with contacts`);
+                
+            } catch (tagContactsError) {
+                console.error(`${endpoint} - Tag contacts query error:`, tagContactsError.message);
+                tagContactsData = [];
+            }
+
+            // Return structured data for multi-chart display
+            const result = {
+                group_data: groupContactsData.map(item => ({
+                    name: item.group_name,
+                    count: parseInt(item.contact_count) || 0
+                })),
+                tag_data: tagContactsData.map(item => ({
+                    name: item.tag_name,
+                    count: parseInt(item.contact_count) || 0
+                }))
+            };
+            
+            console.log(`${endpoint} - Success: Returning ${result.group_data.length} groups, ${result.tag_data.length} tags`);
+            return result;
+            
+        } catch (error) {
+            console.error(`${endpoint} - Fatal error:`, error.message);
+            console.error(`${endpoint} - Error stack:`, error.stack);
+            
+            // Return empty data structure
+            const fallbackResult = {
+                group_data: [],
+                tag_data: []
+            };
+            
+            console.log(`${endpoint} - Returning fallback data due to error`);
+            return fallbackResult;
+        }
+    };
+
     return {
         getTagsDistribution,
         getFavoritesCount,
-        getDashboardContacts
+        getDashboardContacts,
+        getGroupsStatistics
     };
 };
 
