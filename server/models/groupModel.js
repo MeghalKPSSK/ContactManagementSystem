@@ -171,16 +171,20 @@ const groupModel = async () => {
             const [result] = await pool.execute(query, params);
 
             if (members && Array.isArray(members)) {
+                // Delete existing members
                 await pool.execute(
                     `DELETE FROM group_members WHERE group_id = decryptId(?)`,
                     [groupId]
                 );
 
+                // Insert new members one by one to avoid SQL injection
                 if (members.length > 0) {
-                    const memberValues = members.map(memberId => `(decryptId('${groupId}'), decryptId('${memberId}'))`).join(',');
-                    await pool.execute(
-                        `INSERT INTO group_members (group_id, contact_id) VALUES ${memberValues}`
-                    );
+                    for (const memberId of members) {
+                        await pool.execute(
+                            `INSERT INTO group_members (group_id, contact_id) VALUES (decryptId(?), decryptId(?))`,
+                            [groupId, memberId]
+                        );
+                    }
                 }
             }
 

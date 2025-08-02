@@ -113,16 +113,23 @@ export default function GroupDetails() {
     try {
       const config = await fetch('/config.json').then(res => res.json());
       let updatedMembers;
+      
       if (memberModalMode === 'add') {
-        // Add new member UID to members array (avoid duplicates)
-        const memberUid = form.uid; // You must select a contact from your contacts list and get its UID
-        updatedMembers = [
-          ...group.members.map(m => m.uid),
-          memberUid,
-        ].filter((v, i, a) => a.indexOf(v) === i); // unique
+        // Handle multiple member addition
+        if (form.uids && form.uids.length > 0) {
+          const existingMemberUids = group.members.map(m => m.uid);
+          const newMemberUids = form.uids.filter(uid => !existingMemberUids.includes(uid));
+          updatedMembers = [...existingMemberUids, ...newMemberUids];
+        } else {
+          // Fallback for single selection (backward compatibility)
+          const memberUid = form.uid;
+          updatedMembers = [
+            ...group.members.map(m => m.uid),
+            memberUid,
+          ].filter((v, i, a) => a.indexOf(v) === i); // unique
+        }
       } else {
-        // For edit, you may want to update member details in contacts, not here.
-        // If you want to allow changing the member (replace), do so here.
+        // For edit mode (single selection)
         updatedMembers = group.members.map(m =>
           m.uid === selectedMember.uid ? form.uid : m.uid
         );
@@ -144,9 +151,11 @@ export default function GroupDetails() {
       if (data.success) {
         fetchGroup();
         setShowMemberModal(false);
+        const addedCount = memberModalMode === 'add' ? 
+          (form.uids ? form.uids.length : 1) : 1;
         toast.success(
           memberModalMode === 'add'
-            ? 'Member added successfully!'
+            ? `${addedCount} member${addedCount !== 1 ? 's' : ''} added successfully!`
             : 'Member updated successfully!'
         );
       } else {

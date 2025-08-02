@@ -132,13 +132,20 @@ router.delete('/deleteGroup/:id', async (req, res) => {
 });
 
 // Update group
-router.put('/updateGroup/:id', groupIconUpload.single('group_icon'), async (req, res) => {
+router.put('/updateGroup/:id', (req, res, next) => {
+    // Check if request has file upload (multipart) or JSON
+    if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+        groupIconUpload.single('group_icon')(req, res, next);
+    } else {
+        next();
+    }
+}, async (req, res) => {
     try {
         const groupData = req.body;
         if (req.file) {
             groupData.group_icon = req.file.filename;
         }
-        if (groupData.members) {
+        if (typeof groupData.members === 'string') {
             groupData.members = JSON.parse(groupData.members);
         }
         const result = await groupModelInstance.updateGroup(req.params.id, groupData);
