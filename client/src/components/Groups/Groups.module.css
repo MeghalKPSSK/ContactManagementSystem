@@ -154,9 +154,9 @@
 
 .cardContainer {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Adjusted for fixed card width */
+  grid-template-columns: repeat(auto-fill, 300px); /* Use auto-fill with fixed width */
   gap: 1.5rem;
-  justify-content: center; /* Center the cards */
+  justify-content: start; /* Align cards to the left */
 }
 
 .card {
@@ -167,7 +167,6 @@
   text-align: center;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   width: 300px; /* Fixed card width */
-  margin: 0 auto; /* Center the card horizontally */
   position: relative; /* Enable positioning for child elements */
 }
 
@@ -198,6 +197,13 @@
 .groupIcon {
   font-size: 2.5rem;
   color: var(--secondary-bg);
+}
+
+.groupIconImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .cardBody {

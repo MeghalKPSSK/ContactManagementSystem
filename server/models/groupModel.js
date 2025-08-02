@@ -12,26 +12,34 @@ const groupModel = async () => {
 
     const groupSave = async (groupData) => {
         try {
-            const { user_id, name, description, members } = groupData;
+            let { user_id, name, description, members, group_icon } = groupData;
             const userId = await encryptionInstance.dbDecryptID(user_id);
+
+            // Parse members if it's a JSON string
+            if (typeof members === 'string') {
+                members = JSON.parse(members);
+            }
 
             const params = [
                 userId || null, 
                 name || null,
-                description || null
+                description || null,
+                group_icon || null
             ];
 
             const [result] = await pool.execute(
-                `INSERT INTO \`groups\` (user_id, name, description) VALUES (?, ?, ?)`,
+                `INSERT INTO \`groups\` (user_id, name, description, group_icon) VALUES (?, ?, ?, ?)`,
                 [...params]
             );
 
             const groupId = result.insertId;
             console.log(`Group created with ID: ${groupId}`);
 
-            members.forEach(async element => {
-                await pool.execute(`INSERT INTO group_members (group_id, contact_id) VALUES (?, (SELECT decryptId(?)))`, [result.insertId, element]);
-            });  
+            if (Array.isArray(members)) {
+                members.forEach(async element => {
+                    await pool.execute(`INSERT INTO group_members (group_id, contact_id) VALUES (?, (SELECT decryptId(?)))`, [result.insertId, element]);
+                });  
+            }
 
             return groupId;
         } catch (error) {
@@ -147,26 +155,34 @@ const groupModel = async () => {
 
     const updateGroup = async (groupId, groupData) => {
         try {
-            const { name, members, description } = groupData;
+            const { name, members, description, group_icon } = groupData;
 
-            const [result] = await pool.execute(
-                `UPDATE \`groups\` 
-                SET name = ?, modifiedOn = CURRENT_TIMESTAMP, description = ? 
-                WHERE pk_id = decryptId(?) AND is_deleted = 0`,
-                [name, description, groupId]
-            );
+            let query = 'UPDATE `groups` SET name = ?, modifiedOn = CURRENT_TIMESTAMP, description = ?';
+            const params = [name, description];
 
-            await pool.execute(
-                `DELETE FROM group_members WHERE group_id = decryptId(?)`,
-                [groupId]
-            );
+            if (group_icon) {
+                query += ', group_icon = ?';
+                params.push(group_icon);
+            }
 
-            members.forEach(async (memberId) => {
+            query += ' WHERE pk_id = decryptId(?) AND is_deleted = 0';
+            params.push(groupId);
+
+            const [result] = await pool.execute(query, params);
+
+            if (members && Array.isArray(members)) {
                 await pool.execute(
-                    `INSERT INTO group_members (group_id, contact_id) VALUES (decryptId(?), decryptId(?))`,
-                    [groupId, memberId]
+                    `DELETE FROM group_members WHERE group_id = decryptId(?)`,
+                    [groupId]
                 );
-            });
+
+                if (members.length > 0) {
+                    const memberValues = members.map(memberId => `(decryptId('${groupId}'), decryptId('${memberId}'))`).join(',');
+                    await pool.execute(
+                        `INSERT INTO group_members (group_id, contact_id) VALUES ${memberValues}`
+                    );
+                }
+            }
 
             return result.affectedRows > 0;
         } catch (error) {

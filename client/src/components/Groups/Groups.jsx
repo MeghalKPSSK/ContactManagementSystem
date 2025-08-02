@@ -36,6 +36,8 @@ export default function Groups() {
         throw new Error(resData.message || 'Failed to fetch groups');
       }
 
+      // Store the config for later use in image URLs
+      window.apiConfig = config;
       setGroups(resData.groups);
     } catch (error) {
       console.error('Error fetching groups:', error);
@@ -153,7 +155,22 @@ export default function Groups() {
               >
                 <div className={styles.cardHeader}>
                 <div className={styles.groupIconContainer}>
-                  <FontAwesomeIcon icon={faUsers} className={styles.groupIcon} />
+                  {group.group_icon ? (
+                    <img 
+                      src={`${window.apiConfig?.apiUrl.replace('/api', '')}/uploads/group_icons/${group.group_icon}`}
+                      alt={group.name}
+                      className={styles.groupIconImage}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                  ) : null}
+                  <FontAwesomeIcon 
+                    icon={faUsers} 
+                    className={styles.groupIcon}
+                    style={{ display: group.group_icon ? 'none' : 'block' }}
+                  />
                 </div>
                 </div>
                 <div className={styles.cardBody}>

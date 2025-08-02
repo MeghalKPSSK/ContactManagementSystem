@@ -23,7 +23,11 @@ export default function GroupDetails() {
       const config = await fetch('/config.json').then(res => res.json());
       const response = await fetch(`${config.apiUrl}/groups/group/${groupId}`);
       const data = await response.json();
-      if (data.success) setGroup(data.group);
+      if (data.success) {
+        setGroup(data.group);
+        // Store config for image URLs
+        window.groupDetailsConfig = config;
+      }
     } catch (err) {
       setGroup(null);
     } finally {
@@ -159,7 +163,22 @@ export default function GroupDetails() {
       </button>
       <div className={styles.headerStrip}>
         <div className={styles.groupIconContainer}>
-          <FontAwesomeIcon icon={faUsers} className={styles.groupIcon} />
+          {group.group_icon ? (
+            <img 
+              src={`${window.groupDetailsConfig?.apiUrl?.replace('/api', '')}/uploads/group_icons/${group.group_icon}`}
+              alt={group.name}
+              className={styles.groupIconImage}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'block';
+              }}
+            />
+          ) : null}
+          <FontAwesomeIcon 
+            icon={faUsers} 
+            className={styles.groupIcon}
+            style={{ display: group.group_icon ? 'none' : 'block' }}
+          />
         </div>
         <div className={styles.groupInfo}>
           <h2 className={styles.groupName}>{group.name}</h2>

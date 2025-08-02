@@ -3,6 +3,8 @@ const router = express.Router();
 const groupModel = require('../models/groupModel');
 const encryption = require('../utils/dbEncryption');
 
+const groupIconUpload = require('../utils/groupIconUpload');
+
 let groupModelInstance;
 let encryptionInstance;
 
@@ -17,9 +19,13 @@ let encryptionInstance;
 })();
 
 // Add a new group
-router.post('/groupSave', async (req, res) => {
+router.post('/groupSave', groupIconUpload.single('group_icon'), async (req, res) => {
     try {
-        const groupId = await encryptionInstance.dbEncryptID(await groupModelInstance.groupSave(req.body));
+        const groupData = req.body;
+        if (req.file) {
+            groupData.group_icon = req.file.filename;
+        }
+        const groupId = await encryptionInstance.dbEncryptID(await groupModelInstance.groupSave(groupData));
         console.log(`Group created with ID: ${groupId}`);
         res.status(201).json({ success: true, uid: groupId, message: 'Group added successfully' });
     } catch (error) {
@@ -126,10 +132,16 @@ router.delete('/deleteGroup/:id', async (req, res) => {
 });
 
 // Update group
-router.put('/updateGroup/:id', async (req, res) => {
+router.put('/updateGroup/:id', groupIconUpload.single('group_icon'), async (req, res) => {
     try {
-        const { members, ...groupData } = req.body;
-        const result = await groupModelInstance.updateGroup(req.params.id, { ...groupData, members });
+        const groupData = req.body;
+        if (req.file) {
+            groupData.group_icon = req.file.filename;
+        }
+        if (groupData.members) {
+            groupData.members = JSON.parse(groupData.members);
+        }
+        const result = await groupModelInstance.updateGroup(req.params.id, groupData);
 
         if (result) {
             res.status(200).json({ success: true, message: 'Group updated successfully' });

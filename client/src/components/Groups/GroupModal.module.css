@@ -217,6 +217,110 @@
   transform: translateY(-1px);
 }
 
+.profileImageSection {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.imageUploadContainer {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.imagePreview {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    background-color: var(--accent-bg);
+    border: 3px solid var(--accent-border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.profileImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.imageOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.imagePreview:hover .imageOverlay {
+    opacity: 1;
+}
+
+.overlayIcon {
+    font-size: 2rem;
+}
+
+.overlayText {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.placeholderImage {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-secondary);
+}
+
+.placeholderIcon {
+    font-size: 3rem;
+}
+
+.placeholderText {
+    margin-top: 0.5rem;
+}
+
+.fileInput {
+    display: none;
+}
+
+.removeButton {
+    margin-top: 1rem;
+    background: none;
+    border: 1px solid var(--error-color);
+    color: var(--error-color);
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.removeButton:hover {
+    background-color: var(--error-color);
+    color: white;
+}
+
+.buttonIcon {
+    font-size: 0.9rem;
+}
 .uploadPreviewContainer {
   display: flex;
   flex-direction: column;
