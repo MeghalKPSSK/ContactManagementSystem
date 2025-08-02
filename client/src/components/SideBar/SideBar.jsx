@@ -36,7 +36,7 @@ export default function SideBar() {
         }
         
         // Then fetch fresh data from API
-        const data = await apiService.fetch(`/users/${user.uid}`, {
+        const data = await apiService.fetch(`/users/user/${user.uid}`, {
           method: 'GET'
         });
         
@@ -76,7 +76,7 @@ export default function SideBar() {
           }
           
           // Then fetch fresh data from API
-          const data = await apiService.fetch(`/users/${user.uid}`, {
+          const data = await apiService.fetch(`/users/user/${user.uid}`, {
             method: 'GET'
           });
           

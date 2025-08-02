@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ReactApexChart from 'react-apexcharts';
 import { Card, List, Tag, Space, Select, Typography, Spin } from 'antd';
 import { StarFilled, StarOutlined } from '@ant-design/icons';
@@ -28,7 +28,8 @@ function Dashboard() {
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState({
     contacts: false,
-    charts: false
+    charts: false,
+    groupsChart: false
   });
 
   const [pagination, setPagination] = useState({
@@ -47,19 +48,18 @@ function Dashboard() {
           show: true,
           tools: {
             download: true,
-            selection: true,
-            zoom: true,
-            zoomin: true,
-            zoomout: true,
-            pan: true,
-            reset: true
+            selection: false,
+            zoom: false,
+            zoomin: false,
+            zoomout: false,
+            pan: false,
+            reset: false
           },
           export: {
             svg: true,
-            csv: true,
-            png: true
-          },
-          autoSelected: 'zoom'
+            png: true,
+            csv: false
+          }
         },
         animations: {
           enabled: true,
@@ -157,17 +157,17 @@ function Dashboard() {
           show: true,
           tools: {
             download: true,
-            selection: true,
-            zoom: true,
-            zoomin: true,
-            zoomout: true,
-            pan: true,
-            reset: true
+            selection: false,
+            zoom: false,
+            zoomin: false,
+            zoomout: false,
+            pan: false,
+            reset: false
           },
           export: {
             svg: true,
-            csv: true,
-            png: true
+            png: true,
+            csv: false
           }
         },
         background: 'transparent',
@@ -210,10 +210,13 @@ function Dashboard() {
         enabled: true,
         style: {
           fontSize: '14px',
-          fontWeight: 500,
-          colors: ['#fff', '#fff']  // White text for both columns
+          fontWeight: 600,
+          colors: ['#000', '#000'] // Black text for better visibility
         },
-        offsetY: -20
+        offsetY: -20,
+        formatter: function (val) {
+          return val
+        }
       },
       xaxis: {
         categories: ['Favorite', 'Regular'],
@@ -283,7 +286,173 @@ function Dashboard() {
     }
   });
 
-  const fetchContactsData = async (page = 1) => {
+  const [groupsOptions, setGroupsOptions] = useState({
+    series: [{
+      name: 'Group Contacts',
+      type: 'line',
+      data: [0]
+    }, {
+      name: 'Tag Contacts',
+      type: 'bar',
+      data: [0]
+    }],
+    options: {
+      chart: {
+        type: 'line',
+        height: 400,
+        background: 'transparent',
+        toolbar: {
+          show: true,
+          tools: {
+            download: true,
+            selection: false,
+            zoom: false,
+            zoomin: false,
+            zoomout: false,
+            pan: false,
+            reset: false
+          },
+          export: {
+            svg: true,
+            png: true,
+            csv: false
+          }
+        },
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 800
+        }
+      },
+      colors: ['#4B70DD', '#8E54E9'], // Blue for line, Purple for bars
+      stroke: {
+        width: [3, 0], // Line width for line chart, 0 for bar chart
+        curve: 'smooth'
+      },
+      plotOptions: {
+        bar: {
+          borderRadius: 4,
+          columnWidth: '50%',
+          dataLabels: {
+            position: 'top'
+          }
+        }
+      },
+      dataLabels: {
+        enabled: false // Disable data labels, values visible on hover
+      },
+      labels: ['No Data'],
+      xaxis: {
+        type: 'category',
+        categories: ['No Data'],
+        labels: {
+          style: {
+            colors: 'var(--text-secondary)',
+            fontSize: '12px',
+            fontWeight: 500
+          },
+          rotate: -35,
+          rotateAlways: false,
+          hideOverlappingLabels: true,
+          showDuplicates: false,
+          trim: true,
+          maxHeight: 120
+        }
+      },
+      yaxis: [{
+        title: {
+          text: 'Contact Count',
+          style: {
+            color: 'var(--text-secondary)',
+            fontSize: '14px',
+            fontWeight: 500
+          }
+        },
+        labels: {
+          style: {
+            colors: 'var(--text-secondary)',
+            fontSize: '12px'
+          },
+          formatter: function (val) {
+            return Math.floor(val)
+          }
+        },
+        min: 0
+      }],
+      legend: {
+        position: 'top',
+        horizontalAlign: 'center',
+        floating: false,
+        offsetY: -10,
+        markers: {
+          width: 12,
+          height: 12,
+          fillColors: ['#4B70DD', '#8E54E9'],
+          strokeWidth: 0,
+          radius: 2
+        },
+        labels: {
+          colors: 'var(--text-secondary)',
+          useSeriesColors: false
+        },
+        itemMargin: {
+          horizontal: 20,
+          vertical: 5
+        }
+      },
+      grid: {
+        borderColor: '#e2e8f0',
+        strokeDashArray: 3,
+        xaxis: {
+          lines: {
+            show: false
+          }
+        },
+        yaxis: {
+          lines: {
+            show: true
+          }
+        },
+        padding: {
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0
+        }
+      },
+      tooltip: {
+        shared: true,
+        intersect: false,
+        y: [{
+          formatter: (value) => `${value} contacts`
+        }, {
+          formatter: (value) => `${value} contacts`
+        }],
+        theme: 'light',
+        style: {
+          fontSize: '12px'
+        }
+      },
+      responsive: [{
+        breakpoint: 768,
+        options: {
+          chart: {
+            height: 300
+          },
+          legend: {
+            position: 'bottom'
+          },
+          xaxis: {
+            labels: {
+              rotate: -45
+            }
+          }
+        }
+      }]
+    }
+  });
+
+  const fetchContactsData = useCallback(async (page = 1) => {
     setLoading(prev => ({ ...prev, contacts: true }));
     try {
       const userId = JSON.parse(localStorage.getItem('user')).uid;
@@ -325,9 +494,9 @@ function Dashboard() {
     } finally {
       setLoading(prev => ({ ...prev, contacts: false }));
     }
-  };
+  }, [selectedTags, pagination.pageSize, tags.length]);
 
-  const fetchChartData = async () => {
+  const fetchChartData = useCallback(async () => {
     try {
       setLoading(prev => ({ ...prev, charts: true }));
       const userId = JSON.parse(localStorage.getItem('user')).uid;
@@ -349,7 +518,101 @@ function Dashboard() {
     } finally {
       setLoading(prev => ({ ...prev, charts: false }));
     }
-  };
+  }, []);
+
+  const fetchGroupsData = useCallback(async () => {
+    try {
+      setLoading(prev => ({ ...prev, groupsChart: true }));
+      const userId = JSON.parse(localStorage.getItem('user')).uid;
+      console.log('Fetching groups data for user:', userId);
+
+      const groupsData = await apiService.fetch(`/dashboard/groups-stats?userId=${userId}`, {
+        method: 'GET'
+      });
+
+      console.log('Groups API response:', groupsData);
+
+      if (groupsData.success) {
+        console.log('Groups data:', groupsData.data);
+        
+        const { group_data, tag_data } = groupsData.data;
+        
+        // Handle empty data cases
+        const hasGroupData = group_data && group_data.length > 0;
+        const hasTagData = tag_data && tag_data.length > 0;
+        
+        let allLabels = [];
+        let groupContactsData = [];
+        let tagContactsData = [];
+        
+        if (hasGroupData && hasTagData) {
+          // Combine labels from both datasets, prioritizing groups
+          const groupLabels = group_data.map(item => item.name);
+          const tagLabels = tag_data.map(item => item.name);
+          
+          // Create a combined label set (first groups, then tags not in groups)
+          allLabels = [...groupLabels];
+          const uniqueTagLabels = tagLabels.filter(label => !groupLabels.includes(label));
+          allLabels = [...allLabels, ...uniqueTagLabels.slice(0, 5)]; // Limit total labels
+          
+          // Map data to combined labels
+          groupContactsData = allLabels.map(label => {
+            const groupItem = group_data.find(item => item.name === label);
+            return groupItem ? groupItem.count : 0;
+          });
+          
+          tagContactsData = allLabels.map(label => {
+            const tagItem = tag_data.find(item => item.name === label);
+            return tagItem ? tagItem.count : 0;
+          });
+        } else if (hasGroupData) {
+          allLabels = group_data.map(item => item.name);
+          groupContactsData = group_data.map(item => item.count);
+          tagContactsData = new Array(allLabels.length).fill(0);
+        } else if (hasTagData) {
+          allLabels = tag_data.map(item => item.name);
+          groupContactsData = new Array(allLabels.length).fill(0);
+          tagContactsData = tag_data.map(item => item.count);
+        } else {
+          // No data available
+          allLabels = ['No Data'];
+          groupContactsData = [0];
+          tagContactsData = [0];
+        }
+        
+        console.log('Combined labels:', allLabels);
+        console.log('Group contacts data:', groupContactsData);
+        console.log('Tag contacts data:', tagContactsData);
+        
+        setGroupsOptions(prev => ({
+          ...prev,
+          series: [{
+            name: 'Group Contacts',
+            type: 'line',
+            data: groupContactsData
+          }, {
+            name: 'Tag Contacts',
+            type: 'bar',
+            data: tagContactsData
+          }],
+          options: {
+            ...prev.options,
+            labels: allLabels,
+            xaxis: {
+              ...prev.options.xaxis,
+              categories: allLabels
+            }
+          }
+        }));
+      } else {
+        console.error('Groups API failed:', groupsData);
+      }
+    } catch (error) {
+      console.error('Error fetching groups data:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, groupsChart: false }));
+    }
+  }, []);
 
   // Helper function to update chart options
   const updateChartOptions = (tagsData, favoritesData) => {
@@ -407,12 +670,17 @@ function Dashboard() {
   // Initial data fetch
   useEffect(() => {
     fetchContactsData();
-  }, []);
+  }, [fetchContactsData]);
 
   // Remove the contacts dependency for chart data
   useEffect(() => {
     fetchChartData();
-  }, []); // Only fetch chart data once on component mount
+  }, [fetchChartData]); // Only fetch chart data once on component mount
+
+  // Fetch groups data
+  useEffect(() => {
+    fetchGroupsData();
+  }, [fetchGroupsData]);
 
   // Update the tag filtering effect to include pagination
   useEffect(() => {
@@ -421,13 +689,15 @@ function Dashboard() {
       current: 1 // Reset to first page when filters change
     }));
     fetchContactsData(1);
-  }, [selectedTags]);
+  }, [selectedTags, fetchContactsData]);
 
   return (
     <div className={styles.dashboard}>
       <div className={styles.chartsContainer}>
         <Card className={styles.chartCard}>
-          <Title level={4}>Contacts by Tags</Title>
+          <Title level={4} style={{ marginBottom: 20, color: '#1f2937', fontWeight: 600 }}>
+            Contacts by Tags
+          </Title>
           {loading.charts ? (
             <div className={styles.chartLoader}>
               <Spin size="large" />
@@ -442,7 +712,9 @@ function Dashboard() {
           )}
         </Card>
         <Card className={styles.chartCard}>
-          <Title level={4}>Favorite vs Regular Contacts</Title>
+          <Title level={4} style={{ marginBottom: 20, color: '#1f2937', fontWeight: 600 }}>
+            Favorite vs Regular Contacts
+          </Title>
           {loading.charts ? (
             <div className={styles.chartLoader}>
               <Spin size="large" />
@@ -457,9 +729,33 @@ function Dashboard() {
           )}
         </Card>
       </div>
+      
+      {/* Groups & Tags Statistics Chart - Separate Row */}
+      <div style={{ marginBottom: '24px' }}>
+        <Card className={styles.chartCard}>
+          <Title level={4} style={{ marginBottom: 20, color: '#1f2937', fontWeight: 600 }}>
+            Groups vs Tags Contact Distribution
+          </Title>
+          {loading.groupsChart ? (
+            <div className={styles.chartLoader}>
+              <Spin size="large" />
+            </div>
+          ) : (
+            <ReactApexChart 
+              options={groupsOptions.options}
+              series={groupsOptions.series}
+              type="line"
+              height={400}
+            />
+          )}
+        </Card>
+      </div>
+      
       <Card className={styles.contactsList}>
         <Space className={styles.filterContainer}>
-          <Title level={4}>Contacts List</Title>
+          <Title level={4} style={{ marginBottom: 16, color: '#1f2937', fontWeight: 600 }}>
+            Contacts List
+          </Title>
           <Select
             mode="multiple"
             placeholder="Filter by tags"
