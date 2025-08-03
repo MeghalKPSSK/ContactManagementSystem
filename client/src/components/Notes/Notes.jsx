@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './Notes.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -12,13 +13,37 @@ import {
   faStarOfLife,
   faAddressBook,
   faUsers,
-  faChevronLeft,
-  faChevronRight,
-  faTimes
+  faTimes,
+  faSync,
+  faAngleLeft,
+  faAngleRight,
+  faAnglesLeft,
+  faAnglesRight
 } from '@fortawesome/free-solid-svg-icons';
 import apiService from '../../services/apiService';
 
+// Constants for pagination
+const MAX_PAGES_SHOWN = 5;
+
+// Helper function for pagination numbers
+const getPageNumbers = (current, total, pageSize) => {
+  const totalPages = Math.ceil(total / pageSize);
+  const pages = [];
+  let startPage = Math.max(1, current - Math.floor(MAX_PAGES_SHOWN / 2));
+  let endPage = Math.min(totalPages, startPage + MAX_PAGES_SHOWN - 1);
+
+  if (endPage - startPage + 1 < MAX_PAGES_SHOWN) {
+    startPage = Math.max(1, endPage - MAX_PAGES_SHOWN + 1);
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    pages.push(i);
+  }
+  return pages;
+};
+
 export default function Notes() {
+  const navigate = useNavigate();
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,7 +51,7 @@ export default function Notes() {
   const [filterType, setFilterType] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const pageSize = 12;
+  const pageSize = 10;
   const [stats, setStats] = useState({
     total: 0,
     important: 0,
@@ -131,21 +156,68 @@ export default function Notes() {
     setCurrentPage(newPage);
   };
 
+  const handleRefresh = () => {
+    // Save current scroll position
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Refresh the notes
+    fetchNotes();
+    
+    // Restore scroll position after a brief delay to allow for re-render
+    setTimeout(() => {
+      window.scrollTo(0, scrollPosition);
+    }, 150);
+  };
+
   const handleEdit = (noteId) => {
-    // TODO: Open edit modal
-    console.log('Edit note:', noteId);
+    // Ensure the note ID is valid before navigating
+    if (noteId && noteId.trim() !== '') {
+      navigate(`/notesDetails/${noteId}`);
+    } else {
+      console.error('Invalid note ID for edit navigation:', noteId);
+    }
+  };
+
+  const handleAddNote = () => {
+    navigate('/notesDetails/');
+  };
+
+  const handleViewNote = (noteId) => {
+    // Ensure the note ID is valid before navigating
+    if (noteId && noteId.trim() !== '') {
+      navigate(`/notesDetails/${noteId}`);
+    } else {
+      console.error('Invalid note ID for navigation:', noteId);
+    }
   };
 
   const handleDelete = async (noteId) => {
     if (window.confirm('Are you sure you want to delete this note?')) {
       try {
+        console.log('Deleting note with ID:', noteId); // Debug log
+        
+        // Immediately remove the note from local state to prevent any UI interactions
+        setNotes(prevNotes => prevNotes.filter(note => note.uid !== noteId));
+        
         const response = await apiService.deleteNote(noteId);
+        console.log('Delete response:', response); // Debug log
+        
         if (response.success) {
-          fetchNotes(); // Refresh the list
+          console.log('Note deleted successfully');
+          // Refresh the list after a short delay to ensure consistency
+          setTimeout(() => {
+            fetchNotes();
+          }, 300);
+        } else {
+          // If delete failed, restore the note (need to refetch)
+          alert('Failed to delete note. Please try again.');
+          fetchNotes();
         }
       } catch (error) {
         console.error('Error deleting note:', error);
         alert('Failed to delete note. Please try again.');
+        // Restore the list if there was an error
+        fetchNotes();
       }
     }
   };
@@ -238,10 +310,12 @@ export default function Notes() {
           <FontAwesomeIcon icon={faStickyNote} className={styles.headerIcon} />
           Notes
         </h1>
-        <button className={styles.addButton}>
-          <FontAwesomeIcon icon={faPlus} />
-          Add Note
-        </button>
+        <div className={styles.headerActions}>
+          <button className={styles.addButton} onClick={handleAddNote}>
+            <FontAwesomeIcon icon={faPlus} />
+            Add Note
+          </button>
+        </div>
       </div>
 
       {/* Stats moved to top */}
@@ -357,9 +431,13 @@ export default function Notes() {
             const isImportant = note.is_important === 1 || note.is_important === true;
             
             return (
-              <div key={note.id} className={styles.noteCardWrapper}>
+              <div key={note.uid} className={styles.noteCardWrapper}>
                 {/* Notepad style card */}
-                <div className={`${styles.noteCard} ${styles[`noteCard${noteColor.charAt(0).toUpperCase() + noteColor.slice(1)}`]}`}>
+                <div 
+                  className={`${styles.noteCard} ${styles[`noteCard${noteColor.charAt(0).toUpperCase() + noteColor.slice(1)}`]}`}
+                  onClick={() => handleViewNote(note.uid)}
+                  style={{ cursor: 'pointer' }}
+                >
                   {/* Notepad holes */}
                   <div className={styles.notepadHoles}>
                     <div className={styles.hole}></div>
@@ -406,14 +484,20 @@ export default function Notes() {
                     <div className={styles.noteActions}>
                       <button 
                         className={styles.actionButton}
-                        onClick={() => handleEdit(note.id)}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent card click
+                          handleEdit(note.uid);
+                        }}
                         title="Edit note"
                       >
                         <FontAwesomeIcon icon={faEdit} />
                       </button>
                       <button 
                         className={styles.actionButton}
-                        onClick={() => handleDelete(note.id)}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent card click
+                          handleDelete(note.uid);
+                        }}
                         title="Delete note"
                       >
                         <FontAwesomeIcon icon={faTrash} />
@@ -431,37 +515,71 @@ export default function Notes() {
         )}
       </div>
 
-      {/* Pagination Controls */}
-      {notes.length > 0 && totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button 
-            className={`${styles.paginationButton} ${currentPage === 1 ? styles.disabled : ''}`}
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            <FontAwesomeIcon icon={faChevronLeft} />
-            Previous
-          </button>
-          
-          <div className={styles.paginationInfo}>
-            <span className={styles.paginationText}>
-              Page {currentPage} of {totalPages}
-            </span>
-            <span className={styles.paginationSubtext}>
-              ({totalCount} total notes)
-            </span>
+      {/* Enhanced Pagination Controls */}
+      {notes.length > 0 && (
+        <div className={styles.paginationContainer}>
+          <div className={styles.paginationControls}>
+            <button
+              className={`${styles.paginationButton} ${styles.iconButton}`}
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1 || loading}
+              title="First Page"
+            >
+              <FontAwesomeIcon icon={faAnglesLeft} />
+            </button>
+            <button
+              className={`${styles.paginationButton} ${styles.iconButton}`}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1 || loading}
+              title="Previous Page"
+            >
+              <FontAwesomeIcon icon={faAngleLeft} />
+            </button>
+            {getPageNumbers(currentPage, totalCount, pageSize).map(pageNum => (
+              <button
+                key={pageNum}
+                className={`${styles.paginationButton} ${pageNum === currentPage ? styles.active : ''}`}
+                onClick={() => handlePageChange(pageNum)}
+                disabled={loading}
+              >
+                {pageNum}
+              </button>
+            ))}
+            <button
+              className={`${styles.paginationButton} ${styles.iconButton}`}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages || loading}
+              title="Next Page"
+            >
+              <FontAwesomeIcon icon={faAngleRight} />
+            </button>
+            <button
+              className={`${styles.paginationButton} ${styles.iconButton}`}
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage >= totalPages || loading}
+              title="Last Page"
+            >
+              <FontAwesomeIcon icon={faAnglesRight} />
+            </button>
           </div>
-          
-          <button 
-            className={`${styles.paginationButton} ${currentPage === totalPages ? styles.disabled : ''}`}
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            Next
-            <FontAwesomeIcon icon={faChevronRight} />
-          </button>
+          <div className={styles.paginationInfo}>
+            Showing {notes.length ? (currentPage - 1) * pageSize + 1 : 0} - {Math.min(currentPage * pageSize, totalCount)} of {totalCount} entries
+          </div>
         </div>
       )}
+      
+      <div className={styles.reloadContainer}>
+        <button 
+          className={styles.reloadButton} 
+          onClick={handleRefresh}
+          disabled={loading}
+        >
+          <FontAwesomeIcon 
+            icon={faSync} 
+            className={`${styles.reloadIcon} ${loading ? styles.spinning : ''}`} 
+          />
+        </button>
+      </div>
     </div>
   );
 }
