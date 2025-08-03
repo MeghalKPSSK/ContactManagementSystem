@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faEyeSlash, faKey, faSave, faTimes, faCamera } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faKey, faSave, faTimes, faCamera, faUser } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import styles from './profile.module.css';
 import apiService from '../../services/apiService';
@@ -241,7 +241,14 @@ const Profile = () => {
     };
 
     if (loading) {
-        return <div className={styles.loading}>Loading...</div>;
+        return (
+            <div className={styles.profileContainer}>
+                <div className={styles.loading}>
+                    <FontAwesomeIcon icon={faUser} spin />
+                    <p>Loading profile...</p>
+                </div>
+            </div>
+        );
     }
 
     return (

@@ -119,7 +119,14 @@ export default function Groups() {
 
   return (
     <div className={styles.groupsContainer}>
-      <div className={styles.header}>
+      {isLoading ? (
+        <div className={styles.loading}>
+          <FontAwesomeIcon icon={faUsers} spin />
+          <p>Loading groups...</p>
+        </div>
+      ) : (
+        <>
+          <div className={styles.header}>
         <h2>Groups</h2>
         <div className={styles.headerActions}>
           <div className={styles.searchBar}>
@@ -212,6 +219,8 @@ export default function Groups() {
           <FontAwesomeIcon icon={faSync} className={`${styles.reloadIcon} ${isLoading ? styles.spinning : ''}`} />
         </button>
       </div>
+        </>
+      )}
 
       {showModal && (
         <GroupModal

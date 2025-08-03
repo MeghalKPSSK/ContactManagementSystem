@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ReactApexChart from 'react-apexcharts';
 import { Card, List, Tag, Space, Select, Typography, Spin } from 'antd';
 import { StarFilled, StarOutlined } from '@ant-design/icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTachometerAlt } from '@fortawesome/free-solid-svg-icons';
 import styles from './Dashboard.module.css';
 import apiService from '../../services/apiService';
 
@@ -693,6 +695,13 @@ function Dashboard() {
 
   return (
     <div className={styles.dashboard}>
+      {(loading.contacts && loading.charts && loading.groupsChart) ? (
+        <div className={styles.loading}>
+          <FontAwesomeIcon icon={faTachometerAlt} spin style={{ color: '#6c757d' }} />
+          <p style={{ marginTop: 16, color: '#6c757d', fontSize: '1.2rem' }}>Loading dashboard...</p>
+        </div>
+      ) : (
+        <>
       <div className={styles.chartsContainer}>
         <Card className={styles.chartCard}>
           <Title level={4} style={{ marginBottom: 20, color: '#1f2937', fontWeight: 600 }}>
@@ -840,6 +849,8 @@ function Dashboard() {
           )}
         />
       </Card>
+        </>
+      )}
     </div>
   );
 }

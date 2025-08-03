@@ -5,6 +5,16 @@
   box-shadow: 0 1px 3px var(--box-shadow-color);
 }
 
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  font-size: 1.2rem;
+  color: #6c757d;
+}
+
 .header {
   display: flex;
   justify-content: space-between;

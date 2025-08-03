@@ -12,7 +12,8 @@ import {
   faAngleLeft,
   faAngleRight,
   faAnglesLeft,
-  faAnglesRight
+  faAnglesRight,
+  faAddressBook
 } from '@fortawesome/free-solid-svg-icons';
 import ContactModal from './ContactModal';
 import { toast } from 'react-toastify';
@@ -162,8 +163,14 @@ export default function Contacts() {
 
   return (
     <div className={styles.contactsContainer}>
-      
-      <div className={styles.header}>
+      {isLoading ? (
+        <div className={styles.loading}>
+          <FontAwesomeIcon icon={faAddressBook} spin />
+          <p>Loading contacts...</p>
+        </div>
+      ) : (
+        <>
+          <div className={styles.header}>
         <h2>Contacts</h2>
         <div className={styles.headerActions}>
           <div className={styles.searchBar}>
@@ -302,6 +309,8 @@ export default function Contacts() {
           </div>
         </div>
       </div>
+        </>
+      )}
       
       <div className={styles.reloadContainer}>
         <button 
