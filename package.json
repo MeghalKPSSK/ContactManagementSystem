@@ -4,6 +4,7 @@
   "description": "Welcome to the **Contact Management System**! This project is designed to help you efficiently manage and organize your contacts.",
   "main": "index.js",
   "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
     "start": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd server && node app.js",
     "client": "cd client && npm run dev"
