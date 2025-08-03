@@ -10,7 +10,8 @@ import {
   faSignOut,
   faUser,
   faUsers,
-  faDragon
+  faDragon,
+  faStickyNote
 } from '@fortawesome/free-solid-svg-icons';
 import apiService from '../../services/apiService';
 import { addProfileUpdateListener } from '../../utils/eventUtils';
@@ -135,6 +136,7 @@ export default function SideBar() {
     { path: '/dragon', icon: faDragon, label: 'Dragon' },
     { path: homepath, icon: faHome, label: 'Dashboard' },
     { path: '/contacts', icon: faAddressBook, label: 'Contacts' },
+    { path: '/notes', icon: faStickyNote, label: 'Notes' },
     { path: '/profile', icon: faUser, label: 'Profile' },
     { path: '/groups', icon: faUsers, label: 'Groups' }
   ];

@@ -16,6 +16,7 @@ import Dashboard from './components/Dashboards/Dashboard';
 import Dragon from './components/Dragon/Dragon';
 import Groups from './components/Groups/Groups';
 import GroupDetails from './components/Groups/GroupDetails';
+import Notes from './components/Notes/Notes';
 import configService from './services/configService';
 
 // Authenticated Layout
@@ -95,6 +96,7 @@ function App() {
             <Route path="/contacts" element={<Contacts />}>
               <Route path=":id" element={<Contacts />} />
             </Route>
+            <Route path="/notes" element={<Notes />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/groups" element={<Groups />}>
               <Route path=":id" element={<Groups />} />
