@@ -1,17 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styles from './NotesDetail.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faStickyNote,
   faSave,
-  faTimes,
   faArrowLeft,
   faStar,
   faStarOfLife,
   faAddressBook,
   faUsers,
-  faSpinner
+  faSpinner,
+  faTimes,
+  faExclamationCircle,
+  faCheck
 } from '@fortawesome/free-solid-svg-icons';
 import apiService from '../../services/apiService';
 
@@ -22,6 +24,16 @@ export default function NotesDetail() {
   
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
+  
+  const titleRef = useRef(null);
+  const contentRef = useRef(null);
+  const initialNoteRef = useRef(null);
+  
   const [note, setNote] = useState({
     title: '',
     content: '',
@@ -42,13 +54,44 @@ export default function NotesDetail() {
     }
   };
 
+  // Auto-save functionality
+  useEffect(() => {
+    if (!hasUnsavedChanges || !isEditMode) return;
+    
+    const autoSaveTimer = setTimeout(() => {
+      handleSave(true); // Pass true for auto-save
+    }, 30000); // Auto-save after 30 seconds of inactivity
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [hasUnsavedChanges, note]);
+
+  // Track changes to detect unsaved modifications
+  useEffect(() => {
+    if (initialNoteRef.current) {
+      const hasChanges = JSON.stringify(note) !== JSON.stringify(initialNoteRef.current);
+      setHasUnsavedChanges(hasChanges);
+    }
+  }, [note]);
+
+  // Warn user about unsaved changes when trying to leave
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
   // Check if user is logged in on component mount
   useEffect(() => {
     const userId = getUserId();
     if (!userId) {
-      console.error('No user found in localStorage, redirecting to login');
-      alert('Please login to access notes');
-      navigate('/login');
+      setError('Please login to access notes');
+      setTimeout(() => navigate('/login'), 2000);
       return;
     }
   }, [navigate]);
@@ -56,53 +99,85 @@ export default function NotesDetail() {
   // Fetch note data if in edit mode
   useEffect(() => {
     const fetchNoteDetails = async () => {
+      if (!isEditMode) return;
+      
       try {
         setLoading(true);
-        console.log('Fetching note details for ID:', id); // Debug log
+        setError('');
+        
         const response = await apiService.getNoteById(id);
-        console.log('Note details response:', response); // Debug log
         
         if (response.success && response.note) {
-          setNote({
+          const noteData = {
             title: response.note.title || '',
             content: response.note.content || '',
             note_type: response.note.note_type || 'personal',
             color: response.note.color || 'blue',
             is_important: response.note.is_important === 1 || response.note.is_important === true
-          });
+          };
+          
+          setNote(noteData);
+          initialNoteRef.current = { ...noteData };
         } else {
-          console.error('Failed to fetch note details:', response);
-          alert('Failed to load note details. Redirecting to notes list.');
-          navigate('/notes');
+          throw new Error('Failed to load note');
         }
       } catch (error) {
         console.error('Error fetching note details:', error);
-        alert('Error loading note details. Redirecting to notes list.');
-        navigate('/notes');
+        setError('Failed to load note. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
-    if (isEditMode) {
-      fetchNoteDetails();
-    }
-  }, [id, isEditMode, navigate]);
+    fetchNoteDetails();
+  }, [id, isEditMode]);
 
-  const handleSave = async () => {
-    if (!note.title.trim() || !note.content.trim()) {
-      alert('Please fill in both title and content');
+  // Focus title input when creating new note
+  useEffect(() => {
+    if (!isEditMode && !loading && titleRef.current) {
+      titleRef.current.focus();
+    }
+  }, [isEditMode, loading]);
+
+  const validateNote = () => {
+    const errors = {};
+    
+    if (!note.title.trim()) {
+      errors.title = 'Title is required';
+    } else if (note.title.trim().length < 3) {
+      errors.title = 'Title must be at least 3 characters';
+    } else if (note.title.trim().length > 100) {
+      errors.title = 'Title must be less than 100 characters';
+    }
+    
+    if (!note.content.trim()) {
+      errors.content = 'Content is required';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSave = async (isAutoSave = false) => {
+    if (!validateNote()) {
+      if (!isAutoSave) {
+        // Focus first field with error
+        if (validationErrors.title && titleRef.current) {
+          titleRef.current.focus();
+        } else if (validationErrors.content && contentRef.current) {
+          contentRef.current.focus();
+        }
+      }
       return;
     }
 
     try {
       setSaving(true);
-      const userId = getUserId();
-      console.log('UserID retrieved:', userId); // Debug log
+      setError('');
       
+      const userId = getUserId();
       if (!userId) {
-        console.error('No userId found in localStorage');
-        alert('User session not found. Please login again.');
+        setError('User session expired. Please login again.');
         return;
       }
 
@@ -112,10 +187,8 @@ export default function NotesDetail() {
         note_type: note.note_type,
         color: note.color,
         is_important: note.is_important ? 1 : 0,
-        userId: userId
+        user_id: userId
       };
-
-      console.log('Note data to save:', noteData); // Debug log
 
       let response;
       if (isEditMode) {
@@ -124,23 +197,40 @@ export default function NotesDetail() {
         response = await apiService.createNote(noteData);
       }
 
-      console.log('API response:', response); // Debug log
-
       if (response.success) {
-        navigate('/notes');
+        initialNoteRef.current = { ...note };
+        setHasUnsavedChanges(false);
+        
+        if (!isAutoSave) {
+          setSaveSuccess(true);
+          setTimeout(() => setSaveSuccess(false), 3000);
+        }
       } else {
-        alert(`Failed to ${isEditMode ? 'update' : 'create'} note. Please try again.`);
+        throw new Error('Save operation failed');
       }
     } catch (error) {
       console.error(`Error ${isEditMode ? 'updating' : 'creating'} note:`, error);
-      alert(`Failed to ${isEditMode ? 'update' : 'create'} note. Please try again.`);
+      setError(`Failed to ${isEditMode ? 'update' : 'save'} note. Please try again.`);
     } finally {
       setSaving(false);
     }
   };
 
   const handleCancel = () => {
+    if (hasUnsavedChanges) {
+      setShowUnsavedWarning(true);
+    } else {
+      navigate('/notes');
+    }
+  };
+
+  const confirmLeave = () => {
+    setShowUnsavedWarning(false);
     navigate('/notes');
+  };
+
+  const cancelLeave = () => {
+    setShowUnsavedWarning(false);
   };
 
   const getNoteTypeColor = (type) => {
@@ -166,6 +256,14 @@ export default function NotesDetail() {
       ...prev,
       [field]: value
     }));
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
   };
 
   if (loading) {
@@ -181,92 +279,52 @@ export default function NotesDetail() {
 
   return (
     <div className={styles.container}>
-      {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <button 
-            onClick={handleCancel}
-            className={styles.backButton}
-            title="Back to Notes"
-          >
-            <FontAwesomeIcon icon={faArrowLeft} />
-          </button>
-          <h1>
-            <FontAwesomeIcon icon={faStickyNote} className={styles.headerIcon} />
-            {isEditMode ? 'Edit Note' : 'Create New Note'}
-          </h1>
-        </div>
-        <div className={styles.headerActions}>
-          <button 
-            onClick={handleCancel}
-            className={styles.cancelButton}
-            disabled={saving}
-          >
+      {/* Error Banner */}
+      {error && (
+        <div className={styles.errorBanner}>
+          <FontAwesomeIcon icon={faExclamationCircle} />
+          <span>{error}</span>
+          <button onClick={() => setError('')} className={styles.closeError}>
             <FontAwesomeIcon icon={faTimes} />
-            Cancel
-          </button>
-          <button 
-            onClick={handleSave}
-            className={styles.saveButton}
-            disabled={saving}
-          >
-            <FontAwesomeIcon icon={saving ? faSpinner : faSave} spin={saving} />
-            {saving ? 'Saving...' : 'Save Note'}
           </button>
         </div>
-      </div>
+      )}
+
+      {/* Success Banner */}
+      {saveSuccess && (
+        <div className={styles.successBanner}>
+          <FontAwesomeIcon icon={faCheck} />
+          <span>Note saved successfully!</span>
+        </div>
+      )}
+
+      {/* Unsaved Changes Warning Modal */}
+      {showUnsavedWarning && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <FontAwesomeIcon icon={faExclamationCircle} />
+              <h3>Unsaved Changes</h3>
+            </div>
+            <p className={styles.modalText}>
+              You have unsaved changes. Are you sure you want to leave without saving?
+            </p>
+            <div className={styles.modalActions}>
+              <button onClick={cancelLeave} className={styles.modalCancel}>
+                Keep Editing
+              </button>
+              <button onClick={confirmLeave} className={styles.modalConfirm}>
+                Leave Without Saving
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className={styles.content}>
-        {/* Form Controls */}
-        <div className={styles.controls}>
-          <div className={styles.controlGroup}>
-            <label htmlFor="noteType">Note Type:</label>
-            <select
-              id="noteType"
-              value={note.note_type}
-              onChange={(e) => handleInputChange('note_type', e.target.value)}
-              className={styles.select}
-            >
-              <option value="personal">Personal</option>
-              <option value="contact">Contact</option>
-              <option value="group">Group</option>
-            </select>
-          </div>
-
-          <div className={styles.controlGroup}>
-            <label htmlFor="noteColor">Color:</label>
-            <select
-              id="noteColor"
-              value={note.color}
-              onChange={(e) => handleInputChange('color', e.target.value)}
-              className={styles.select}
-            >
-              <option value="pink">Pink</option>
-              <option value="blue">Blue</option>
-              <option value="yellow">Yellow</option>
-              <option value="green">Green</option>
-              <option value="purple">Purple</option>
-            </select>
-          </div>
-
-          <div className={styles.controlGroup}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={note.is_important}
-                onChange={(e) => handleInputChange('is_important', e.target.checked)}
-                className={styles.checkbox}
-              />
-              <FontAwesomeIcon icon={faStar} className={styles.starIcon} />
-              Mark as Important
-            </label>
-          </div>
-        </div>
-
-        {/* Note Card Preview and Editor */}
         <div className={styles.editorContainer}>
-          {/* Notepad style card */}
           <div className={`${styles.noteCard} ${styles[`noteCard${note.color.charAt(0).toUpperCase() + note.color.slice(1)}`]}`}>
+            
             {/* Notepad holes */}
             <div className={styles.notepadHoles}>
               <div className={styles.hole}></div>
@@ -277,52 +335,122 @@ export default function NotesDetail() {
             {/* Header area */}
             <div className={styles.notepadHeader}>
               <div className={styles.noteHeader}>
-                <div className={styles.noteType} style={{ backgroundColor: getNoteTypeColor(note.note_type) }}>
-                  {note.note_type}
+                <div className={styles.headerLeft}>
+                  <div className={styles.noteType} style={{ backgroundColor: getNoteTypeColor(note.note_type) }}>
+                    {note.note_type}
+                  </div>
+                  {hasUnsavedChanges && (
+                    <span className={styles.unsavedIndicator}>Unsaved changes</span>
+                  )}
                 </div>
-                {note.is_important && (
-                  <FontAwesomeIcon icon={faStar} className={styles.importantIcon} />
-                )}
+                <div className={styles.headerControls}>
+                  {/* Back Button */}
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className={`${styles.headerButton} ${styles.backButton}`}
+                    title="Back to Notes"
+                  >
+                    <FontAwesomeIcon icon={faArrowLeft} />
+                  </button>
+                  
+                  {/* Color Selection */}
+                  <select
+                    value={note.color}
+                    onChange={(e) => handleInputChange('color', e.target.value)}
+                    className={styles.colorSelect}
+                    title="Select note color"
+                  >
+                    <option value="blue">Blue</option>
+                    <option value="pink">Pink</option>
+                    <option value="yellow">Yellow</option>
+                    <option value="green">Green</option>
+                    <option value="purple">Purple</option>
+                  </select>
+                  
+                  {/* Important Star Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange('is_important', !note.is_important)}
+                    className={`${styles.starButton} ${note.is_important ? styles.important : ''}`}
+                    title={note.is_important ? "Remove from important" : "Mark as important"}
+                  >
+                    <FontAwesomeIcon icon={faStar} />
+                  </button>
+                  
+                  {/* Save Button */}
+                  <button
+                    type="button"
+                    onClick={() => handleSave(false)}
+                    className={`${styles.headerButton} ${styles.saveButton}`}
+                    disabled={saving || (!hasUnsavedChanges && isEditMode)}
+                    title={saving ? "Saving..." : (isEditMode ? "Update Note" : "Save Note")}
+                  >
+                    <FontAwesomeIcon icon={saving ? faSpinner : faSave} spin={saving} />
+                  </button>
+                </div>
               </div>
               
               {/* Editable title */}
-              <input
-                type="text"
-                value={note.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                placeholder="Enter note title..."
-                className={styles.noteTitle}
-                maxLength={100}
-              />
+              <div className={styles.titleContainer}>
+                <input
+                  ref={titleRef}
+                  type="text"
+                  value={note.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  placeholder="Enter note title..."
+                  className={`${styles.noteTitle} ${validationErrors.title ? styles.hasError : ''}`}
+                  maxLength={100}
+                />
+                {validationErrors.title && (
+                  <p className={styles.errorText}>
+                    <FontAwesomeIcon icon={faExclamationCircle} />
+                    {validationErrors.title}
+                  </p>
+                )}
+                <div className={styles.charCount}>
+                  {note.title.length}/100 characters
+                </div>
+              </div>
             </div>
             
             {/* Lined paper content area */}
             <div className={styles.notepadContent}>
               <div className={styles.contentLines}>
                 <textarea
+                  ref={contentRef}
                   value={note.content}
                   onChange={(e) => handleInputChange('content', e.target.value)}
                   placeholder="Write your note content here..."
-                  className={styles.noteContentTextarea}
-                  rows={15}
+                  className={`${styles.noteContentTextarea} ${validationErrors.content ? styles.hasError : ''}`}
                 />
+                {validationErrors.content && (
+                  <p className={styles.errorText}>
+                    <FontAwesomeIcon icon={faExclamationCircle} />
+                    {validationErrors.content}
+                  </p>
+                )}
               </div>
             </div>
             
             {/* Bottom section with current date */}
             <div className={styles.noteFooter}>
-              <span className={styles.noteDate}>
-                {new Date().toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: true
-                })}
-              </span>
-              <div className={styles.noteActions}>
-                <FontAwesomeIcon icon={getNoteTypeIcon(note.note_type)} className={styles.typeIcon} />
+              <div className={styles.footerLeft}>
+                <span className={styles.noteDate}>
+                  {new Date().toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  })}
+                </span>
+              </div>
+              <div className={styles.footerRight}>
+                <div className={styles.noteActions}>
+                  <FontAwesomeIcon icon={getNoteTypeIcon(note.note_type)} className={styles.typeIcon} />
+                </div>
               </div>
             </div>
             
