@@ -4,9 +4,10 @@
   "description": "Welcome to the **Contact Management System**! This project is designed to help you efficiently manage and organize your contacts.",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"npm run dev\" \"npm run client\"",
-    "start": "concurrently \"npm run start\" \"npm run client\"",
-    "server": "cd server && npm run dev",
+    "dev": "concurrently \"npm run server:dev\" \"npm run client\"",
+    "start": "concurrently \"npm run server:prod\" \"npm run client\"",
+    "server:dev": "cd server && npm run dev",
+    "server:prod": "cd server && npm run start",
     "client": "cd client && npm run dev"
   },
   "devDependencies": {
