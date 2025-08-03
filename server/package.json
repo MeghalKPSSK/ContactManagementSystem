@@ -3,7 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "db:init": "node dbInit/standalone.js",
+    "db:verify": "node dbInit/standalone.js --verify-only",
+    "db:status": "node dbInit/standalone.js --status"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +20,7 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "multer": "^2.0.1",
-    "mysql2": "^3.14.0"
+    "mysql2": "^3.14.0",
+    "nodemon": "^3.1.10"
   }
 }

@@ -1,4 +1,4 @@
-const initDB = require('../db');
+const initDB = require('../../db');
 
 const ensureAppUserTable = async () => {
     const pool = await initDB(); // Assuming initDB returns a MySQL2 connection pool

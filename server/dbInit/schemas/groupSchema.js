@@ -1,4 +1,4 @@
-const initDB = require('../db');
+const initDB = require('../../db');
 
 const ensureGroupsTable = async () => {
     const pool = await initDB();

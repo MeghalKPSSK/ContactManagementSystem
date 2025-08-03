@@ -1,0 +1,150 @@
+const initDB = require('../../db');
+
+const ensureNotesTable = async () => {
+    const pool = await initDB();
+
+    try {
+        // First create tables if they don't exist
+        await createTablesIfNotExist(pool);
+        
+        // Then validate and update schema if needed
+        await validateAndUpdateSchema(pool);
+
+    } catch (error) {
+        console.error('Error ensuring notes tables:', error);
+        throw error;
+    }
+};
+
+const createTablesIfNotExist = async (pool) => {
+    // Create notes table
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS notes (
+            pk_id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            content TEXT NOT NULL,
+            note_type ENUM('personal', 'contact', 'group') DEFAULT 'personal',
+            contact_id INT NULL,
+            group_id INT NULL,
+            is_important BOOLEAN DEFAULT FALSE,
+            is_deleted BOOLEAN DEFAULT FALSE,
+            createdOn DATETIME DEFAULT CURRENT_TIMESTAMP,
+            modifiedOn DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES app_user(pk_id) ON DELETE CASCADE,
+            FOREIGN KEY (contact_id) REFERENCES contacts(pk_id) ON DELETE CASCADE,
+            FOREIGN KEY (group_id) REFERENCES \`groups\`(pk_id) ON DELETE CASCADE,
+            INDEX idx_user_id (user_id),
+            INDEX idx_note_type (note_type),
+            INDEX idx_contact_id (contact_id),
+            INDEX idx_group_id (group_id),
+            INDEX idx_is_important (is_important),
+            INDEX idx_created_on (createdOn),
+            INDEX idx_title (title),
+            CONSTRAINT chk_note_reference CHECK (
+                (note_type = 'personal' AND contact_id IS NULL AND group_id IS NULL) OR
+                (note_type = 'contact' AND contact_id IS NOT NULL AND group_id IS NULL) OR
+                (note_type = 'group' AND group_id IS NOT NULL AND contact_id IS NULL)
+            )
+        )
+    `);
+
+    // Create note_keywords table for searchable keywords/tags
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS note_keywords (
+            pk_id INT AUTO_INCREMENT PRIMARY KEY,
+            note_id INT NOT NULL,
+            keyword VARCHAR(100) NOT NULL,
+            createdOn DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (note_id) REFERENCES notes(pk_id) ON DELETE CASCADE,
+            INDEX idx_note_id (note_id),
+            INDEX idx_keyword (keyword),
+            UNIQUE KEY unique_note_keyword (note_id, keyword)
+        )
+    `);
+};
+
+const validateAndUpdateSchema = async (pool) => {
+    // Get current schema information for notes table
+    const [notesColumns] = await pool.query(`
+        SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'notes'
+    `);
+
+    // Check and add missing columns for notes table
+    const requiredColumns = {
+        'is_important': "ALTER TABLE notes ADD COLUMN is_important BOOLEAN DEFAULT FALSE AFTER content",
+        'note_type': "ALTER TABLE notes ADD COLUMN note_type ENUM('personal', 'contact', 'group') DEFAULT 'personal' AFTER content",
+        'contact_id': "ALTER TABLE notes ADD COLUMN contact_id INT NULL AFTER note_type",
+        'group_id': "ALTER TABLE notes ADD COLUMN group_id INT NULL AFTER contact_id"
+    };
+
+    const existingColumns = notesColumns.map(col => col.COLUMN_NAME);
+
+    for (const [column, query] of Object.entries(requiredColumns)) {
+        if (!existingColumns.includes(column)) {
+            try {
+                await pool.query(query);
+                console.log(`Added missing column: ${column}`);
+            } catch (error) {
+                console.error(`Error adding column ${column}:`, error);
+            }
+        }
+    }
+
+    // Check and add missing indexes for notes table
+    const [existingIndexes] = await pool.query(`
+        SHOW INDEX FROM notes
+    `);
+
+    const requiredIndexes = {
+        'idx_note_type': "CREATE INDEX idx_note_type ON notes(note_type)",
+        'idx_contact_id': "CREATE INDEX idx_contact_id ON notes(contact_id)",
+        'idx_group_id': "CREATE INDEX idx_group_id ON notes(group_id)",
+        'idx_is_important': "CREATE INDEX idx_is_important ON notes(is_important)",
+        'idx_created_on': "CREATE INDEX idx_created_on ON notes(createdOn)",
+        'idx_title': "CREATE INDEX idx_title ON notes(title)"
+    };
+
+    const existingIndexNames = existingIndexes.map(idx => idx.Key_name);
+
+    for (const [indexName, query] of Object.entries(requiredIndexes)) {
+        if (!existingIndexNames.includes(indexName)) {
+            try {
+                await pool.query(query);
+                console.log(`Added missing index: ${indexName}`);
+            } catch (error) {
+                console.error(`Error adding index ${indexName}:`, error);
+            }
+        }
+    }
+
+    // Add foreign key constraints if they don't exist
+    try {
+        await pool.query(`
+            ALTER TABLE notes 
+            ADD CONSTRAINT fk_notes_contact 
+            FOREIGN KEY (contact_id) REFERENCES contacts(pk_id) ON DELETE CASCADE
+        `);
+        console.log('Added foreign key constraint for contact_id');
+    } catch (error) {
+        // Constraint might already exist, ignore error
+    }
+
+    try {
+        await pool.query(`
+            ALTER TABLE notes 
+            ADD CONSTRAINT fk_notes_group 
+            FOREIGN KEY (group_id) REFERENCES \`groups\`(pk_id) ON DELETE CASCADE
+        `);
+        console.log('Added foreign key constraint for group_id');
+    } catch (error) {
+        // Constraint might already exist, ignore error
+    }
+
+    console.log('Schema validation and updates for notes table completed.');
+};
+
+module.exports = ensureNotesTable;

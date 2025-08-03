@@ -1,4 +1,4 @@
-const initDB = require('../db');
+const initDB = require('../../db');
 
 const ensureContactsTable = async () => {
     const pool = await initDB();
