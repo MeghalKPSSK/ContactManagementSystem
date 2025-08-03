@@ -32,6 +32,7 @@ const createTablesIfNotExist = async (pool) => {
             note_type ENUM('personal', 'contact', 'group') DEFAULT 'personal',
             contact_id INT NULL,
             group_id INT NULL,
+            color ENUM('pink', 'blue', 'green', 'yellow', 'purple') DEFAULT 'blue',
             is_important BOOLEAN DEFAULT FALSE,
             is_deleted BOOLEAN DEFAULT FALSE,
             createdOn DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -88,7 +89,8 @@ const validateAndUpdateSchema = async (pool) => {
         'is_important': "ALTER TABLE notes ADD COLUMN is_important BOOLEAN DEFAULT FALSE AFTER content",
         'note_type': "ALTER TABLE notes ADD COLUMN note_type ENUM('personal', 'contact', 'group') DEFAULT 'personal' AFTER content",
         'contact_id': "ALTER TABLE notes ADD COLUMN contact_id INT NULL AFTER note_type",
-        'group_id': "ALTER TABLE notes ADD COLUMN group_id INT NULL AFTER contact_id"
+        'group_id': "ALTER TABLE notes ADD COLUMN group_id INT NULL AFTER contact_id",
+        'color': "ALTER TABLE notes ADD COLUMN color ENUM('pink', 'blue', 'green', 'yellow', 'purple') DEFAULT 'blue' AFTER group_id"
     };
 
     const existingColumns = notesColumns.map(col => col.COLUMN_NAME);

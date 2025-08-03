@@ -21,9 +21,9 @@ router.post('/createNote', async (req, res) => {
     try {
         console.log('📝 Notes API: Creating new note...');
         const noteData = req.body;
-        const { title, content, note_type, user_id } = noteData;
+        const { title, content, note_type, user_id, color } = noteData;
 
-        console.log(`📝 Notes API: User ${user_id} creating ${note_type || 'personal'} note: "${title}"`);
+        console.log(`📝 Notes API: User ${user_id} creating ${note_type || 'personal'} note: "${title}" with color: ${color || 'blue'}`);
 
         // Validate required fields
         if (!title || !content || !user_id) {
@@ -41,6 +41,16 @@ router.post('/createNote', async (req, res) => {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Invalid note type. Must be personal, contact, or group' 
+            });
+        }
+
+        // Validate color
+        const validColors = ['pink', 'blue', 'green', 'yellow', 'purple'];
+        if (color && !validColors.includes(color)) {
+            console.warn(`⚠️ Notes API: Invalid color: ${color}`);
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid color. Must be pink, blue, green, yellow, or purple' 
             });
         }
 
@@ -161,9 +171,9 @@ router.put('/updateNote/:id', async (req, res) => {
         console.log('✏️ Notes API: Updating note...');
         const noteId = req.params.id;
         const noteData = req.body;
-        const { title, content } = noteData;
+        const { title, content, color } = noteData;
 
-        console.log(`✏️ Notes API: Updating note ID: ${noteId}, new title: "${title}"`);
+        console.log(`✏️ Notes API: Updating note ID: ${noteId}, new title: "${title}", color: ${color || 'unchanged'}`);
 
         // Validate required fields
         if (!title || !content) {
@@ -171,6 +181,16 @@ router.put('/updateNote/:id', async (req, res) => {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Title and content are required' 
+            });
+        }
+
+        // Validate color if provided
+        const validColors = ['pink', 'blue', 'green', 'yellow', 'purple'];
+        if (color && !validColors.includes(color)) {
+            console.warn(`⚠️ Notes API: Invalid color: ${color}`);
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid color. Must be pink, blue, green, yellow, or purple' 
             });
         }
 
@@ -435,6 +455,58 @@ router.patch('/toggleImportant/:id', async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: 'Error updating note importance' 
+        });
+    }
+});
+
+// Update note color
+router.patch('/updateColor/:id', async (req, res) => {
+    try {
+        console.log('🎨 Notes API: Updating note color...');
+        const noteId = req.params.id;
+        const { color } = req.body;
+
+        console.log(`🎨 Notes API: Setting note ${noteId} color to: ${color}`);
+
+        if (!color) {
+            console.warn('⚠️ Notes API: Missing color field');
+            return res.status(400).json({ 
+                success: false, 
+                message: 'color field is required' 
+            });
+        }
+
+        // Validate color
+        const validColors = ['pink', 'blue', 'green', 'yellow', 'purple'];
+        if (!validColors.includes(color)) {
+            console.warn(`⚠️ Notes API: Invalid color: ${color}`);
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid color. Must be pink, blue, green, yellow, or purple' 
+            });
+        }
+
+        const noteData = { color };
+        const result = await notesModelInstance.updateNote(noteId, noteData);
+
+        if (result) {
+            console.log(`✅ Notes API: Note color updated successfully: ${noteId} to ${color}`);
+            res.status(200).json({ 
+                success: true, 
+                message: `Note color updated to ${color}` 
+            });
+        } else {
+            console.warn(`⚠️ Notes API: Note not found for color update: ${noteId}`);
+            res.status(404).json({ 
+                success: false, 
+                message: 'Note not found' 
+            });
+        }
+    } catch (error) {
+        console.error('❌ Notes API: Error updating note color:', error.message);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error updating note color' 
         });
     }
 });

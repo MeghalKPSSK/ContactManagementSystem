@@ -20,6 +20,7 @@ const notesModel = async () => {
                 note_type = 'personal', 
                 contact_id = null, 
                 group_id = null, 
+                color = 'blue',
                 is_important = false,
                 keywords = []
             } = noteData;
@@ -51,12 +52,13 @@ const notesModel = async () => {
                 note_type,
                 contactIdDecrypted,
                 groupIdDecrypted,
+                color,
                 is_important
             ];
 
             const [result] = await pool.execute(`
-                INSERT INTO notes (user_id, title, content, note_type, contact_id, group_id, is_important) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO notes (user_id, title, content, note_type, contact_id, group_id, color, is_important) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `, params);
 
             const noteId = result.insertId;
@@ -109,6 +111,7 @@ const notesModel = async () => {
                     n.note_type,
                     encryptId(n.contact_id) AS contact_id,
                     encryptId(n.group_id) AS group_id,
+                    n.color,
                     n.is_important,
                     n.createdOn,
                     n.modifiedOn,
@@ -211,6 +214,7 @@ const notesModel = async () => {
                     n.note_type,
                     encryptId(n.contact_id) AS contact_id,
                     encryptId(n.group_id) AS group_id,
+                    n.color,
                     n.is_important,
                     n.createdOn,
                     n.modifiedOn,
@@ -247,6 +251,7 @@ const notesModel = async () => {
                 note_type, 
                 contact_id, 
                 group_id, 
+                color,
                 is_important,
                 keywords = []
             } = noteData;
@@ -276,6 +281,7 @@ const notesModel = async () => {
                 note_type,
                 contactIdDecrypted,
                 groupIdDecrypted,
+                color,
                 is_important,
                 noteId
             ];
@@ -283,7 +289,7 @@ const notesModel = async () => {
             const [result] = await pool.execute(`
                 UPDATE notes 
                 SET title = ?, content = ?, note_type = ?, contact_id = ?, 
-                    group_id = ?, is_important = ?, modifiedOn = CURRENT_TIMESTAMP
+                    group_id = ?, color = ?, is_important = ?, modifiedOn = CURRENT_TIMESTAMP
                 WHERE pk_id = decryptId(?) AND is_deleted = 0
             `, params);
 
