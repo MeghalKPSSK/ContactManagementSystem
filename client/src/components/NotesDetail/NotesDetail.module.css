@@ -683,7 +683,6 @@
 
 .noteContentTextarea {
   width: 100%;
-  height: 100%;
   background: transparent;
   border: none;
   outline: none;
@@ -705,6 +704,8 @@
   );
   background-size: 100% 2.2rem;
   background-position: 0 0;
+  position: relative;
+  z-index: 2;
 }
 
 .noteContentTextarea::placeholder {
@@ -963,5 +964,705 @@
     width: 32px;
     height: 32px;
     font-size: 1rem;
+  }
+}
+
+/* Highlighting Functionality Styles */
+.highlightToolbar {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  padding: 12px;
+}
+
+.toolbarContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.selectedTextPreview {
+  font-style: italic;
+  color: #666;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toolbarButtons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbarColorSelect {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.highlightButton {
+  background: #ffc107;
+  color: #333;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.2s;
+}
+
+.highlightButton:hover {
+  background: #e0a800;
+}
+
+.cancelButton {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.cancelButton:hover {
+  background: #5a6268;
+}
+
+.highlightControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.highlightColorSelect {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  background: white;
+}
+
+.headerButton.active {
+  background: #ffc107;
+  color: #333;
+}
+
+/* Highlight colors in content */
+.noteContentTextarea::selection {
+  background: rgba(255, 193, 7, 0.3);
+}
+
+/* Visual feedback for highlights when showing them */
+.highlightYellow {
+  background-color: rgba(255, 255, 0, 0.3);
+  border-radius: 2px;
+}
+
+.highlightBlue {
+  background-color: rgba(0, 123, 255, 0.3);
+  border-radius: 2px;
+}
+
+.highlightGreen {
+  background-color: rgba(40, 167, 69, 0.3);
+  border-radius: 2px;
+}
+
+.highlightPink {
+  background-color: rgba(255, 20, 147, 0.3);
+  border-radius: 2px;
+}
+
+.highlightPurple {
+  background-color: rgba(128, 0, 128, 0.3);
+  border-radius: 2px;
+}
+
+/* Textarea container for positioning highlights */
+.textareaContainer {
+  position: relative;
+  width: 100%;
+  display: block;
+}
+
+.highlightOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(7 * 2.2rem);
+  overflow: hidden;
+  pointer-events: none;
+  font-size: 1.1rem;
+  line-height: 2.2rem;
+  font-style: italic;
+  font-family: 'Brush Script MT', cursive, sans-serif;
+  color: transparent;
+  font-weight: 600;
+  padding: 0;
+  margin: 0;
+  white-space: pre-wrap;
+  z-index: 1;
+}
+
+.highlightOverlay mark {
+  background: transparent;
+  color: transparent;
+  position: relative;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.highlightOverlay mark::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  border-radius: 3px;
+}
+
+/* Highlight color variants */
+.highlightOverlay .highlightYellow::before {
+  background: rgba(251, 191, 36, 0.4);
+}
+
+.highlightOverlay .highlightBlue::before {
+  background: rgba(59, 130, 246, 0.4);
+}
+
+.highlightOverlay .highlightGreen::before {
+  background: rgba(16, 185, 129, 0.4);
+}
+
+.highlightOverlay .highlightPink::before {
+  background: rgba(236, 72, 153, 0.4);
+}
+
+.highlightOverlay .highlightPurple::before {
+  background: rgba(139, 92, 246, 0.4);
+}
+
+.removableHighlight:hover::before {
+  opacity: 0.8 !important;
+}
+
+.removableHighlight:hover::after {
+  content: '×';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  z-index: 10;
+}
+
+.highlightOverlay {
+  border-radius: 3px;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.highlightOverlay:hover {
+  opacity: 0.6;
+}
+
+/* ContentEditable styling */
+.contentEditable {
+  outline: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.contentEditable:empty:before {
+  content: attr(data-placeholder);
+  color: #999;
+  font-style: italic;
+}
+
+.contentEditable mark {
+  border-radius: 3px;
+  padding: 1px 2px;
+}
+
+/* Align controls styling */
+.alignControls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid #ddd;
+}
+
+/* Removable highlight styling */
+.removableHighlight,
+:global(.removableHighlight) {
+  cursor: pointer;
+  position: relative;
+}
+
+.removableHighlight:hover,
+:global(.removableHighlight):hover {
+  opacity: 0.8;
+}
+
+.removableHighlight:hover::after,
+:global(.removableHighlight):hover::after {
+  content: "Double-click to remove";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* Highlighting Functionality Styles */
+
+/* Highlight toolbar that appears when text is selected */
+.highlightToolbar {
+  position: absolute;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Color picker in the highlight toolbar */
+.colorPicker {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 4px;
+  background: #f9fafb;
+}
+
+.colorOption {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.colorOption:hover {
+  transform: scale(1.1);
+  border-color: #374151;
+}
+
+.colorOption.selected {
+  border-color: #1f2937;
+  transform: scale(1.1);
+}
+
+/* Predefined highlight colors */
+.colorOption.yellow {
+  background-color: #fef3c7;
+}
+
+.colorOption.green {
+  background-color: #d1fae5;
+}
+
+.colorOption.blue {
+  background-color: #dbeafe;
+}
+
+.colorOption.pink {
+  background-color: #fce7f3;
+}
+
+.colorOption.purple {
+  background-color: #e9d5ff;
+}
+
+/* Toolbar action buttons */
+.toolbarButton {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.addHighlightBtn {
+  background: #3b82f6;
+  color: white;
+}
+
+.addHighlightBtn:hover {
+  background: #2563eb;
+}
+
+.addHighlightBtn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.cancelHighlightBtn {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.cancelHighlightBtn:hover {
+  background: #e5e7eb;
+}
+
+/* Rendered highlights in the content */
+.highlight {
+  border-radius: 3px;
+  padding: 1px 2px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.highlight:hover {
+  filter: brightness(0.9);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Highlight colors for rendered highlights */
+.highlight.yellow {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.highlight.green {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.highlight.blue {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.highlight.pink {
+  background-color: #fce7f3;
+  color: #be185d;
+}
+
+.highlight.purple {
+  background-color: #e9d5ff;
+  color: #7c2d12;
+}
+
+/* Keywords panel */
+.keywordsPanel {
+  margin-top: 20px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.keywordsPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.keywordsPanelTitle {
+  font-weight: 600;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.keywordsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.keywordTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 16px;
+  font-size: 0.875rem;
+  color: #374151;
+  transition: all 0.2s ease;
+}
+
+.keywordTag:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.keywordTag.hashtag {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.keywordTag.highlight {
+  border-color: #fbbf24;
+}
+
+.keywordTag.highlight.yellow {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+.keywordTag.highlight.green {
+  background: #d1fae5;
+  border-color: #10b981;
+  color: #065f46;
+}
+
+.keywordTag.highlight.blue {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #1e40af;
+}
+
+.keywordTag.highlight.pink {
+  background: #fce7f3;
+  border-color: #ec4899;
+  color: #be185d;
+}
+
+.keywordTag.highlight.purple {
+  background: #e9d5ff;
+  border-color: #8b5cf6;
+  color: #7c2d12;
+}
+
+.removeKeywordBtn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.removeKeywordBtn:hover {
+  color: #ef4444;
+  background: #fee2e2;
+}
+
+.emptyKeywords {
+  color: #9ca3af;
+  font-style: italic;
+  text-align: center;
+  padding: 12px;
+}
+
+/* Header controls for highlighting */
+.highlightControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.highlightToggle {
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  color: #374151;
+}
+
+.highlightToggle:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.highlightToggle.active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+.headerColorPicker {
+  position: relative;
+}
+
+.colorPickerToggle {
+  padding: 6px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  width: 32px;
+  height: 32px;
+}
+
+.colorPickerToggle:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.colorPickerDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Responsive adjustments for highlighting */
+@media (max-width: 768px) {
+  .highlightToolbar {
+    padding: 6px;
+    gap: 6px;
+  }
+  
+  .colorOption {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .toolbarButton {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+  }
+  
+  .keywordsPanel {
+    padding: 12px;
+  }
+  
+  .keywordTag {
+    font-size: 0.8rem;
+    padding: 3px 6px;
+  }
+  
+  .highlightControls {
+    gap: 6px;
+  }
+  
+  .highlightToggle {
+    padding: 5px 8px;
+    font-size: 0.8rem;
+  }
+  
+  .colorPickerToggle {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .highlightToolbar {
+    padding: 4px;
+    gap: 4px;
+  }
+  
+  .colorPicker {
+    gap: 2px;
+  }
+  
+  .colorOption {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .toolbarButton {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+  }
+  
+  .keywordsList {
+    gap: 6px;
+  }
+  
+  .keywordTag {
+    font-size: 0.75rem;
+    padding: 2px 5px;
+  }
+  
+  .highlightToggle {
+    padding: 4px 6px;
+    font-size: 0.75rem;
+  }
+  
+  .colorPickerToggle {
+    width: 24px;
+    height: 24px;
   }
 }

@@ -70,8 +70,17 @@ const notesModel = async () => {
                     if (typeof keywordItem === 'string') {
                         // Regular keyword
                         await addNoteKeywords(noteId, [keywordItem]);
+                    } else if (keywordItem.highlight_start !== null && keywordItem.highlight_start !== undefined) {
+                        // Highlight keyword (legacy format)
+                        await addNoteHighlight(
+                            noteId, 
+                            keywordItem.keyword, 
+                            keywordItem.highlight_start, 
+                            keywordItem.highlight_end, 
+                            keywordItem.highlight_color || 'yellow'
+                        );
                     } else if (keywordItem.isHighlight) {
-                        // Highlight keyword
+                        // Highlight keyword (new format)
                         await addNoteHighlight(
                             noteId, 
                             keywordItem.keyword, 
@@ -81,7 +90,7 @@ const notesModel = async () => {
                         );
                     } else {
                         // Regular keyword object
-                        await addNoteKeywords(noteId, [keywordItem.keyword]);
+                        await addNoteKeywords(noteId, [keywordItem.keyword || keywordItem]);
                     }
                 }
             }
@@ -399,8 +408,17 @@ const notesModel = async () => {
                         if (typeof keywordItem === 'string') {
                             // Regular keyword
                             await addNoteKeywords(noteIdDecrypted, [keywordItem]);
+                        } else if (keywordItem.highlight_start !== null && keywordItem.highlight_start !== undefined) {
+                            // Highlight keyword (legacy format)
+                            await addNoteHighlight(
+                                noteIdDecrypted, 
+                                keywordItem.keyword, 
+                                keywordItem.highlight_start, 
+                                keywordItem.highlight_end, 
+                                keywordItem.highlight_color || 'yellow'
+                            );
                         } else if (keywordItem.isHighlight) {
-                            // Highlight keyword
+                            // Highlight keyword (new format)
                             await addNoteHighlight(
                                 noteIdDecrypted, 
                                 keywordItem.keyword, 
@@ -410,7 +428,7 @@ const notesModel = async () => {
                             );
                         } else {
                             // Regular keyword object
-                            await addNoteKeywords(noteIdDecrypted, [keywordItem.keyword]);
+                            await addNoteKeywords(noteIdDecrypted, [keywordItem.keyword || keywordItem]);
                         }
                     }
                 }

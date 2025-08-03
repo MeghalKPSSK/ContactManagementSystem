@@ -13,7 +13,11 @@ import {
   faSpinner,
   faTimes,
   faExclamationCircle,
-  faCheck
+  faCheck,
+  faHighlighter,
+  faAlignLeft,
+  faAlignCenter,
+  faAlignRight
 } from '@fortawesome/free-solid-svg-icons';
 import apiService from '../../services/apiService';
 
@@ -39,8 +43,17 @@ export default function NotesDetail() {
     content: '',
     note_type: 'personal',
     color: 'blue',
-    is_important: false
+    is_important: false,
+    keywords: [] // Will contain both hashtags and highlights
   });
+
+  // Highlighting functionality state
+  const [showHighlightToolbar, setShowHighlightToolbar] = useState(false);
+  const [selectedText, setSelectedText] = useState('');
+  const [selectedRange, setSelectedRange] = useState(null);
+  const [highlightColor, setHighlightColor] = useState('yellow');
+  const [showHighlights, setShowHighlights] = useState(true);
+  const [textAlign, setTextAlign] = useState('left');
 
   // Get user ID from localStorage
   const getUserId = () => {
@@ -54,16 +67,133 @@ export default function NotesDetail() {
     }
   };
 
-  // Auto-save functionality
-  useEffect(() => {
-    if (!hasUnsavedChanges || !isEditMode) return;
-    
-    const autoSaveTimer = setTimeout(() => {
-      handleSave(true); // Pass true for auto-save
-    }, 30000); // Auto-save after 30 seconds of inactivity
+  // Utility functions for hashtags
+  const extractHashtags = (content) => {
+    const hashtagRegex = /#[\w]+/g;
+    const matches = content.match(hashtagRegex);
+    return matches ? matches.map(tag => tag.substring(1)) : [];
+  };
 
-    return () => clearTimeout(autoSaveTimer);
-  }, [hasUnsavedChanges, note]);
+  const renderTextWithHighlights = () => {
+    if (!note.content || !note.keywords?.length) return note.content;
+
+    const highlights = note.keywords
+      .filter(k => k.isHighlight && k.start !== null && k.start !== undefined)
+      .sort((a, b) => a.start - b.start);
+
+    if (highlights.length === 0) return note.content;
+
+    let result = [];
+    let lastIndex = 0;
+
+    highlights.forEach((highlight, index) => {
+      // Add text before highlight
+      if (highlight.start > lastIndex) {
+        result.push(note.content.substring(lastIndex, highlight.start));
+      }
+      
+      // Add highlighted text
+      const highlightedText = note.content.substring(highlight.start, highlight.end);
+      result.push(
+        <mark
+          key={index}
+          className={`${styles[`highlight${highlight.color?.charAt(0).toUpperCase() + highlight.color?.slice(1)}`] || styles.highlightYellow} ${styles.removableHighlight}`}
+          onDoubleClick={() => removeHighlight(highlight.start, highlight.end)}
+          title="Double-click to remove highlight"
+        >
+          {highlightedText}
+        </mark>
+      );
+      
+      lastIndex = highlight.end;
+    });
+
+    // Add remaining text
+    if (lastIndex < note.content.length) {
+      result.push(note.content.substring(lastIndex));
+    }
+
+    return result;
+  };
+
+  const handleTextSelection = () => {
+    if (!contentRef.current) return;
+    
+    const textarea = contentRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end).trim();
+    
+    if (selectedText && start !== end) {
+      setSelectedText(selectedText);
+      setSelectedRange({ start, end });
+      setShowHighlightToolbar(true);
+    } else {
+      setShowHighlightToolbar(false);
+    }
+  };
+
+  const handleContentChange = (e) => {
+    const newContent = e.target.value || '';
+    handleInputChange('content', newContent);
+  };
+
+  const addHighlight = () => {
+    if (!selectedText || !selectedRange) return;
+
+    const newKeyword = {
+      keyword: selectedText,
+      isHighlight: true,
+      start: selectedRange.start,
+      end: selectedRange.end,
+      color: highlightColor
+    };
+
+    setNote(prev => ({
+      ...prev,
+      keywords: [...(prev.keywords || []), newKeyword]
+    }));
+
+    setShowHighlightToolbar(false);
+    setSelectedText('');
+    setSelectedRange(null);
+    
+    // Clear the selection
+    if (contentRef.current) {
+      contentRef.current.setSelectionRange(contentRef.current.selectionStart, contentRef.current.selectionStart);
+    }
+  };
+
+  const cancelHighlight = () => {
+    setShowHighlightToolbar(false);
+    setSelectedText('');
+    setSelectedRange(null);
+    
+    // Clear the selection
+    if (contentRef.current) {
+      contentRef.current.setSelectionRange(contentRef.current.selectionStart, contentRef.current.selectionStart);
+    }
+  };
+
+  const removeHighlight = (start, end) => {
+    setNote(prev => ({
+      ...prev,
+      keywords: (prev.keywords || []).filter(k => 
+        !(k.isHighlight && k.start === start && k.end === end)
+      )
+    }));
+  };
+
+  // Auto-save functionality - disabled for now
+  // useEffect(() => {
+  //   if (!hasUnsavedChanges || !isEditMode) return;
+  //   
+  //   const autoSaveTimer = setTimeout(() => {
+  //     handleSave(true); // Pass true for auto-save
+  //   }, 30000); // Auto-save after 30 seconds of inactivity
+
+  //   return () => clearTimeout(autoSaveTimer);
+  // }, [hasUnsavedChanges, note]);
 
   // Track changes to detect unsaved modifications
   useEffect(() => {
@@ -113,7 +243,8 @@ export default function NotesDetail() {
             content: response.note.content || '',
             note_type: response.note.note_type || 'personal',
             color: response.note.color || 'blue',
-            is_important: response.note.is_important === 1 || response.note.is_important === true
+            is_important: response.note.is_important === 1 || response.note.is_important === true,
+            keywords: response.note.keywords || []
           };
           
           setNote(noteData);
@@ -181,13 +312,26 @@ export default function NotesDetail() {
         return;
       }
 
+      // Extract hashtags from content and combine with highlights
+      const contentHashtags = extractHashtags(note.content);
+      const hashtagKeywords = contentHashtags.map(tag => ({ keyword: tag }));
+      const highlightKeywords = (note.keywords || []).filter(k => k.isHighlight)
+        .map(k => ({
+          keyword: k.keyword,
+          highlight_start: k.start,
+          highlight_end: k.end,
+          highlight_color: k.color
+        }));
+      const allKeywords = [...hashtagKeywords, ...highlightKeywords];
+
       const noteData = {
         title: note.title.trim(),
         content: note.content.trim(),
         note_type: note.note_type,
         color: note.color,
         is_important: note.is_important ? 1 : 0,
-        user_id: userId
+        user_id: userId,
+        keywords: allKeywords
       };
 
       let response;
@@ -321,6 +465,45 @@ export default function NotesDetail() {
         </div>
       )}
 
+      {/* Highlight Toolbar */}
+      {showHighlightToolbar && selectedText && (
+        <div className={styles.highlightToolbar}>
+          <div className={styles.toolbarContent}>
+            <span className={styles.selectedTextPreview}>
+              "{selectedText.length > 20 ? selectedText.substring(0, 20) + '...' : selectedText}"
+            </span>
+            <div className={styles.toolbarButtons}>
+              <select
+                value={highlightColor}
+                onChange={(e) => setHighlightColor(e.target.value)}
+                className={styles.toolbarColorSelect}
+              >
+                <option value="yellow">Yellow</option>
+                <option value="blue">Blue</option>
+                <option value="green">Green</option>
+                <option value="pink">Pink</option>
+                <option value="purple">Purple</option>
+              </select>
+              <button
+                onClick={addHighlight}
+                className={styles.highlightButton}
+                title="Add highlight"
+              >
+                <FontAwesomeIcon icon={faHighlighter} />
+                Highlight
+              </button>
+              <button
+                onClick={cancelHighlight}
+                className={styles.cancelButton}
+                title="Cancel"
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className={styles.content}>
         <div className={styles.editorContainer}>
           <div className={`${styles.noteCard} ${styles[`noteCard${note.color.charAt(0).toUpperCase() + note.color.slice(1)}`]}`}>
@@ -377,6 +560,61 @@ export default function NotesDetail() {
                   >
                     <FontAwesomeIcon icon={faStar} />
                   </button>
+
+                  {/* Highlight Controls */}
+                  <div className={styles.highlightControls}>
+                    {/* Toggle Highlights Visibility */}
+                    <button
+                      type="button"
+                      onClick={() => setShowHighlights(!showHighlights)}
+                      className={`${styles.headerButton} ${showHighlights ? styles.active : ''}`}
+                      title={showHighlights ? "Hide highlights" : "Show highlights"}
+                    >
+                      <FontAwesomeIcon icon={faHighlighter} />
+                    </button>
+
+                    {/* Highlight Color Picker */}
+                    <select
+                      value={highlightColor}
+                      onChange={(e) => setHighlightColor(e.target.value)}
+                      className={styles.highlightColorSelect}
+                      title="Select highlight color"
+                    >
+                      <option value="yellow">Yellow</option>
+                      <option value="blue">Blue</option>
+                      <option value="green">Green</option>
+                      <option value="pink">Pink</option>
+                      <option value="purple">Purple</option>
+                    </select>
+                  </div>
+
+                  {/* Text Alignment Controls */}
+                  <div className={styles.alignControls}>
+                    <button
+                      type="button"
+                      onClick={() => setTextAlign('left')}
+                      className={`${styles.headerButton} ${textAlign === 'left' ? styles.active : ''}`}
+                      title="Align left"
+                    >
+                      <FontAwesomeIcon icon={faAlignLeft} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTextAlign('center')}
+                      className={`${styles.headerButton} ${textAlign === 'center' ? styles.active : ''}`}
+                      title="Align center"
+                    >
+                      <FontAwesomeIcon icon={faAlignCenter} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTextAlign('right')}
+                      className={`${styles.headerButton} ${textAlign === 'right' ? styles.active : ''}`}
+                      title="Align right"
+                    >
+                      <FontAwesomeIcon icon={faAlignRight} />
+                    </button>
+                  </div>
                   
                   {/* Save Button */}
                   <button
@@ -417,13 +655,25 @@ export default function NotesDetail() {
             {/* Lined paper content area */}
             <div className={styles.notepadContent}>
               <div className={styles.contentLines}>
-                <textarea
-                  ref={contentRef}
-                  value={note.content}
-                  onChange={(e) => handleInputChange('content', e.target.value)}
-                  placeholder="Write your note content here..."
-                  className={`${styles.noteContentTextarea} ${validationErrors.content ? styles.hasError : ''}`}
-                />
+                <div className={styles.textareaContainer}>
+                  <textarea
+                    ref={contentRef}
+                    value={note.content}
+                    onChange={handleContentChange}
+                    onMouseUp={handleTextSelection}
+                    className={`${styles.noteContentTextarea} ${validationErrors.content ? styles.hasError : ''}`}
+                    style={{ textAlign: textAlign }}
+                    placeholder="Write your note content here..."
+                    rows={7}
+                  />
+                  
+                  {/* Highlight overlay that mirrors the textarea */}
+                  {showHighlights && note.keywords?.filter(k => k.isHighlight).length > 0 && (
+                    <div className={styles.highlightOverlay}>
+                      {renderTextWithHighlights()}
+                    </div>
+                  )}
+                </div>
                 {validationErrors.content && (
                   <p className={styles.errorText}>
                     <FontAwesomeIcon icon={faExclamationCircle} />
