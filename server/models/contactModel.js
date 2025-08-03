@@ -146,6 +146,106 @@ const contactModel = async () => {
         }
     };
 
+    const getContactsForSelection = async (userId, groupId = null, filter = '', page = 1, pageSize = 10) => {
+        try {
+            const offset = (page - 1) * pageSize;
+            const filterCheck = filter ? filter : '';
+            
+            let countQuery;
+            let dataQuery;
+            let countParams;
+            let dataParams;
+
+            if (groupId) {
+                // Exclude contacts that are already members of the specified group
+                const whereClause = `
+                    WHERE user_id = decryptId(?) 
+                    AND is_deleted = 0 
+                    AND pk_id NOT IN (
+                        SELECT gm.contact_id 
+                        FROM group_members gm 
+                        WHERE gm.group_id = decryptId(?)
+                    )
+                    AND CASE 
+                        WHEN IFNULL(?,'') != '' 
+                        THEN (firstName LIKE ? OR lastName LIKE ? OR email LIKE ?) 
+                        ELSE 1=1 
+                    END
+                `;
+
+                countQuery = `
+                    SELECT COUNT(*) as total 
+                    FROM contacts 
+                    ${whereClause}
+                `;
+                
+                dataQuery = `
+                    SELECT 
+                        (select encryptId(pk_id)) uid, 
+                        firstName, 
+                        lastName, 
+                        email
+                    FROM contacts 
+                    ${whereClause}
+                    ORDER BY firstName, lastName
+                    LIMIT ? OFFSET ?
+                `;
+                
+                countParams = [userId, groupId, filterCheck, `%${filterCheck}%`, `%${filterCheck}%`, `%${filterCheck}%`];
+                dataParams = [...countParams, pageSize, offset];
+            } else {
+                // Return all contacts if no groupId provided
+                const whereClause = `
+                    WHERE user_id = decryptId(?) 
+                    AND is_deleted = 0
+                    AND CASE 
+                        WHEN IFNULL(?,'') != '' 
+                        THEN (firstName LIKE ? OR lastName LIKE ? OR email LIKE ?) 
+                        ELSE 1=1 
+                    END
+                `;
+
+                countQuery = `
+                    SELECT COUNT(*) as total 
+                    FROM contacts 
+                    ${whereClause}
+                `;
+                
+                dataQuery = `
+                    SELECT 
+                        (select encryptId(pk_id)) uid, 
+                        firstName, 
+                        lastName, 
+                        email
+                    FROM contacts 
+                    ${whereClause}
+                    ORDER BY firstName, lastName
+                    LIMIT ? OFFSET ?
+                `;
+                
+                countParams = [userId, filterCheck, `%${filterCheck}%`, `%${filterCheck}%`, `%${filterCheck}%`];
+                dataParams = [...countParams, pageSize, offset];
+            }
+
+            // Get total count
+            const [totalRows] = await pool.query(countQuery, countParams);
+            
+            // Get paginated data
+            const [rows] = await pool.query(dataQuery, dataParams);
+
+            return {
+                contacts: rows,
+                total: totalRows[0].total,
+                page: parseInt(page),
+                pageSize: parseInt(pageSize),
+                totalPages: Math.ceil(totalRows[0].total / pageSize)
+            };
+        } catch (error) {
+            console.error(`Error fetching contacts for selection: ${error}`);
+            throw error;
+        }
+    };
+
     const deleteContact = async (contactId) => {
         try {
             const [result] = await pool.execute(`UPDATE contacts SET is_deleted = 1 WHERE pk_id in (select decryptId(?))`, [contactId]);
@@ -290,6 +390,7 @@ const contactModel = async () => {
         getContactById,
         contactSave,
         getContactsList,
+        getContactsForSelection,
         deleteContact,
         updateContact,
         toggleFavorite,

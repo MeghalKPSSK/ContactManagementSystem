@@ -48,6 +48,43 @@ router.get('/contactsList', async (req, res) => {
     }
 });
 
+// Get contacts for member selection (limited fields)
+router.get('/contactsForSelection', async (req, res) => {
+    try {
+        const { userId, groupId, page = 1, pageSize = 10, filter } = req.query;
+        
+        // Validate required parameters
+        if (!userId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'User ID is required' 
+            });
+        }
+        
+        const result = await contactModelInstance.getContactsForSelection(
+            userId, 
+            groupId, 
+            filter, 
+            parseInt(page), 
+            parseInt(pageSize)
+        );
+        res.status(200).json({
+            success: true, 
+            contacts: result.contacts,
+            pagination: {
+                current: result.page,
+                pageSize: result.pageSize,
+                total: result.total,
+                totalPages: Math.ceil(result.total / result.pageSize)
+            },
+            message: 'Contacts retrieved for selection successfully'
+        });
+    } catch (error) {
+        console.error('Error retrieving contacts for selection:', error);
+        res.status(500).json({ success: false, message: 'Error retrieving contacts for selection' });
+    }
+});
+
 // Get contact by ID
 router.get('/contact/:id', async (req, res) => {
     try {

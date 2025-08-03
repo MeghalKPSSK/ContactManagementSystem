@@ -161,4 +161,48 @@ router.put('/updateGroup/:id', (req, res, next) => {
     }
 });
 
+// Add members to a group
+router.post('/addMembers/:groupId', async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const { memberIds } = req.body;
+
+        if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
+            return res.status(400).json({ success: false, message: 'Invalid member IDs provided' });
+        }
+
+        const result = await groupModelInstance.addGroupMembers(groupId, memberIds);
+
+        if (result) {
+            res.status(200).json({ 
+                success: true, 
+                message: `${memberIds.length} member${memberIds.length !== 1 ? 's' : ''} added successfully` 
+            });
+        } else {
+            res.status(500).json({ success: false, message: 'Failed to add members' });
+        }
+    } catch (error) {
+        console.error('Error adding members:', error);
+        res.status(500).json({ success: false, message: 'Error adding members' });
+    }
+});
+
+// Remove a member from a group
+router.delete('/removeMember/:groupId/:memberId', async (req, res) => {
+    try {
+        const { groupId, memberId } = req.params;
+
+        const result = await groupModelInstance.removeGroupMember(groupId, memberId);
+
+        if (result) {
+            res.status(200).json({ success: true, message: 'Member removed successfully' });
+        } else {
+            res.status(404).json({ success: false, message: 'Member not found in group' });
+        }
+    } catch (error) {
+        console.error('Error removing member:', error);
+        res.status(500).json({ success: false, message: 'Error removing member' });
+    }
+});
+
 module.exports = router;

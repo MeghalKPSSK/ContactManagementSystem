@@ -167,12 +167,58 @@ const groupModel = async () => {
         }
     };
 
+    const addGroupMembers = async (groupId, memberIds) => {
+        try {
+            if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
+                throw new Error('Invalid member IDs provided');
+            }
+
+            // Insert new members one by one
+            for (const memberId of memberIds) {
+                // Check if member is already in the group
+                const [existing] = await pool.execute(
+                    `SELECT 1 FROM group_members WHERE group_id = decryptId(?) AND contact_id = decryptId(?)`,
+                    [groupId, memberId]
+                );
+
+                // Only add if not already a member
+                if (existing.length === 0) {
+                    await pool.execute(
+                        `INSERT INTO group_members (group_id, contact_id) VALUES (decryptId(?), decryptId(?))`,
+                        [groupId, memberId]
+                    );
+                }
+            }
+
+            return true;
+        } catch (error) {
+            console.error(`Error adding group members: ${error}`);
+            throw error;
+        }
+    };
+
+    const removeGroupMember = async (groupId, memberId) => {
+        try {
+            const [result] = await pool.execute(
+                `DELETE FROM group_members WHERE group_id = decryptId(?) AND contact_id = decryptId(?)`,
+                [groupId, memberId]
+            );
+
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error(`Error removing group member: ${error}`);
+            throw error;
+        }
+    };
+
     return {
         groupSave,
         getGroupById,
         getGroupsList,
         deleteGroup,
-        updateGroup
+        updateGroup,
+        addGroupMembers,
+        removeGroupMember
     };
 };
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styles from './GroupDetails.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faArrowLeft, faPlus, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faArrowLeft, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import MemberModal from './MemberModal';
 import { toast } from 'react-toastify';
 
@@ -12,9 +12,6 @@ export default function GroupDetails() {
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showMemberModal, setShowMemberModal] = useState(false);
-  const [memberModalMode, setMemberModalMode] = useState('add');
-  const [selectedMember, setSelectedMember] = useState(null);
-  const [contacts, setContacts] = useState([]);
 
   // Fetch group details
   const fetchGroup = async () => {
@@ -44,27 +41,6 @@ export default function GroupDetails() {
 
   // Add Member
   const handleAddMember = async () => {
-    setMemberModalMode('add');
-    setSelectedMember(null);
-    setShowMemberModal(true);
-    
-    // Fetch contacts when opening add member modal
-    try {
-      const config = await fetch('/config.json').then(res => res.json());
-      const userId = JSON.parse(localStorage.getItem('user')).uid;
-      const response = await fetch(`${config.apiUrl}/contacts/contactsList?userId=${userId}&groupId=${groupId}`);
-      const data = await response.json();
-      if (data.success) setContacts(data.contacts);
-    } catch (error) {
-      console.error('Error fetching contacts:', error);
-      toast.error('Failed to fetch contacts');
-    }
-  };
-
-  // Edit Member
-  const handleEditMember = (member) => {
-    setMemberModalMode('edit');
-    setSelectedMember(member);
     setShowMemberModal(true);
   };
 
@@ -75,23 +51,17 @@ export default function GroupDetails() {
     if (window.confirm(`Are you sure want to delete ${memberName}?`)) {
       try {
         const config = await fetch('/config.json').then(res => res.json());
-        // Remove member UID from members array
-        const updatedMembers = group.members
-          .filter(m => m.uid !== member.uid)
-          .map(m => m.uid); // Only send array of UIDs
 
-        const payload = {
-          name: group.name,
-          description: group.description,
-          members: updatedMembers,
-          user_id: group.user_id,
-        };
-
-        const response = await fetch(`${config.apiUrl}/groups/updateGroup/${group.uid}`, {
-          method: 'PUT',
+        // Use the dedicated removeMember API
+        const response = await fetch(`${config.apiUrl}/groups/removeMember/${group.uid}/${member.uid}`, {
+          method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
         });
+        
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
+        
         const data = await response.json();
         if (data.success) {
           fetchGroup();
@@ -102,68 +72,58 @@ export default function GroupDetails() {
       } catch (err) {
         toast.error('Failed to delete member');
         console.error('Delete member error:', err);
-
       }
     }
   };
 
-  // Submit handler for Add/Edit
+  // Submit handler for Add
   const handleMemberModalSubmit = async (form) => {
     if (!group) return;
     try {
       const config = await fetch('/config.json').then(res => res.json());
-      let updatedMembers;
+      let memberIds = [];
       
-      if (memberModalMode === 'add') {
-        // Handle multiple member addition
-        if (form.uids && form.uids.length > 0) {
-          const existingMemberUids = group.members.map(m => m.uid);
-          const newMemberUids = form.uids.filter(uid => !existingMemberUids.includes(uid));
-          updatedMembers = [...existingMemberUids, ...newMemberUids];
-        } else {
-          // Fallback for single selection (backward compatibility)
-          const memberUid = form.uid;
-          updatedMembers = [
-            ...group.members.map(m => m.uid),
-            memberUid,
-          ].filter((v, i, a) => a.indexOf(v) === i); // unique
+      // Handle multiple member addition
+      if (form.uids && form.uids.length > 0) {
+        // Filter out existing members to avoid duplicates
+        const existingMemberUids = group.members.map(m => m.uid);
+        memberIds = form.uids.filter(uid => !existingMemberUids.includes(uid));
+      } else if (form.uid) {
+        // Fallback for single selection (backward compatibility)
+        const existingMemberUids = group.members.map(m => m.uid);
+        if (!existingMemberUids.includes(form.uid)) {
+          memberIds = [form.uid];
         }
-      } else {
-        // For edit mode (single selection)
-        updatedMembers = group.members.map(m =>
-          m.uid === selectedMember.uid ? form.uid : m.uid
-        );
       }
 
-      const payload = {
-        name: group.name,
-        description: group.description,
-        members: updatedMembers,
-        user_id: group.user_id,
-      };
+      if (memberIds.length === 0) {
+        toast.info('Selected contacts are already members of this group');
+        setShowMemberModal(false);
+        return;
+      }
 
-      const response = await fetch(`${config.apiUrl}/groups/updateGroup/${group.uid}`, {
-        method: 'PUT',
+      // Use the dedicated addMembers API
+      const response = await fetch(`${config.apiUrl}/groups/addMembers/${group.uid}`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ memberIds }),
       });
+      
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+      
       const data = await response.json();
       if (data.success) {
         fetchGroup();
         setShowMemberModal(false);
-        const addedCount = memberModalMode === 'add' ? 
-          (form.uids ? form.uids.length : 1) : 1;
-        toast.success(
-          memberModalMode === 'add'
-            ? `${addedCount} member${addedCount !== 1 ? 's' : ''} added successfully!`
-            : 'Member updated successfully!'
-        );
+        toast.success(data.message || `${memberIds.length} member${memberIds.length !== 1 ? 's' : ''} added successfully!`);
       } else {
-        toast.error(data.message || 'Failed to save member');
+        toast.error(data.message || 'Failed to add members');
       }
     } catch (err) {
-      toast.error('Failed to save member');
-      console.error('Save member error:', err);
+      toast.error('Failed to add members');
+      console.error('Add members error:', err);
     }
   };
 
@@ -225,13 +185,6 @@ export default function GroupDetails() {
                     <td>{member.email}</td>
                     <td style={{textAlign: 'right'}}>
                       <button
-                        className={styles.actionButton}
-                        title="Edit"
-                        onClick={() => handleEditMember(member)}
-                      >
-                        <FontAwesomeIcon icon={faEdit} />
-                      </button>
-                      <button
                         className={`${styles.actionButton} ${styles.deleteButton}`}
                         title="Delete"
                         onClick={() => handleDeleteMember(member)}
@@ -254,15 +207,7 @@ export default function GroupDetails() {
         show={showMemberModal}
         onClose={() => setShowMemberModal(false)}
         onSubmit={handleMemberModalSubmit}
-        member={selectedMember}
-        mode={memberModalMode}
-        contacts={
-          memberModalMode === 'add'
-            ? contacts.filter(
-                c => !group.members.some(m => m.uid === c.uid)
-              )
-            : contacts
-        }
+        mode="add"
         group={group}
       />
     </div>
