@@ -68,6 +68,9 @@
   position: relative;
   flex: 1;
   min-width: 300px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .searchIcon {
@@ -79,7 +82,7 @@
 }
 
 .searchInput {
-  width: 100%;
+  flex: 1;
   padding: 12px 12px 12px 40px;
   border: 1px solid var(--highlight-border);
   border-radius: 8px;
@@ -93,6 +96,46 @@
   outline: none;
   border-color: var(--secondary-bg);
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.searchButton {
+  padding: 12px 16px;
+  background: var(--secondary-bg);
+  color: var(--text-light);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+}
+
+.searchButton:hover {
+  background: var(--secondary-light);
+  transform: translateY(-2px);
+}
+
+.clearButton {
+  padding: 12px 16px;
+  background: var(--text-secondary);
+  color: var(--text-light);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+}
+
+.clearButton:hover {
+  background: var(--text-disabled);
+  transform: translateY(-2px);
 }
 
 .filterContainer {
@@ -137,7 +180,8 @@
 
 .noteCardWrapper {
   position: relative;
-  max-width: 320px;
+  width: 320px;
+  height: 400px;
   margin: 0 auto;
 }
 
@@ -148,6 +192,10 @@
   overflow: hidden;
   position: relative;
   transition: all 0.3s ease;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .noteCard:hover {
@@ -200,6 +248,7 @@
 /* Header area */
 .notepadHeader {
   padding: 24px 24px 16px 64px;
+  flex-shrink: 0;
 }
 
 .noteHeader {
@@ -238,17 +287,28 @@
 /* Lined paper content area */
 .notepadContent {
   padding: 0 24px 24px 64px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 120px;
 }
 
 .contentLines {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 6px;
+  flex: 1;
 }
 
 .contentLine {
   border-bottom: 1px solid;
-  padding-bottom: 4px;
+  padding-bottom: 3px;
+  min-height: 2rem;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
 }
 
 .noteCardPink .contentLine {
@@ -272,17 +332,28 @@
 }
 
 .noteContent {
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  line-height: 1.6;
+  color: #374151;
+  font-size: 1rem;
+  line-height: 1.3;
   font-style: italic;
   font-family: 'Brush Script MT', cursive, sans-serif;
   margin: 0;
+  padding: 0 2px;
+  position: relative;
+  bottom: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 4px);
+  opacity: 1;
+  font-weight: 600;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);
 }
 
 .emptyLine {
   border-bottom: 1px solid;
-  height: 24px;
+  height: 2rem;
+  flex-shrink: 0;
 }
 
 .noteCardPink .emptyLine {
@@ -308,10 +379,12 @@
 /* Bottom section */
 .noteFooter {
   background: rgba(0, 0, 0, 0.05);
-  padding: 12px 64px 12px 64px;
+  padding: 12px 16px 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
+  margin-top: auto;
 }
 
 .noteCardPink .noteFooter {
@@ -336,9 +409,13 @@
 
 .noteDate {
   color: var(--text-secondary);
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-style: italic;
   font-family: 'Brush Script MT', cursive, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
 }
 
 .noteActions {
@@ -550,11 +627,33 @@
   .searchContainer,
   .filterContainer {
     min-width: auto;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .searchContainer {
+    flex-direction: row;
+  }
+  
+  .searchInput {
+    padding-right: 12px;
+  }
+  
+  .searchButton,
+  .clearButton {
+    padding: 10px 12px;
+    min-width: 40px;
   }
   
   .notesGrid {
     grid-template-columns: 1fr;
     gap: 15px;
+  }
+  
+  .noteCardWrapper {
+    width: 100%;
+    max-width: 320px;
+    height: 380px;
   }
   
   .stats {
@@ -572,5 +671,73 @@
   
   .statNumber {
     font-size: 1.8rem;
+  }
+}
+
+/* Pagination Styles */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-top: 30px;
+  padding: 20px;
+}
+
+.paginationButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--secondary-bg);
+  color: var(--text-light);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.paginationButton:hover:not(.disabled) {
+  background: var(--secondary-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.paginationButton.disabled {
+  background: var(--text-disabled);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.paginationInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.paginationText {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary-text);
+}
+
+.paginationSubtext {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .pagination {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .paginationButton {
+    padding: 10px 16px;
+    font-size: 0.85rem;
   }
 }

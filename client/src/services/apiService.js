@@ -171,6 +171,55 @@ class ApiService {
         return this.fetch(`/dashboard/stats/${userId}`);
     }
 
+    // Notes API methods
+    async getNotesList(userId, filters = {}, page = 1, pageSize = 10) {
+        const queryParams = new URLSearchParams({
+            userId: userId.toString(),
+            page: page.toString(),
+            pageSize: pageSize.toString()
+        });
+
+        // Add filters to query params if they exist
+        Object.keys(filters).forEach(key => {
+            if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+                queryParams.append(key, filters[key].toString());
+            }
+        });
+
+        return this.fetch(`/notes/notesList?${queryParams.toString()}`);
+    }
+
+    async createNote(noteData) {
+        return this.fetch('/notes/createNote', {
+            method: 'POST',
+            body: JSON.stringify(noteData)
+        });
+    }
+
+    async updateNote(noteId, noteData) {
+        return this.fetch(`/notes/updateNote/${noteId}`, {
+            method: 'PUT',
+            body: JSON.stringify(noteData)
+        });
+    }
+
+    async deleteNote(noteId) {
+        return this.fetch(`/notes/deleteNote/${noteId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async getNoteById(noteId) {
+        return this.fetch(`/notes/note/${noteId}`);
+    }
+
+    async updateNoteColor(noteId, color) {
+        return this.fetch(`/notes/updateColor/${noteId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ color })
+        });
+    }
+
     // Utility methods
     getImageUrl(imagePath) {
         if (!imagePath) return null;

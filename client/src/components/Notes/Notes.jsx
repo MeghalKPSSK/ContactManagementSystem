@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styles from './Notes.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -11,91 +11,170 @@ import {
   faTrash,
   faStarOfLife,
   faAddressBook,
-  faUsers
+  faUsers,
+  faChevronLeft,
+  faChevronRight,
+  faTimes
 } from '@fortawesome/free-solid-svg-icons';
+import apiService from '../../services/apiService';
 
 export default function Notes() {
-  // const [notes, setNotes] = useState([]);
+  const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); // Actual search query for API
   const [filterType, setFilterType] = useState('all');
-
-  useEffect(() => {
-    // Simulate loading
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-  }, []);
-
-  // Dummy notes data
-  const dummyNotes = [
-    {
-      id: 1,
-      title: "Meeting Notes",
-      content: "Discuss project timeline and deliverables with the team...",
-      type: "personal",
-      isImportant: true,
-      color: "pink",
-      createdOn: "2025-08-01T10:30:00Z",
-      modifiedOn: "2025-08-01T10:30:00Z"
-    },
-    {
-      id: 2,
-      title: "Contact Follow-up",
-      content: "Need to follow up with John regarding the proposal...",
-      type: "contact",
-      isImportant: false,
-      color: "blue",
-      createdOn: "2025-08-02T14:15:00Z",
-      modifiedOn: "2025-08-02T14:15:00Z"
-    },
-    {
-      id: 3,
-      title: "Group Discussion Points",
-      content: "Key points to discuss in the next group meeting...",
-      type: "group",
-      isImportant: true,
-      color: "yellow",
-      createdOn: "2025-08-03T09:00:00Z",
-      modifiedOn: "2025-08-03T09:00:00Z"
-    },
-    {
-      id: 4,
-      title: "Project Ideas",
-      content: "Brainstorm new features for the upcoming release...",
-      type: "personal",
-      isImportant: false,
-      color: "green",
-      createdOn: "2025-08-03T11:00:00Z",
-      modifiedOn: "2025-08-03T11:00:00Z"
-    },
-    {
-      id: 5,
-      title: "Client Requirements",
-      content: "Document all client requirements and specifications...",
-      type: "contact",
-      isImportant: true,
-      color: "purple",
-      createdOn: "2025-08-03T15:30:00Z",
-      modifiedOn: "2025-08-03T15:30:00Z"
-    }
-  ];
-
-  const filteredNotes = dummyNotes.filter(note => {
-    const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         note.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterType === 'all' || note.type === filterType;
-    return matchesSearch && matchesFilter;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 12;
+  const [stats, setStats] = useState({
+    total: 0,
+    important: 0,
+    personal: 0,
+    contact: 0,
+    group: 0
   });
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+  // Get user ID from localStorage or context
+  const getUserId = () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      return user?.uid || null;
+    } catch (error) {
+      console.error('Error parsing user from localStorage:', error);
+      return null;
+    }
+  };
+
+  const fetchNotes = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      const userId = getUserId();
+      if (!userId) {
+        console.error('No user ID found in session');
+        setNotes([]);
+        return;
+      }
+      
+      const filters = {};
+      if (filterType !== 'all') {
+        filters.note_type = filterType;
+      }
+      if (searchQuery.trim()) {
+        filters.search = searchQuery;
+      }
+
+      const response = await apiService.getNotesList(
+        userId,
+        filters,
+        currentPage,
+        pageSize
+      );
+
+      if (response.success) {
+        setNotes(response.notes || []);
+        setTotalCount(response.pagination.total);
+        
+        // Calculate stats from current notes data
+        calculateStats(response.notes || []);
+      }
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+      setNotes([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [filterType, searchQuery, currentPage, pageSize]);
+
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
+
+  // Reset to first page when search query or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterType]);
+
+  const calculateStats = (notesData) => {
+    const totalNotes = notesData.length;
+    const importantCount = notesData.filter(note => note.is_important === 1 || note.is_important === true).length;
+    const personalCount = notesData.filter(note => note.note_type === 'personal').length;
+    const contactCount = notesData.filter(note => note.note_type === 'contact').length;
+    const groupCount = notesData.filter(note => note.note_type === 'group').length;
+
+    setStats({
+      total: totalNotes,
+      important: importantCount,
+      personal: personalCount,
+      contact: contactCount,
+      group: groupCount
     });
+  };
+
+  const handleSearch = () => {
+    setSearchQuery(searchTerm);
+  };
+
+  const handleSearchKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setSearchQuery('');
+  };
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
+  const handleEdit = (noteId) => {
+    // TODO: Open edit modal
+    console.log('Edit note:', noteId);
+  };
+
+  const handleDelete = async (noteId) => {
+    if (window.confirm('Are you sure you want to delete this note?')) {
+      try {
+        const response = await apiService.deleteNote(noteId);
+        if (response.success) {
+          fetchNotes(); // Refresh the list
+        }
+      } catch (error) {
+        console.error('Error deleting note:', error);
+        alert('Failed to delete note. Please try again.');
+      }
+    }
+  };
+
+  // Dummy notes data - REMOVED (now using API)
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'No date';
+    
+    try {
+      const date = new Date(dateString);
+      
+      // Check if the date is valid
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
+    }
   };
 
   const getNoteTypeColor = (type) => {
@@ -106,6 +185,40 @@ export default function Notes() {
       default: return '#6c757d';
     }
   };
+
+  // Function to split content into lines for realistic notepad appearance
+  const splitContentIntoLines = (content, maxLinesPerCard = 4) => {
+    if (!content || content.trim() === '') return ['No content preview available'];
+    
+    const words = content.split(' ');
+    const lines = [];
+    let currentLine = '';
+    const wordsPerLine = 4; // Reduced for larger font
+    
+    for (let i = 0; i < words.length && lines.length < maxLinesPerCard; i++) {
+      if (currentLine.length === 0) {
+        currentLine = words[i];
+      } else if (currentLine.split(' ').length < wordsPerLine && currentLine.length < 25) {
+        currentLine += ' ' + words[i];
+      } else {
+        lines.push(currentLine);
+        currentLine = words[i];
+      }
+    }
+    
+    if (currentLine && lines.length < maxLinesPerCard) {
+      lines.push(currentLine);
+    }
+    
+    // If we truncated, add ellipsis to last line
+    if (words.length > lines.join(' ').split(' ').length) {
+      lines[lines.length - 1] += '...';
+    }
+    
+    return lines;
+  };
+
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   if (loading) {
     return (
@@ -137,7 +250,7 @@ export default function Notes() {
           <div className={styles.statContent}>
             <FontAwesomeIcon icon={faStickyNote} className={styles.statIcon} />
             <div className={styles.statText}>
-              <span className={styles.statNumber}>{dummyNotes.length}</span>
+              <span className={styles.statNumber}>{stats.total}</span>
               <span className={styles.statLabel}>Total Notes</span>
             </div>
           </div>
@@ -146,9 +259,7 @@ export default function Notes() {
           <div className={styles.statContent}>
             <FontAwesomeIcon icon={faStar} className={styles.statIcon} />
             <div className={styles.statText}>
-              <span className={styles.statNumber}>
-                {dummyNotes.filter(note => note.isImportant).length}
-              </span>
+              <span className={styles.statNumber}>{stats.important}</span>
               <span className={styles.statLabel}>Important</span>
             </div>
           </div>
@@ -157,9 +268,7 @@ export default function Notes() {
           <div className={styles.statContent}>
             <FontAwesomeIcon icon={faStarOfLife} className={styles.statIcon} />
             <div className={styles.statText}>
-              <span className={styles.statNumber}>
-                {dummyNotes.filter(note => note.type === 'personal').length}
-              </span>
+              <span className={styles.statNumber}>{stats.personal}</span>
               <span className={styles.statLabel}>Personal</span>
             </div>
           </div>
@@ -168,9 +277,7 @@ export default function Notes() {
           <div className={styles.statContent}>
             <FontAwesomeIcon icon={faAddressBook} className={styles.statIcon} />
             <div className={styles.statText}>
-              <span className={styles.statNumber}>
-                {dummyNotes.filter(note => note.type === 'contact').length}
-              </span>
+              <span className={styles.statNumber}>{stats.contact}</span>
               <span className={styles.statLabel}>Contact</span>
             </div>
           </div>
@@ -179,9 +286,7 @@ export default function Notes() {
           <div className={styles.statContent}>
             <FontAwesomeIcon icon={faUsers} className={styles.statIcon} />
             <div className={styles.statText}>
-              <span className={styles.statNumber}>
-                {dummyNotes.filter(note => note.type === 'group').length}
-              </span>
+              <span className={styles.statNumber}>{stats.group}</span>
               <span className={styles.statLabel}>Group</span>
             </div>
           </div>
@@ -196,8 +301,27 @@ export default function Notes() {
             placeholder="Search notes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyPress={handleSearchKeyPress}
             className={styles.searchInput}
           />
+          <button 
+            type="button"
+            onClick={handleSearch}
+            className={styles.searchButton}
+            title="Search"
+          >
+            <FontAwesomeIcon icon={faSearch} />
+          </button>
+          {searchQuery && (
+            <button 
+              type="button"
+              onClick={handleClearSearch}
+              className={styles.clearButton}
+              title="Clear search"
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+          )}
         </div>
 
         <div className={styles.filterContainer}>
@@ -216,7 +340,7 @@ export default function Notes() {
       </div>
 
       <div className={styles.notesGrid}>
-        {filteredNotes.length === 0 ? (
+        {notes.length === 0 ? (
           <div className={styles.emptyState}>
             <FontAwesomeIcon icon={faStickyNote} className={styles.emptyIcon} />
             <h3>No Notes Found</h3>
@@ -228,11 +352,14 @@ export default function Notes() {
             </p>
           </div>
         ) : (
-          filteredNotes.map(note => {
+          notes.map(note => {
+            const noteColor = note.color || 'blue'; // Fallback to blue
+            const isImportant = note.is_important === 1 || note.is_important === true;
+            
             return (
               <div key={note.id} className={styles.noteCardWrapper}>
                 {/* Notepad style card */}
-                <div className={`${styles.noteCard} ${styles[`noteCard${note.color.charAt(0).toUpperCase() + note.color.slice(1)}`]}`}>
+                <div className={`${styles.noteCard} ${styles[`noteCard${noteColor.charAt(0).toUpperCase() + noteColor.slice(1)}`]}`}>
                   {/* Notepad holes */}
                   <div className={styles.notepadHoles}>
                     <div className={styles.hole}></div>
@@ -243,10 +370,10 @@ export default function Notes() {
                   {/* Header area */}
                   <div className={styles.notepadHeader}>
                     <div className={styles.noteHeader}>
-                      <div className={styles.noteType} style={{ backgroundColor: getNoteTypeColor(note.type) }}>
-                        {note.type}
+                      <div className={styles.noteType} style={{ backgroundColor: getNoteTypeColor(note.note_type) }}>
+                        {note.note_type}
                       </div>
-                      {note.isImportant && (
+                      {isImportant && (
                         <FontAwesomeIcon icon={faStar} className={styles.importantIcon} />
                       )}
                     </div>
@@ -258,27 +385,37 @@ export default function Notes() {
                   {/* Lined paper content area */}
                   <div className={styles.notepadContent}>
                     <div className={styles.contentLines}>
-                      <div className={styles.contentLine}>
-                        <p className={styles.noteContent}>{note.content}</p>
-                      </div>
+                      {splitContentIntoLines(note.content_preview, 4).map((line, index) => (
+                        <div key={index} className={styles.contentLine}>
+                          <span className={styles.noteContent}>{line}</span>
+                        </div>
+                      ))}
                       
                       {/* Empty lines for notepad effect */}
-                      <div className={styles.emptyLine}></div>
-                      <div className={styles.emptyLine}></div>
-                      <div className={styles.emptyLine}></div>
+                      {Array.from({ length: Math.max(0, 4 - splitContentIntoLines(note.content_preview, 4).length) }, (_, index) => (
+                        <div key={`empty-${index}`} className={styles.emptyLine}></div>
+                      ))}
                     </div>
                   </div>
                   
                   {/* Bottom section with date and actions */}
                   <div className={styles.noteFooter}>
                     <span className={styles.noteDate}>
-                      {formatDate(note.modifiedOn)}
+                      {formatDate(note.modifiedOn || note.createdOn)}
                     </span>
                     <div className={styles.noteActions}>
-                      <button className={styles.actionButton}>
+                      <button 
+                        className={styles.actionButton}
+                        onClick={() => handleEdit(note.id)}
+                        title="Edit note"
+                      >
                         <FontAwesomeIcon icon={faEdit} />
                       </button>
-                      <button className={styles.actionButton}>
+                      <button 
+                        className={styles.actionButton}
+                        onClick={() => handleDelete(note.id)}
+                        title="Delete note"
+                      >
                         <FontAwesomeIcon icon={faTrash} />
                       </button>
                     </div>
@@ -293,6 +430,38 @@ export default function Notes() {
           })
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {notes.length > 0 && totalPages > 1 && (
+        <div className={styles.pagination}>
+          <button 
+            className={`${styles.paginationButton} ${currentPage === 1 ? styles.disabled : ''}`}
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <FontAwesomeIcon icon={faChevronLeft} />
+            Previous
+          </button>
+          
+          <div className={styles.paginationInfo}>
+            <span className={styles.paginationText}>
+              Page {currentPage} of {totalPages}
+            </span>
+            <span className={styles.paginationSubtext}>
+              ({totalCount} total notes)
+            </span>
+          </div>
+          
+          <button 
+            className={`${styles.paginationButton} ${currentPage === totalPages ? styles.disabled : ''}`}
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next
+            <FontAwesomeIcon icon={faChevronRight} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
