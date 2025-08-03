@@ -11,7 +11,7 @@
   justify-content: center;
   height: 400px;
   font-size: 1.2rem;
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .header {
@@ -20,12 +20,12 @@
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 1px solid var(--highlight-border);
 }
 
 .header h1 {
   margin: 0;
-  color: #2c3e50;
+  color: var(--primary-text);
   font-size: 2rem;
   display: flex;
   align-items: center;
@@ -33,12 +33,12 @@
 }
 
 .headerIcon {
-  color: #f39c12;
+  color: var(--secondary-bg);
 }
 
 .addButton {
-  background: linear-gradient(135deg, #007bff, #0056b3);
-  color: white;
+  background-color: var(--secondary-bg);
+  color: var(--text-light);
   border: none;
   padding: 12px 20px;
   border-radius: 8px;
@@ -48,13 +48,13 @@
   align-items: center;
   gap: 8px;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .addButton:hover {
-  background: linear-gradient(135deg, #0056b3, #004085);
+  background-color: var(--secondary-light);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .controls {
@@ -75,22 +75,24 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .searchInput {
   width: 100%;
   padding: 12px 12px 12px 40px;
-  border: 2px solid #e9ecef;
+  border: 1px solid var(--highlight-border);
   border-radius: 8px;
   font-size: 1rem;
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
   transition: all 0.3s ease;
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  border-color: var(--secondary-bg);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
 .filterContainer {
@@ -103,25 +105,26 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #6c757d;
+  color: var(--text-secondary);
   z-index: 1;
 }
 
 .filterSelect {
   width: 100%;
   padding: 12px 12px 12px 40px;
-  border: 2px solid #e9ecef;
+  border: 1px solid var(--highlight-border);
   border-radius: 8px;
   font-size: 1rem;
-  background: white;
+  background: var(--primary-bg);
+  color: var(--primary-text);
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .filterSelect:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  border-color: var(--secondary-bg);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
 .notesGrid {
@@ -226,7 +229,7 @@
   font-size: 1.5rem;
   font-weight: 300;
   font-style: italic;
-  color: #374151;
+  color: var(--primary-text);
   margin: 0;
   font-family: 'Brush Script MT', cursive, sans-serif;
   line-height: 1.3;
@@ -269,7 +272,7 @@
 }
 
 .noteContent {
-  color: #4b5563;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   line-height: 1.6;
   font-style: italic;
@@ -332,7 +335,7 @@
 }
 
 .noteDate {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   font-style: italic;
   font-family: 'Brush Script MT', cursive, sans-serif;
@@ -347,16 +350,16 @@
   padding: 8px;
   background: transparent;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  color: #6b7280;
+  transition: all 0.2s ease;
+  color: var(--secondary-bg);
 }
 
 .actionButton:hover {
-  background: rgba(0, 0, 0, 0.1);
-  color: #374151;
-  transform: scale(1.1);
+  background: var(--hover-bg);
+  color: var(--secondary-light);
+  transform: translateY(-1px);
 }
 
 /* Paper shadow effects */
@@ -428,18 +431,18 @@
   grid-column: 1 / -1;
   text-align: center;
   padding: 60px 20px;
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .emptyIcon {
   font-size: 4rem;
   margin-bottom: 20px;
-  color: #e9ecef;
+  color: var(--text-disabled);
 }
 
 .emptyState h3 {
   margin: 0 0 10px 0;
-  color: #495057;
+  color: var(--primary-text);
 }
 
 .emptyState p {
@@ -498,8 +501,8 @@
 
 .statIcon {
   font-size: 2.5rem;
-  color: #007bff;
-  filter: drop-shadow(0 2px 4px rgba(0, 123, 255, 0.3));
+  color: var(--secondary-bg);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .statText {
@@ -510,13 +513,13 @@
 .statNumber {
   font-size: 2.2rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--primary-text);
   margin-bottom: 2px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .statLabel {
-  color: #6c757d;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   font-weight: 600;
   text-transform: uppercase;
