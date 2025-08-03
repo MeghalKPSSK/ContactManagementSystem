@@ -12,6 +12,7 @@ const notesModel = async () => {
 
     const createNote = async (noteData) => {
         try {
+            console.log('📝 Notes Model: Creating new note...');
             const { 
                 user_id, 
                 title, 
@@ -23,18 +24,23 @@ const notesModel = async () => {
                 keywords = []
             } = noteData;
 
+            console.log(`📝 Notes Model: Note details - Type: ${note_type}, Title: "${title}", Keywords: ${keywords.length}`);
+
             const userId = await encryptionInstance.dbDecryptID(user_id);
             const contactIdDecrypted = contact_id ? await encryptionInstance.dbDecryptID(contact_id) : null;
             const groupIdDecrypted = group_id ? await encryptionInstance.dbDecryptID(group_id) : null;
 
             // Validate note type constraints
             if (note_type === 'contact' && !contactIdDecrypted) {
+                console.warn('⚠️ Notes Model: Contact ID required for contact note but missing');
                 throw new Error('Contact ID is required for contact notes');
             }
             if (note_type === 'group' && !groupIdDecrypted) {
+                console.warn('⚠️ Notes Model: Group ID required for group note but missing');
                 throw new Error('Group ID is required for group notes');
             }
             if (note_type === 'personal' && (contactIdDecrypted || groupIdDecrypted)) {
+                console.warn('⚠️ Notes Model: Personal note cannot have contact/group references');
                 throw new Error('Personal notes cannot have contact or group references');
             }
 
@@ -57,19 +63,23 @@ const notesModel = async () => {
 
             // Add keywords if provided
             if (keywords && keywords.length > 0) {
+                console.log(`📝 Notes Model: Adding ${keywords.length} keywords to note ${noteId}`);
                 await addNoteKeywords(noteId, keywords);
             }
 
+            console.log(`✅ Notes Model: Note created successfully with ID: ${noteId}`);
             return noteId;
         } catch (error) {
-            console.error(`Error creating note: ${error}`);
+            console.error('❌ Notes Model: Error creating note:', error.message);
             throw error;
         }
     };
 
     const addNoteKeywords = async (noteId, keywords) => {
         try {
+            console.log(`🏷️ Notes Model: Adding keywords to note ${noteId}...`);
             const uniqueKeywords = [...new Set(keywords.map(k => k.toLowerCase().trim()))];
+            console.log(`🏷️ Notes Model: Processing ${uniqueKeywords.length} unique keywords`);
             
             for (const keyword of uniqueKeywords) {
                 if (keyword) {
@@ -79,14 +89,17 @@ const notesModel = async () => {
                     `, [noteId, keyword]);
                 }
             }
+            console.log(`✅ Notes Model: Keywords added successfully to note ${noteId}`);
         } catch (error) {
-            console.error(`Error adding keywords: ${error}`);
+            console.error('❌ Notes Model: Error adding keywords:', error.message);
             throw error;
         }
     };
 
     const getNoteById = async (noteId) => {
         try {
+            console.log('📖 Notes Model: Fetching note by ID...');
+            console.log(`📖 Notes Model: Requested note ID: ${noteId}`);
             const [notes] = await pool.execute(`
                 SELECT 
                     encryptId(n.pk_id) AS uid,
@@ -109,6 +122,7 @@ const notesModel = async () => {
             `, [noteId]);
 
             if (notes && notes[0]) {
+                console.log(`📖 Notes Model: Note found: "${notes[0].title}"`);
                 // Get keywords for this note
                 const [keywords] = await pool.execute(`
                     SELECT keyword
@@ -118,18 +132,21 @@ const notesModel = async () => {
                 `, [noteId]);
 
                 notes[0].keywords = keywords.map(k => k.keyword);
+                console.log(`✅ Notes Model: Note retrieved with ${keywords.length} keywords`);
                 return notes[0];
             }
 
+            console.warn(`⚠️ Notes Model: Note not found with ID: ${noteId}`);
             return null;
         } catch (error) {
-            console.error('Error fetching note:', error);
+            console.error('❌ Notes Model: Error fetching note:', error.message);
             throw error;
         }
     };
 
     const getNotesList = async (userId, filters = {}, page = 1, pageSize = 10) => {
         try {
+            console.log('📋 Notes Model: Fetching notes list...');
             const { 
                 note_type, 
                 contact_id, 
@@ -138,6 +155,8 @@ const notesModel = async () => {
                 is_important,
                 keyword
             } = filters;
+
+            console.log(`📋 Notes Model: Filters - Type: ${note_type || 'all'}, Search: "${search || 'none'}", Page: ${page}`);
 
             const offset = (page - 1) * pageSize;
             let whereConditions = ['n.user_id = decryptId(?)', 'n.is_deleted = 0'];
@@ -206,6 +225,7 @@ const notesModel = async () => {
                 LIMIT ? OFFSET ?
             `, [...params, pageSize, offset]);
 
+            console.log(`✅ Notes Model: Retrieved ${rows.length} notes (total: ${totalRows[0].total})`);
             return {
                 notes: rows,
                 total: totalRows[0].total,
@@ -213,13 +233,14 @@ const notesModel = async () => {
                 pageSize
             };
         } catch (error) {
-            console.error(`Error fetching notes list: ${error}`);
+            console.error('❌ Notes Model: Error fetching notes list:', error.message);
             throw error;
         }
     };
 
     const updateNote = async (noteId, noteData) => {
         try {
+            console.log('✏️ Notes Model: Updating note...');
             const { 
                 title, 
                 content, 
@@ -230,17 +251,22 @@ const notesModel = async () => {
                 keywords = []
             } = noteData;
 
+            console.log(`✏️ Notes Model: Updating note ${noteId}, title: "${title}"`);
+
             const contactIdDecrypted = contact_id ? await encryptionInstance.dbDecryptID(contact_id) : null;
             const groupIdDecrypted = group_id ? await encryptionInstance.dbDecryptID(group_id) : null;
 
             // Validate note type constraints
             if (note_type === 'contact' && !contactIdDecrypted) {
+                console.warn('⚠️ Notes Model: Contact ID required for contact note but missing');
                 throw new Error('Contact ID is required for contact notes');
             }
             if (note_type === 'group' && !groupIdDecrypted) {
+                console.warn('⚠️ Notes Model: Group ID required for group note but missing');
                 throw new Error('Group ID is required for group notes');
             }
             if (note_type === 'personal' && (contactIdDecrypted || groupIdDecrypted)) {
+                console.warn('⚠️ Notes Model: Personal note cannot have contact/group references');
                 throw new Error('Personal notes cannot have contact or group references');
             }
 
@@ -262,6 +288,7 @@ const notesModel = async () => {
             `, params);
 
             if (result.affectedRows > 0) {
+                console.log(`✏️ Notes Model: Note updated successfully, updating keywords...`);
                 // Update keywords
                 const noteIdDecrypted = await encryptionInstance.dbDecryptID(noteId);
                 await pool.execute('DELETE FROM note_keywords WHERE note_id = ?', [noteIdDecrypted]);
@@ -269,32 +296,45 @@ const notesModel = async () => {
                 if (keywords && keywords.length > 0) {
                     await addNoteKeywords(noteIdDecrypted, keywords);
                 }
+                console.log(`✅ Notes Model: Note and keywords updated successfully`);
+            } else {
+                console.warn(`⚠️ Notes Model: No note found to update or no changes made: ${noteId}`);
             }
 
             return result.affectedRows > 0;
         } catch (error) {
-            console.error(`Error updating note: ${error}`);
+            console.error('❌ Notes Model: Error updating note:', error.message);
             throw error;
         }
     };
 
     const deleteNote = async (noteId) => {
         try {
+            console.log('🗑️ Notes Model: Deleting note...');
+            console.log(`🗑️ Notes Model: Soft deleting note ID: ${noteId}`);
             const [result] = await pool.execute(`
                 UPDATE notes 
                 SET is_deleted = 1, modifiedOn = CURRENT_TIMESTAMP
                 WHERE pk_id = decryptId(?) AND is_deleted = 0
             `, [noteId]);
 
+            if (result.affectedRows > 0) {
+                console.log(`✅ Notes Model: Note deleted successfully: ${noteId}`);
+            } else {
+                console.warn(`⚠️ Notes Model: Note not found for deletion: ${noteId}`);
+            }
+
             return result.affectedRows > 0;
         } catch (error) {
-            console.error(`Error deleting note: ${error}`);
+            console.error('❌ Notes Model: Error deleting note:', error.message);
             throw error;
         }
     };
 
     const getNotesStats = async (userId) => {
         try {
+            console.log('📊 Notes Model: Fetching notes statistics...');
+            console.log(`📊 Notes Model: Getting stats for user: ${userId}`);
             const [stats] = await pool.execute(`
                 SELECT 
                     COUNT(*) as total_notes,
@@ -306,15 +346,18 @@ const notesModel = async () => {
                 WHERE user_id = decryptId(?) AND is_deleted = 0
             `, [userId]);
 
+            console.log(`✅ Notes Model: Statistics retrieved - Total: ${stats[0].total_notes}, Important: ${stats[0].important_notes}`);
             return stats[0];
         } catch (error) {
-            console.error('Error fetching notes stats:', error);
+            console.error('❌ Notes Model: Error fetching notes stats:', error.message);
             throw error;
         }
     };
 
     const searchNotesByKeyword = async (userId, keyword, page = 1, pageSize = 10) => {
         try {
+            console.log('🔍 Notes Model: Searching notes by keyword...');
+            console.log(`🔍 Notes Model: User ${userId} searching for: "${keyword}"`);
             const offset = (page - 1) * pageSize;
 
             const [totalRows] = await pool.query(`
@@ -345,6 +388,7 @@ const notesModel = async () => {
                 LIMIT ? OFFSET ?
             `, [userId, `%${keyword}%`, pageSize, offset]);
 
+            console.log(`✅ Notes Model: Search completed - found ${rows.length} notes for "${keyword}"`);
             return {
                 notes: rows,
                 total: totalRows[0].total,
@@ -352,7 +396,7 @@ const notesModel = async () => {
                 pageSize
             };
         } catch (error) {
-            console.error('Error searching notes by keyword:', error);
+            console.error('❌ Notes Model: Error searching notes by keyword:', error.message);
             throw error;
         }
     };

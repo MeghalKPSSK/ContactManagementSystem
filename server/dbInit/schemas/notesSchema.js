@@ -1,22 +1,27 @@
 const initDB = require('../../db');
 
 const ensureNotesTable = async () => {
+    console.log('📝 Notes Schema: Starting notes table initialization...');
     const pool = await initDB();
 
     try {
+        console.log('📝 Notes Schema: Creating tables if they don\'t exist...');
         // First create tables if they don't exist
         await createTablesIfNotExist(pool);
         
+        console.log('📝 Notes Schema: Validating and updating schema...');
         // Then validate and update schema if needed
         await validateAndUpdateSchema(pool);
 
+        console.log('✅ Notes Schema: Notes table initialization completed successfully');
     } catch (error) {
-        console.error('Error ensuring notes tables:', error);
+        console.error('❌ Notes Schema: Error ensuring notes tables:', error.message);
         throw error;
     }
 };
 
 const createTablesIfNotExist = async (pool) => {
+    console.log('📝 Notes Schema: Creating notes table...');
     // Create notes table
     await pool.query(`
         CREATE TABLE IF NOT EXISTS notes (
@@ -49,6 +54,7 @@ const createTablesIfNotExist = async (pool) => {
         )
     `);
 
+    console.log('🏷️ Notes Schema: Creating note_keywords table...');
     // Create note_keywords table for searchable keywords/tags
     await pool.query(`
         CREATE TABLE IF NOT EXISTS note_keywords (
@@ -62,9 +68,11 @@ const createTablesIfNotExist = async (pool) => {
             UNIQUE KEY unique_note_keyword (note_id, keyword)
         )
     `);
+    console.log('✅ Notes Schema: Tables created successfully');
 };
 
 const validateAndUpdateSchema = async (pool) => {
+    console.log('🔍 Notes Schema: Validating notes table schema...');
     // Get current schema information for notes table
     const [notesColumns] = await pool.query(`
         SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT
@@ -72,6 +80,8 @@ const validateAndUpdateSchema = async (pool) => {
         WHERE TABLE_SCHEMA = DATABASE()
         AND TABLE_NAME = 'notes'
     `);
+
+    console.log(`🔍 Notes Schema: Found ${notesColumns.length} existing columns`);
 
     // Check and add missing columns for notes table
     const requiredColumns = {
@@ -87,14 +97,15 @@ const validateAndUpdateSchema = async (pool) => {
         if (!existingColumns.includes(column)) {
             try {
                 await pool.query(query);
-                console.log(`Added missing column: ${column}`);
+                console.log(`✅ Notes Schema: Added missing column: ${column}`);
             } catch (error) {
-                console.error(`Error adding column ${column}:`, error);
+                console.error(`❌ Notes Schema: Error adding column ${column}:`, error.message);
             }
         }
     }
 
     // Check and add missing indexes for notes table
+    console.log('🔍 Notes Schema: Checking indexes...');
     const [existingIndexes] = await pool.query(`
         SHOW INDEX FROM notes
     `);
@@ -114,23 +125,25 @@ const validateAndUpdateSchema = async (pool) => {
         if (!existingIndexNames.includes(indexName)) {
             try {
                 await pool.query(query);
-                console.log(`Added missing index: ${indexName}`);
+                console.log(`✅ Notes Schema: Added missing index: ${indexName}`);
             } catch (error) {
-                console.error(`Error adding index ${indexName}:`, error);
+                console.error(`❌ Notes Schema: Error adding index ${indexName}:`, error.message);
             }
         }
     }
 
     // Add foreign key constraints if they don't exist
+    console.log('🔗 Notes Schema: Adding foreign key constraints...');
     try {
         await pool.query(`
             ALTER TABLE notes 
             ADD CONSTRAINT fk_notes_contact 
             FOREIGN KEY (contact_id) REFERENCES contacts(pk_id) ON DELETE CASCADE
         `);
-        console.log('Added foreign key constraint for contact_id');
+        console.log('✅ Notes Schema: Added foreign key constraint for contact_id');
     } catch (error) {
         // Constraint might already exist, ignore error
+        console.log('🔗 Notes Schema: Foreign key constraint for contact_id already exists');
     }
 
     try {
@@ -139,12 +152,13 @@ const validateAndUpdateSchema = async (pool) => {
             ADD CONSTRAINT fk_notes_group 
             FOREIGN KEY (group_id) REFERENCES \`groups\`(pk_id) ON DELETE CASCADE
         `);
-        console.log('Added foreign key constraint for group_id');
+        console.log('✅ Notes Schema: Added foreign key constraint for group_id');
     } catch (error) {
         // Constraint might already exist, ignore error
+        console.log('🔗 Notes Schema: Foreign key constraint for group_id already exists');
     }
 
-    console.log('Schema validation and updates for notes table completed.');
+    console.log('✅ Notes Schema: Schema validation and updates for notes table completed.');
 };
 
 module.exports = ensureNotesTable;

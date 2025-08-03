@@ -19,11 +19,15 @@ let encryptionInstance;
 // Create a new note
 router.post('/createNote', async (req, res) => {
     try {
+        console.log('📝 Notes API: Creating new note...');
         const noteData = req.body;
         const { title, content, note_type, user_id } = noteData;
 
+        console.log(`📝 Notes API: User ${user_id} creating ${note_type || 'personal'} note: "${title}"`);
+
         // Validate required fields
         if (!title || !content || !user_id) {
+            console.warn('⚠️ Notes API: Missing required fields for note creation');
             return res.status(400).json({ 
                 success: false, 
                 message: 'Title, content, and user_id are required' 
@@ -33,6 +37,7 @@ router.post('/createNote', async (req, res) => {
         // Validate note_type
         const validNoteTypes = ['personal', 'contact', 'group'];
         if (note_type && !validNoteTypes.includes(note_type)) {
+            console.warn(`⚠️ Notes API: Invalid note type: ${note_type}`);
             return res.status(400).json({ 
                 success: false, 
                 message: 'Invalid note type. Must be personal, contact, or group' 
@@ -42,14 +47,14 @@ router.post('/createNote', async (req, res) => {
         const noteId = await notesModelInstance.createNote(noteData);
         const encryptedNoteId = await encryptionInstance.dbEncryptID(noteId);
         
-        console.log(`Note created with ID: ${encryptedNoteId}`);
+        console.log(`✅ Notes API: Note created successfully with ID: ${encryptedNoteId}`);
         res.status(201).json({ 
             success: true, 
             uid: encryptedNoteId, 
             message: 'Note created successfully' 
         });
     } catch (error) {
-        console.error('Error creating note:', error);
+        console.error('❌ Notes API: Error creating note:', error.message);
         res.status(500).json({ 
             success: false, 
             message: error.message || 'Error creating note' 
@@ -60,6 +65,7 @@ router.post('/createNote', async (req, res) => {
 // Get list of notes with filtering and pagination
 router.get('/notesList', async (req, res) => {
     try {
+        console.log('📋 Notes API: Fetching notes list...');
         const { 
             userId, 
             note_type, 
@@ -72,7 +78,10 @@ router.get('/notesList', async (req, res) => {
             pageSize = 10 
         } = req.query;
 
+        console.log(`📋 Notes API: User ${userId}, type: ${note_type || 'all'}, page: ${page}, search: "${search || 'none'}"`);
+
         if (!userId) {
+            console.warn('⚠️ Notes API: Missing userId in notes list request');
             return res.status(400).json({ 
                 success: false, 
                 message: 'User ID is required' 
@@ -95,6 +104,7 @@ router.get('/notesList', async (req, res) => {
             parseInt(pageSize)
         );
 
+        console.log(`✅ Notes API: Retrieved ${result.notes.length} notes (total: ${result.total})`);
         res.status(200).json({
             success: true,
             notes: result.notes,
@@ -106,7 +116,7 @@ router.get('/notesList', async (req, res) => {
             message: 'Notes list retrieved successfully'
         });
     } catch (error) {
-        console.error('Error retrieving notes:', error);
+        console.error('❌ Notes API: Error retrieving notes list:', error.message);
         res.status(500).json({ 
             success: false, 
             message: 'Error retrieving notes' 
@@ -117,22 +127,27 @@ router.get('/notesList', async (req, res) => {
 // Get note by ID
 router.get('/note/:id', async (req, res) => {
     try {
+        console.log('📖 Notes API: Fetching note by ID...');
         const noteId = req.params.id;
+        console.log(`📖 Notes API: Requested note ID: ${noteId}`);
+        
         const note = await notesModelInstance.getNoteById(noteId);
 
         if (!note) {
+            console.warn(`⚠️ Notes API: Note not found with ID: ${noteId}`);
             return res.status(404).json({ 
                 success: false, 
                 message: 'Note not found' 
             });
         }
 
+        console.log(`✅ Notes API: Note retrieved: "${note.title}"`);
         res.status(200).json({ 
             success: true, 
             note 
         });
     } catch (error) {
-        console.error('Error retrieving note:', error);
+        console.error('❌ Notes API: Error retrieving note:', error.message);
         res.status(500).json({ 
             success: false, 
             message: 'Error retrieving note' 
@@ -143,12 +158,16 @@ router.get('/note/:id', async (req, res) => {
 // Update note
 router.put('/updateNote/:id', async (req, res) => {
     try {
+        console.log('✏️ Notes API: Updating note...');
         const noteId = req.params.id;
         const noteData = req.body;
         const { title, content } = noteData;
 
+        console.log(`✏️ Notes API: Updating note ID: ${noteId}, new title: "${title}"`);
+
         // Validate required fields
         if (!title || !content) {
+            console.warn('⚠️ Notes API: Missing required fields for note update');
             return res.status(400).json({ 
                 success: false, 
                 message: 'Title and content are required' 
@@ -158,18 +177,20 @@ router.put('/updateNote/:id', async (req, res) => {
         const result = await notesModelInstance.updateNote(noteId, noteData);
 
         if (result) {
+            console.log(`✅ Notes API: Note updated successfully: ${noteId}`);
             res.status(200).json({ 
                 success: true, 
                 message: 'Note updated successfully' 
             });
         } else {
+            console.warn(`⚠️ Notes API: Note not found or no changes made: ${noteId}`);
             res.status(404).json({ 
                 success: false, 
                 message: 'Note not found or no changes made' 
             });
         }
     } catch (error) {
-        console.error('Error updating note:', error);
+        console.error('❌ Notes API: Error updating note:', error.message);
         res.status(500).json({ 
             success: false, 
             message: error.message || 'Error updating note' 
@@ -180,24 +201,27 @@ router.put('/updateNote/:id', async (req, res) => {
 // Delete note (soft delete)
 router.delete('/deleteNote/:id', async (req, res) => {
     try {
+        console.log('🗑️ Notes API: Deleting note...');
         const noteId = req.params.id;
-        console.log(`Note UID for Deletion: ${noteId}`);
+        console.log(`🗑️ Notes API: Deleting note ID: ${noteId}`);
         
         const result = await notesModelInstance.deleteNote(noteId);
         
         if (result) {
+            console.log(`✅ Notes API: Note deleted successfully: ${noteId}`);
             res.status(200).json({ 
                 success: true, 
                 message: 'Note deleted successfully' 
             });
         } else {
+            console.warn(`⚠️ Notes API: Note not found for deletion: ${noteId}`);
             res.status(404).json({ 
                 success: false, 
                 message: 'Note not found' 
             });
         }
     } catch (error) {
-        console.error('Error deleting note:', error);
+        console.error('❌ Notes API: Error deleting note:', error.message);
         res.status(500).json({ 
             success: false, 
             message: 'Error deleting note' 
@@ -208,16 +232,20 @@ router.delete('/deleteNote/:id', async (req, res) => {
 // Get notes statistics
 router.get('/notesStats/:userId', async (req, res) => {
     try {
+        console.log('📊 Notes API: Fetching notes statistics...');
         const userId = req.params.userId;
+        console.log(`📊 Notes API: Getting stats for user: ${userId}`);
+        
         const stats = await notesModelInstance.getNotesStats(userId);
 
+        console.log(`✅ Notes API: Statistics retrieved for user ${userId}`);
         res.status(200).json({
             success: true,
             stats,
             message: 'Notes statistics retrieved successfully'
         });
     } catch (error) {
-        console.error('Error retrieving notes stats:', error);
+        console.error('❌ Notes API: Error retrieving notes statistics:', error.message);
         res.status(500).json({ 
             success: false, 
             message: 'Error retrieving notes statistics' 
@@ -228,9 +256,13 @@ router.get('/notesStats/:userId', async (req, res) => {
 // Search notes by keyword
 router.get('/searchNotes', async (req, res) => {
     try {
+        console.log('🔍 Notes API: Searching notes...');
         const { userId, keyword, page = 1, pageSize = 10 } = req.query;
 
+        console.log(`🔍 Notes API: User ${userId} searching for: "${keyword}"`);
+
         if (!userId || !keyword) {
+            console.warn('⚠️ Notes API: Missing userId or keyword for search');
             return res.status(400).json({ 
                 success: false, 
                 message: 'User ID and keyword are required' 
@@ -244,6 +276,7 @@ router.get('/searchNotes', async (req, res) => {
             parseInt(pageSize)
         );
 
+        console.log(`✅ Notes API: Search completed - found ${result.notes.length} notes for "${keyword}"`);
         res.status(200).json({
             success: true,
             notes: result.notes,
@@ -256,7 +289,7 @@ router.get('/searchNotes', async (req, res) => {
             message: 'Notes search completed successfully'
         });
     } catch (error) {
-        console.error('Error searching notes:', error);
+        console.error('❌ Notes API: Error searching notes:', error.message);
         res.status(500).json({ 
             success: false, 
             message: 'Error searching notes' 
@@ -267,10 +300,14 @@ router.get('/searchNotes', async (req, res) => {
 // Get notes for a specific contact
 router.get('/contactNotes/:contactId', async (req, res) => {
     try {
+        console.log('👤 Notes API: Fetching contact notes...');
         const { contactId } = req.params;
         const { userId, page = 1, pageSize = 10 } = req.query;
 
+        console.log(`👤 Notes API: Getting notes for contact ${contactId}, user ${userId}`);
+
         if (!userId) {
+            console.warn('⚠️ Notes API: Missing userId for contact notes request');
             return res.status(400).json({ 
                 success: false, 
                 message: 'User ID is required' 
@@ -289,6 +326,7 @@ router.get('/contactNotes/:contactId', async (req, res) => {
             parseInt(pageSize)
         );
 
+        console.log(`✅ Notes API: Retrieved ${result.notes.length} notes for contact ${contactId}`);
         res.status(200).json({
             success: true,
             notes: result.notes,
@@ -301,7 +339,7 @@ router.get('/contactNotes/:contactId', async (req, res) => {
             message: 'Contact notes retrieved successfully'
         });
     } catch (error) {
-        console.error('Error retrieving contact notes:', error);
+        console.error('❌ Notes API: Error retrieving contact notes:', error.message);
         res.status(500).json({ 
             success: false, 
             message: 'Error retrieving contact notes' 
@@ -312,10 +350,14 @@ router.get('/contactNotes/:contactId', async (req, res) => {
 // Get notes for a specific group
 router.get('/groupNotes/:groupId', async (req, res) => {
     try {
+        console.log('👥 Notes API: Fetching group notes...');
         const { groupId } = req.params;
         const { userId, page = 1, pageSize = 10 } = req.query;
 
+        console.log(`👥 Notes API: Getting notes for group ${groupId}, user ${userId}`);
+
         if (!userId) {
+            console.warn('⚠️ Notes API: Missing userId for group notes request');
             return res.status(400).json({ 
                 success: false, 
                 message: 'User ID is required' 
@@ -334,6 +376,7 @@ router.get('/groupNotes/:groupId', async (req, res) => {
             parseInt(pageSize)
         );
 
+        console.log(`✅ Notes API: Retrieved ${result.notes.length} notes for group ${groupId}`);
         res.status(200).json({
             success: true,
             notes: result.notes,
@@ -346,7 +389,7 @@ router.get('/groupNotes/:groupId', async (req, res) => {
             message: 'Group notes retrieved successfully'
         });
     } catch (error) {
-        console.error('Error retrieving group notes:', error);
+        console.error('❌ Notes API: Error retrieving group notes:', error.message);
         res.status(500).json({ 
             success: false, 
             message: 'Error retrieving group notes' 
@@ -357,10 +400,14 @@ router.get('/groupNotes/:groupId', async (req, res) => {
 // Toggle note importance
 router.patch('/toggleImportant/:id', async (req, res) => {
     try {
+        console.log('⭐ Notes API: Toggling note importance...');
         const noteId = req.params.id;
         const { is_important } = req.body;
 
+        console.log(`⭐ Notes API: Setting note ${noteId} importance to: ${is_important}`);
+
         if (is_important === undefined) {
+            console.warn('⚠️ Notes API: Missing is_important field');
             return res.status(400).json({ 
                 success: false, 
                 message: 'is_important field is required' 
@@ -371,18 +418,20 @@ router.patch('/toggleImportant/:id', async (req, res) => {
         const result = await notesModelInstance.updateNote(noteId, noteData);
 
         if (result) {
+            console.log(`✅ Notes API: Note importance toggled successfully: ${noteId}`);
             res.status(200).json({ 
                 success: true, 
                 message: `Note marked as ${is_important ? 'important' : 'normal'}` 
             });
         } else {
+            console.warn(`⚠️ Notes API: Note not found for importance toggle: ${noteId}`);
             res.status(404).json({ 
                 success: false, 
                 message: 'Note not found' 
             });
         }
     } catch (error) {
-        console.error('Error toggling note importance:', error);
+        console.error('❌ Notes API: Error toggling note importance:', error.message);
         res.status(500).json({ 
             success: false, 
             message: 'Error updating note importance' 
