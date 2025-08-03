@@ -42,23 +42,23 @@ export default function GroupDetails() {
     // eslint-disable-next-line
   }, [groupId]);
 
-  useEffect(() => {
-    // Fetch contacts:
-    const fetchContacts = async () => {
-      const config = await fetch('/config.json').then(res => res.json());
-      const userId = JSON.parse(localStorage.getItem('user')).uid;
-      const response = await fetch(`${config.apiUrl}/contacts/contactsList?userId=${userId}`);
-      const data = await response.json();
-      if (data.success) setContacts(data.contacts);
-    };
-    fetchContacts();
-  }, [groupId]);
-
   // Add Member
-  const handleAddMember = () => {
+  const handleAddMember = async () => {
     setMemberModalMode('add');
     setSelectedMember(null);
     setShowMemberModal(true);
+    
+    // Fetch contacts when opening add member modal
+    try {
+      const config = await fetch('/config.json').then(res => res.json());
+      const userId = JSON.parse(localStorage.getItem('user')).uid;
+      const response = await fetch(`${config.apiUrl}/contacts/contactsList?userId=${userId}&groupId=${groupId}`);
+      const data = await response.json();
+      if (data.success) setContacts(data.contacts);
+    } catch (error) {
+      console.error('Error fetching contacts:', error);
+      toast.error('Failed to fetch contacts');
+    }
   };
 
   // Edit Member

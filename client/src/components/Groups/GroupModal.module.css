@@ -25,7 +25,7 @@
   animation: modalSlideIn 0.3s ease;
   display: flex;
   flex-direction: column;
-  max-height: 90vh;
+  max-height: none;
   min-height: auto;
 } 
 
@@ -410,8 +410,8 @@
 .contactsTableContainer {
   flex: 1;
   min-height: 0;
-  max-height: 400px;
-  overflow-y: auto;
+  max-height: none;
+  overflow-y: visible;
   overflow-x: hidden;
   border: 1px solid var(--accent-border);
   border-radius: 8px;
@@ -437,7 +437,7 @@
 }
 
 .contactsTable th {
-  padding: 0.75rem 0.75rem;
+  padding: 0.5rem 0.5rem;
   text-align: left;
   font-weight: 600;
   border-bottom: 2px solid var(--accent-border);
@@ -445,12 +445,12 @@
 
 .contactsTable th:first-child {
   text-align: center;
-  width: 60px;
+  width: 50px;
 }
 
 .contactsTable th:nth-child(2) {
   text-align: center;
-  width: 80px;
+  width: 60px;
 }
 
 .contactsTable th:nth-child(3) {
@@ -479,18 +479,18 @@
 }
 
 .contactsTable td {
-  padding: 0.75rem 0.75rem;
+  padding: 0.5rem 0.5rem;
   vertical-align: middle;
 }
 
 .contactsTable td:first-child {
   text-align: center;
-  width: 60px;
+  width: 50px;
 }
 
 .contactsTable td:nth-child(2) {
   text-align: center;
-  width: 80px;
+  width: 60px;
 }
 
 .contactsTable td:nth-child(3) {
@@ -503,15 +503,15 @@
 
 .headerCheckbox,
 .rowCheckbox {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   cursor: pointer;
   accent-color: var(--secondary-bg);
 }
 
 .contactTableAvatar {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   overflow: hidden;
   position: relative;
@@ -787,4 +787,73 @@
   right: 1.5rem;
   color: var(--text-light);
   font-size: 1.2rem;
+}
+
+/* Pagination Styles */
+.paginationContainer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 16px;
+  border-top: 1px solid var(--accent-border);
+  background: var(--primary-bg);
+  gap: 16px;
+}
+
+.paginationInfo {
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: right;
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.paginationButton {
+  padding: 6px 12px;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background: var(--primary-bg);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+  min-width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.paginationButton.iconButton {
+  padding: 6px 8px;
+  min-width: 32px;
+}
+
+.paginationButton:hover:not(:disabled) {
+  border-color: var(--secondary-bg);
+  color: var(--secondary-bg);
+}
+
+.paginationButton:disabled {
+  cursor: not-allowed;
+  color: var(--text-disabled);
+  background: var(--disabled-bg);
+}
+
+.paginationButton.active {
+  background: var(--secondary-bg);
+  color: var(--text-light);
+  border-color: var(--secondary-bg);
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  font-style: italic;
 }
