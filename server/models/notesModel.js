@@ -63,10 +63,27 @@ const notesModel = async () => {
 
             const noteId = result.insertId;
 
-            // Add keywords if provided
+            // Add keywords (including highlights) if provided
             if (keywords && keywords.length > 0) {
                 console.log(`📝 Notes Model: Adding ${keywords.length} keywords to note ${noteId}`);
-                await addNoteKeywords(noteId, keywords);
+                for (const keywordItem of keywords) {
+                    if (typeof keywordItem === 'string') {
+                        // Regular keyword
+                        await addNoteKeywords(noteId, [keywordItem]);
+                    } else if (keywordItem.isHighlight) {
+                        // Highlight keyword
+                        await addNoteHighlight(
+                            noteId, 
+                            keywordItem.keyword, 
+                            keywordItem.start, 
+                            keywordItem.end, 
+                            keywordItem.color || 'yellow'
+                        );
+                    } else {
+                        // Regular keyword object
+                        await addNoteKeywords(noteId, [keywordItem.keyword]);
+                    }
+                }
             }
 
             console.log(`✅ Notes Model: Note created successfully with ID: ${noteId}`);
@@ -94,6 +111,74 @@ const notesModel = async () => {
             console.log(`✅ Notes Model: Keywords added successfully to note ${noteId}`);
         } catch (error) {
             console.error('❌ Notes Model: Error adding keywords:', error.message);
+            throw error;
+        }
+    };
+
+    const addNoteHighlight = async (noteId, selectedText, start, end, color = 'yellow') => {
+        try {
+            console.log(`🎨 Notes Model: Adding highlight to note ${noteId}...`);
+            console.log(`🎨 Notes Model: Highlighting "${selectedText}" from ${start} to ${end} in ${color}`);
+            
+            const trimmedText = selectedText.trim();
+            if (!trimmedText) {
+                throw new Error('Selected text cannot be empty');
+            }
+
+            await pool.execute(`
+                INSERT INTO note_keywords (note_id, keyword, highlight_start, highlight_end, highlight_color) 
+                VALUES (?, ?, ?, ?, ?)
+            `, [noteId, trimmedText, start, end, color]);
+            
+            console.log(`✅ Notes Model: Highlight added successfully to note ${noteId}`);
+        } catch (error) {
+            console.error('❌ Notes Model: Error adding highlight:', error.message);
+            throw error;
+        }
+    };
+
+    const removeNoteHighlight = async (noteId, start, end) => {
+        try {
+            console.log(`🗑️ Notes Model: Removing highlight from note ${noteId} at position ${start}-${end}...`);
+            
+            const [result] = await pool.execute(`
+                DELETE FROM note_keywords 
+                WHERE note_id = ? AND highlight_start = ? AND highlight_end = ?
+            `, [noteId, start, end]);
+
+            if (result.affectedRows > 0) {
+                console.log(`✅ Notes Model: Highlight removed successfully from note ${noteId}`);
+            } else {
+                console.warn(`⚠️ Notes Model: No highlight found to remove at position ${start}-${end}`);
+            }
+
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('❌ Notes Model: Error removing highlight:', error.message);
+            throw error;
+        }
+    };
+
+    const getNoteHighlights = async (noteId) => {
+        try {
+            console.log(`🎨 Notes Model: Fetching highlights for note ${noteId}...`);
+            
+            const [highlights] = await pool.execute(`
+                SELECT keyword, highlight_start, highlight_end, highlight_color
+                FROM note_keywords
+                WHERE note_id = decryptId(?) AND highlight_start IS NOT NULL
+                ORDER BY highlight_start ASC
+            `, [noteId]);
+
+            console.log(`✅ Notes Model: Retrieved ${highlights.length} highlights for note ${noteId}`);
+            return highlights.map(h => ({
+                keyword: h.keyword,
+                start: h.highlight_start,
+                end: h.highlight_end,
+                color: h.highlight_color || 'yellow'
+            }));
+        } catch (error) {
+            console.error('❌ Notes Model: Error fetching highlights:', error.message);
             throw error;
         }
     };
@@ -126,16 +211,24 @@ const notesModel = async () => {
 
             if (notes && notes[0]) {
                 console.log(`📖 Notes Model: Note found: "${notes[0].title}"`);
-                // Get keywords for this note
-                const [keywords] = await pool.execute(`
-                    SELECT keyword
+                // Get all keywords (including highlights) for this note
+                const [keywordData] = await pool.execute(`
+                    SELECT keyword, highlight_start, highlight_end, highlight_color
                     FROM note_keywords
                     WHERE note_id = decryptId(?)
-                    ORDER BY keyword
+                    ORDER BY highlight_start ASC, keyword
                 `, [noteId]);
 
-                notes[0].keywords = keywords.map(k => k.keyword);
-                console.log(`✅ Notes Model: Note retrieved with ${keywords.length} keywords`);
+                // Transform all keyword data into unified format
+                notes[0].keywords = keywordData.map(k => ({
+                    keyword: k.keyword,
+                    isHighlight: k.highlight_start !== null,
+                    start: k.highlight_start,
+                    end: k.highlight_end,
+                    color: k.highlight_color || 'yellow'
+                }));
+                
+                console.log(`✅ Notes Model: Note retrieved with ${keywordData.length} keywords (including highlights)`);
                 return notes[0];
             }
 
@@ -256,7 +349,7 @@ const notesModel = async () => {
                 keywords = []
             } = noteData;
 
-            console.log(`✏️ Notes Model: Updating note ${noteId}, title: "${title}"`);
+            console.log(`✏️ Notes Model: Updating note ${noteId}, title: "${title}", Keywords: ${keywords.length}`);
 
             const contactIdDecrypted = contact_id ? await encryptionInstance.dbDecryptID(contact_id) : null;
             const groupIdDecrypted = group_id ? await encryptionInstance.dbDecryptID(group_id) : null;
@@ -295,13 +388,33 @@ const notesModel = async () => {
 
             if (result.affectedRows > 0) {
                 console.log(`✏️ Notes Model: Note updated successfully, updating keywords...`);
-                // Update keywords
+                // Update keywords - clear all existing ones first
                 const noteIdDecrypted = await encryptionInstance.dbDecryptID(noteId);
                 await pool.execute('DELETE FROM note_keywords WHERE note_id = ?', [noteIdDecrypted]);
                 
+                // Add all keywords (regular and highlights)
                 if (keywords && keywords.length > 0) {
-                    await addNoteKeywords(noteIdDecrypted, keywords);
+                    console.log(`✏️ Notes Model: Adding ${keywords.length} keywords to note ${noteId}`);
+                    for (const keywordItem of keywords) {
+                        if (typeof keywordItem === 'string') {
+                            // Regular keyword
+                            await addNoteKeywords(noteIdDecrypted, [keywordItem]);
+                        } else if (keywordItem.isHighlight) {
+                            // Highlight keyword
+                            await addNoteHighlight(
+                                noteIdDecrypted, 
+                                keywordItem.keyword, 
+                                keywordItem.start, 
+                                keywordItem.end, 
+                                keywordItem.color || 'yellow'
+                            );
+                        } else {
+                            // Regular keyword object
+                            await addNoteKeywords(noteIdDecrypted, [keywordItem.keyword]);
+                        }
+                    }
                 }
+                
                 console.log(`✅ Notes Model: Note and keywords updated successfully`);
             } else {
                 console.warn(`⚠️ Notes Model: No note found to update or no changes made: ${noteId}`);
@@ -414,7 +527,10 @@ const notesModel = async () => {
         updateNote,
         deleteNote,
         getNotesStats,
-        searchNotesByKeyword
+        searchNotesByKeyword,
+        addNoteHighlight,
+        removeNoteHighlight,
+        getNoteHighlights
     };
 };
 

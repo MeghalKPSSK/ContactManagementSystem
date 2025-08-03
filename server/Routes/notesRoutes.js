@@ -511,4 +511,113 @@ router.patch('/updateColor/:id', async (req, res) => {
     }
 });
 
+// Add highlight to a note
+router.post('/addHighlight/:noteId', async (req, res) => {
+    try {
+        console.log('🎨 Notes API: Adding highlight to note...');
+        const { noteId } = req.params;
+        const { selectedText, start, end, color = 'yellow' } = req.body;
+
+        console.log(`🎨 Notes API: Adding highlight to note ${noteId}: "${selectedText}" (${start}-${end}) in ${color}`);
+
+        if (!selectedText || start === undefined || end === undefined) {
+            console.warn('⚠️ Notes API: Missing required highlight data');
+            return res.status(400).json({
+                success: false,
+                message: 'Selected text, start position, and end position are required'
+            });
+        }
+
+        if (start < 0 || end <= start) {
+            console.warn('⚠️ Notes API: Invalid highlight positions');
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid highlight positions'
+            });
+        }
+
+        const noteIdDecrypted = await encryptionInstance.dbDecryptID(noteId);
+        await notesModelInstance.addNoteHighlight(noteIdDecrypted, selectedText, start, end, color);
+
+        console.log(`✅ Notes API: Highlight added successfully to note ${noteId}`);
+        res.status(201).json({
+            success: true,
+            message: 'Highlight added successfully'
+        });
+    } catch (error) {
+        console.error('❌ Notes API: Error adding highlight:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Error adding highlight'
+        });
+    }
+});
+
+// Remove highlight from a note
+router.delete('/removeHighlight/:noteId', async (req, res) => {
+    try {
+        console.log('🗑️ Notes API: Removing highlight from note...');
+        const { noteId } = req.params;
+        const { start, end } = req.body;
+
+        console.log(`🗑️ Notes API: Removing highlight from note ${noteId} at position ${start}-${end}`);
+
+        if (start === undefined || end === undefined) {
+            console.warn('⚠️ Notes API: Missing highlight position data');
+            return res.status(400).json({
+                success: false,
+                message: 'Start and end positions are required'
+            });
+        }
+
+        const noteIdDecrypted = await encryptionInstance.dbDecryptID(noteId);
+        const removed = await notesModelInstance.removeNoteHighlight(noteIdDecrypted, start, end);
+
+        if (removed) {
+            console.log(`✅ Notes API: Highlight removed successfully from note ${noteId}`);
+            res.status(200).json({
+                success: true,
+                message: 'Highlight removed successfully'
+            });
+        } else {
+            console.warn(`⚠️ Notes API: Highlight not found in note ${noteId} at position ${start}-${end}`);
+            res.status(404).json({
+                success: false,
+                message: 'Highlight not found'
+            });
+        }
+    } catch (error) {
+        console.error('❌ Notes API: Error removing highlight:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Error removing highlight'
+        });
+    }
+});
+
+// Get highlights for a note
+router.get('/getHighlights/:noteId', async (req, res) => {
+    try {
+        console.log('🎨 Notes API: Fetching highlights for note...');
+        const { noteId } = req.params;
+
+        console.log(`🎨 Notes API: Fetching highlights for note ${noteId}`);
+
+        const highlights = await notesModelInstance.getNoteHighlights(noteId);
+
+        console.log(`✅ Notes API: Retrieved ${highlights.length} highlights for note ${noteId}`);
+        res.status(200).json({
+            success: true,
+            highlights: highlights,
+            message: 'Highlights retrieved successfully'
+        });
+    } catch (error) {
+        console.error('❌ Notes API: Error fetching highlights:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching highlights'
+        });
+    }
+});
+
 module.exports = router;

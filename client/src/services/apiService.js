@@ -220,6 +220,25 @@ class ApiService {
         });
     }
 
+    // Highlight API methods
+    async addHighlight(noteId, highlightData) {
+        return this.fetch(`/notes/addHighlight/${noteId}`, {
+            method: 'POST',
+            body: JSON.stringify(highlightData)
+        });
+    }
+
+    async removeHighlight(noteId, highlightData) {
+        return this.fetch(`/notes/removeHighlight/${noteId}`, {
+            method: 'DELETE',
+            body: JSON.stringify(highlightData)
+        });
+    }
+
+    async getNoteHighlights(noteId) {
+        return this.fetch(`/notes/getHighlights/${noteId}`);
+    }
+
     // Utility methods
     getImageUrl(imagePath) {
         if (!imagePath) return null;
