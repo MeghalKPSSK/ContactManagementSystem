@@ -63,35 +63,19 @@ const notesModel = async () => {
 
             const noteId = result.insertId;
 
-            // Add keywords (including highlights) if provided
+            // Add keywords if provided
             if (keywords && keywords.length > 0) {
                 console.log(`📝 Notes Model: Adding ${keywords.length} keywords to note ${noteId}`);
-                for (const keywordItem of keywords) {
+                const keywordList = keywords.map(keywordItem => {
                     if (typeof keywordItem === 'string') {
-                        // Regular keyword
-                        await addNoteKeywords(noteId, [keywordItem]);
-                    } else if (keywordItem.highlight_start !== null && keywordItem.highlight_start !== undefined) {
-                        // Highlight keyword (legacy format)
-                        await addNoteHighlight(
-                            noteId, 
-                            keywordItem.keyword, 
-                            keywordItem.highlight_start, 
-                            keywordItem.highlight_end, 
-                            keywordItem.highlight_color || 'yellow'
-                        );
-                    } else if (keywordItem.isHighlight) {
-                        // Highlight keyword (new format)
-                        await addNoteHighlight(
-                            noteId, 
-                            keywordItem.keyword, 
-                            keywordItem.start, 
-                            keywordItem.end, 
-                            keywordItem.color || 'yellow'
-                        );
+                        return keywordItem;
                     } else {
-                        // Regular keyword object
-                        await addNoteKeywords(noteId, [keywordItem.keyword || keywordItem]);
+                        return keywordItem.keyword || keywordItem;
                     }
+                }).filter(Boolean);
+                
+                if (keywordList.length > 0) {
+                    await addNoteKeywords(noteId, keywordList);
                 }
             }
 
@@ -124,74 +108,6 @@ const notesModel = async () => {
         }
     };
 
-    const addNoteHighlight = async (noteId, selectedText, start, end, color = 'yellow') => {
-        try {
-            console.log(`🎨 Notes Model: Adding highlight to note ${noteId}...`);
-            console.log(`🎨 Notes Model: Highlighting "${selectedText}" from ${start} to ${end} in ${color}`);
-            
-            const trimmedText = selectedText.trim();
-            if (!trimmedText) {
-                throw new Error('Selected text cannot be empty');
-            }
-
-            await pool.execute(`
-                INSERT INTO note_keywords (note_id, keyword, highlight_start, highlight_end, highlight_color) 
-                VALUES (?, ?, ?, ?, ?)
-            `, [noteId, trimmedText, start, end, color]);
-            
-            console.log(`✅ Notes Model: Highlight added successfully to note ${noteId}`);
-        } catch (error) {
-            console.error('❌ Notes Model: Error adding highlight:', error.message);
-            throw error;
-        }
-    };
-
-    const removeNoteHighlight = async (noteId, start, end) => {
-        try {
-            console.log(`🗑️ Notes Model: Removing highlight from note ${noteId} at position ${start}-${end}...`);
-            
-            const [result] = await pool.execute(`
-                DELETE FROM note_keywords 
-                WHERE note_id = ? AND highlight_start = ? AND highlight_end = ?
-            `, [noteId, start, end]);
-
-            if (result.affectedRows > 0) {
-                console.log(`✅ Notes Model: Highlight removed successfully from note ${noteId}`);
-            } else {
-                console.warn(`⚠️ Notes Model: No highlight found to remove at position ${start}-${end}`);
-            }
-
-            return result.affectedRows > 0;
-        } catch (error) {
-            console.error('❌ Notes Model: Error removing highlight:', error.message);
-            throw error;
-        }
-    };
-
-    const getNoteHighlights = async (noteId) => {
-        try {
-            console.log(`🎨 Notes Model: Fetching highlights for note ${noteId}...`);
-            
-            const [highlights] = await pool.execute(`
-                SELECT keyword, highlight_start, highlight_end, highlight_color
-                FROM note_keywords
-                WHERE note_id = decryptId(?) AND highlight_start IS NOT NULL
-                ORDER BY highlight_start ASC
-            `, [noteId]);
-
-            console.log(`✅ Notes Model: Retrieved ${highlights.length} highlights for note ${noteId}`);
-            return highlights.map(h => ({
-                keyword: h.keyword,
-                start: h.highlight_start,
-                end: h.highlight_end,
-                color: h.highlight_color || 'yellow'
-            }));
-        } catch (error) {
-            console.error('❌ Notes Model: Error fetching highlights:', error.message);
-            throw error;
-        }
-    };
-
     const getNoteById = async (noteId) => {
         try {
             console.log('📖 Notes Model: Fetching note by ID...');
@@ -220,24 +136,18 @@ const notesModel = async () => {
 
             if (notes && notes[0]) {
                 console.log(`📖 Notes Model: Note found: "${notes[0].title}"`);
-                // Get all keywords (including highlights) for this note
+                // Get keywords for this note
                 const [keywordData] = await pool.execute(`
-                    SELECT keyword, highlight_start, highlight_end, highlight_color
+                    SELECT keyword
                     FROM note_keywords
                     WHERE note_id = decryptId(?)
-                    ORDER BY highlight_start ASC, keyword
+                    ORDER BY keyword
                 `, [noteId]);
 
-                // Transform all keyword data into unified format
-                notes[0].keywords = keywordData.map(k => ({
-                    keyword: k.keyword,
-                    isHighlight: k.highlight_start !== null,
-                    start: k.highlight_start,
-                    end: k.highlight_end,
-                    color: k.highlight_color || 'yellow'
-                }));
+                // Transform keyword data into simple format
+                notes[0].keywords = keywordData.map(k => k.keyword);
                 
-                console.log(`✅ Notes Model: Note retrieved with ${keywordData.length} keywords (including highlights)`);
+                console.log(`✅ Notes Model: Note retrieved with ${keywordData.length} keywords`);
                 return notes[0];
             }
 
@@ -401,35 +311,19 @@ const notesModel = async () => {
                 const noteIdDecrypted = await encryptionInstance.dbDecryptID(noteId);
                 await pool.execute('DELETE FROM note_keywords WHERE note_id = ?', [noteIdDecrypted]);
                 
-                // Add all keywords (regular and highlights)
+                // Add keywords
                 if (keywords && keywords.length > 0) {
                     console.log(`✏️ Notes Model: Adding ${keywords.length} keywords to note ${noteId}`);
-                    for (const keywordItem of keywords) {
+                    const keywordList = keywords.map(keywordItem => {
                         if (typeof keywordItem === 'string') {
-                            // Regular keyword
-                            await addNoteKeywords(noteIdDecrypted, [keywordItem]);
-                        } else if (keywordItem.highlight_start !== null && keywordItem.highlight_start !== undefined) {
-                            // Highlight keyword (legacy format)
-                            await addNoteHighlight(
-                                noteIdDecrypted, 
-                                keywordItem.keyword, 
-                                keywordItem.highlight_start, 
-                                keywordItem.highlight_end, 
-                                keywordItem.highlight_color || 'yellow'
-                            );
-                        } else if (keywordItem.isHighlight) {
-                            // Highlight keyword (new format)
-                            await addNoteHighlight(
-                                noteIdDecrypted, 
-                                keywordItem.keyword, 
-                                keywordItem.start, 
-                                keywordItem.end, 
-                                keywordItem.color || 'yellow'
-                            );
+                            return keywordItem;
                         } else {
-                            // Regular keyword object
-                            await addNoteKeywords(noteIdDecrypted, [keywordItem.keyword || keywordItem]);
+                            return keywordItem.keyword || keywordItem;
                         }
+                    }).filter(Boolean);
+                    
+                    if (keywordList.length > 0) {
+                        await addNoteKeywords(noteIdDecrypted, keywordList);
                     }
                 }
                 
@@ -545,10 +439,7 @@ const notesModel = async () => {
         updateNote,
         deleteNote,
         getNotesStats,
-        searchNotesByKeyword,
-        addNoteHighlight,
-        removeNoteHighlight,
-        getNoteHighlights
+        searchNotesByKeyword
     };
 };
 

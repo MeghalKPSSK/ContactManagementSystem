@@ -716,7 +716,6 @@
   );
   background-size: 100% 2.2rem;
   background-position: 0 0;
-  background-attachment: local;
   position: relative;
   z-index: 2;
 }
@@ -734,7 +733,6 @@
     #fbcfe8 2.1rem,
     #fbcfe8 2.2rem
   );
-  background-attachment: local;
 }
 
 .noteCardBlue .noteContentTextarea {
@@ -744,7 +742,6 @@
     #bfdbfe 2.1rem,
     #bfdbfe 2.2rem
   );
-  background-attachment: local;
 }
 
 .noteCardYellow .noteContentTextarea {
@@ -754,7 +751,6 @@
     #fde68a 2.1rem,
     #fde68a 2.2rem
   );
-  background-attachment: local;
 }
 
 .noteCardGreen .noteContentTextarea {
@@ -764,7 +760,6 @@
     #bbf7d0 2.1rem,
     #bbf7d0 2.2rem
   );
-  background-attachment: local;
 }
 
 .noteCardPurple .noteContentTextarea {
@@ -774,7 +769,6 @@
     #e9d5ff 2.1rem,
     #e9d5ff 2.2rem
   );
-  background-attachment: local;
 }
 
 /* Keywords section for hashtags */

@@ -56,21 +56,17 @@ const createTablesIfNotExist = async (pool) => {
     `);
 
     console.log('🏷️ Notes Schema: Creating note_keywords table...');
-    // Create note_keywords table for searchable keywords/tags and highlights
+    // Create note_keywords table for searchable keywords/tags only
     await pool.query(`
         CREATE TABLE IF NOT EXISTS note_keywords (
             pk_id INT AUTO_INCREMENT PRIMARY KEY,
             note_id INT NOT NULL,
             keyword VARCHAR(100) NOT NULL,
-            highlight_start INT NULL,
-            highlight_end INT NULL,
-            highlight_color VARCHAR(20) NULL,
             createdOn DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (note_id) REFERENCES notes(pk_id) ON DELETE CASCADE,
             INDEX idx_note_id (note_id),
             INDEX idx_keyword (keyword),
-            INDEX idx_highlight_start (highlight_start),
-            UNIQUE KEY unique_note_keyword_highlight (note_id, keyword, highlight_start, highlight_end)
+            UNIQUE KEY unique_note_keyword (note_id, keyword)
         )
     `);
     console.log('✅ Notes Schema: Tables created successfully');
@@ -149,28 +145,24 @@ const validateAndUpdateSchema = async (pool) => {
 
     console.log(`🔍 Notes Schema: Found ${keywordsColumns.length} existing keyword columns`);
 
-    const requiredKeywordColumns = {
-        'highlight_start': "ALTER TABLE note_keywords ADD COLUMN highlight_start INT NULL AFTER keyword",
-        'highlight_end': "ALTER TABLE note_keywords ADD COLUMN highlight_end INT NULL AFTER highlight_start",
-        'highlight_color': "ALTER TABLE note_keywords ADD COLUMN highlight_color VARCHAR(20) NULL AFTER highlight_end"
-    };
-
+    // Remove highlight-related columns if they exist
+    const highlightColumns = ['highlight_start', 'highlight_end', 'highlight_color'];
     const existingKeywordColumns = keywordsColumns.map(col => col.COLUMN_NAME);
 
-    for (const [column, query] of Object.entries(requiredKeywordColumns)) {
-        if (!existingKeywordColumns.includes(column)) {
+    for (const column of highlightColumns) {
+        if (existingKeywordColumns.includes(column)) {
             try {
-                await pool.query(query);
-                console.log(`✅ Notes Schema: Added missing keyword column: ${column}`);
+                await pool.query(`ALTER TABLE note_keywords DROP COLUMN ${column}`);
+                console.log(`✅ Notes Schema: Removed highlight column: ${column}`);
             } catch (error) {
-                console.error(`❌ Notes Schema: Error adding keyword column ${column}:`, error.message);
+                console.error(`❌ Notes Schema: Error removing highlight column ${column}:`, error.message);
             }
         }
     }
 
     // Update unique constraint for note_keywords table
     try {
-        // Check if old constraint exists
+        // Check if old constraint exists and drop it
         const [existingConstraints] = await pool.query(`
             SELECT CONSTRAINT_NAME 
             FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
@@ -179,29 +171,26 @@ const validateAndUpdateSchema = async (pool) => {
             AND CONSTRAINT_TYPE = 'UNIQUE'
         `);
         
-        // Drop old unique constraint if it exists
-        const oldConstraint = existingConstraints.find(c => c.CONSTRAINT_NAME === 'unique_note_keyword');
-        if (oldConstraint) {
-            await pool.query(`ALTER TABLE note_keywords DROP INDEX unique_note_keyword`);
-            console.log('🔍 Notes Schema: Dropped old unique constraint');
-        } else {
-            console.log('🔍 Notes Schema: Old unique constraint not found');
+        // Drop any existing unique constraints
+        for (const constraint of existingConstraints) {
+            if (constraint.CONSTRAINT_NAME.includes('unique_note_keyword')) {
+                await pool.query(`ALTER TABLE note_keywords DROP INDEX ${constraint.CONSTRAINT_NAME}`);
+                console.log(`🔍 Notes Schema: Dropped old unique constraint: ${constraint.CONSTRAINT_NAME}`);
+            }
         }
     } catch (error) {
-        // Constraint might not exist, ignore error
         console.log('🔍 Notes Schema: Old unique constraint handling completed');
     }
 
     try {
-        // Add new unique constraint that includes highlight positions
+        // Add simple unique constraint for keyword only
         await pool.query(`
             ALTER TABLE note_keywords 
-            ADD CONSTRAINT unique_note_keyword_highlight 
-            UNIQUE (note_id, keyword, highlight_start, highlight_end)
+            ADD CONSTRAINT unique_note_keyword 
+            UNIQUE (note_id, keyword)
         `);
-        console.log('✅ Notes Schema: Added new unique constraint for keywords with highlights');
+        console.log('✅ Notes Schema: Added simple unique constraint for keywords');
     } catch (error) {
-        // Constraint might already exist, ignore error
         console.log('🔗 Notes Schema: Unique constraint for keywords already exists or error occurred:', error.message);
     }
 

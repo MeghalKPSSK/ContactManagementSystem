@@ -192,6 +192,7 @@ export default function NotesDetail() {
 
       // Extract hashtags from content
       const contentHashtags = extractHashtags(note.content);
+      const hashtagKeywords = contentHashtags.map(tag => ({ keyword: tag }));
 
       const noteData = {
         title: note.title.trim(),
@@ -200,7 +201,7 @@ export default function NotesDetail() {
         color: note.color,
         is_important: note.is_important ? 1 : 0,
         user_id: userId,
-        keywords: contentHashtags
+        keywords: hashtagKeywords
       };
 
       let response;
@@ -478,7 +479,21 @@ export default function NotesDetail() {
               </div>
             </div>
             
-        
+            {/* Keywords display (hashtags only) */}
+            {note.content && extractHashtags(note.content).length > 0 && (
+              <div className={styles.keywordsSection}>
+                <div className={styles.keywordsHeader}>
+                  <span className={styles.keywordsTitle}>Keywords found:</span>
+                </div>
+                <div className={styles.keywordsList}>
+                  {extractHashtags(note.content).map((tag, index) => (
+                    <span key={index} className={styles.keywordTag}>
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             
             {/* Bottom section with current date */}
             <div className={styles.noteFooter}>
