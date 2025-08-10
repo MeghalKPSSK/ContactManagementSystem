@@ -51,7 +51,7 @@ export default function Notes() {
   const [filterType, setFilterType] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const pageSize = 10;
+  const pageSize = 12;
   const [stats, setStats] = useState({
     total: 0,
     important: 0,

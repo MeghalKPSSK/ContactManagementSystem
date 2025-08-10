@@ -449,9 +449,6 @@ export default function NotesDetail() {
                     {validationErrors.title}
                   </p>
                 )}
-                <div className={styles.charCount}>
-                  {note.title.length}/100 characters
-                </div>
               </div>
             </div>
             
