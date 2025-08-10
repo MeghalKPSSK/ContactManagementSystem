@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const contactModel = require('../models/contactModel');
+const customAttributesModel = require('../models/customAttributesModel');
 const encryption = require('../utils/dbEncryption');
 
 let contactModelInstance;
 let encryptionInstance;
+let customAttributesInstance;
 // Initialize the encryption instance   
 (async () => {
     encryptionInstance = await encryption();
@@ -13,6 +15,11 @@ let encryptionInstance;
 // Initialize the contactModel instance
 (async () => {
     contactModelInstance = await contactModel();
+})();
+
+// Initialize the custom attributes model instance
+(async () => {
+    customAttributesInstance = await customAttributesModel();
 })();
 
 // Add a new contact
@@ -182,3 +189,64 @@ router.post('/tags', async (req, res) => {
 });
 
 module.exports = router;
+
+// ---------------------- Custom Attributes Endpoints ---------------------- //
+
+// List definitions for a user
+router.get('/customAttributes', async (req, res) => {
+    try {
+        const { userId, includeInactive } = req.query;
+        if (!userId) return res.status(400).json({ success: false, message: 'User ID is required' });
+        const defs = await customAttributesInstance.listDefinitions(userId, includeInactive !== 'false');
+        res.status(200).json({ success: true, attributes: defs });
+    } catch (error) {
+        console.error('Error listing custom attributes:', error.message);
+        res.status(error.status || 500).json({ success: false, message: error.message || 'Error listing attributes' });
+    }
+});
+
+// Create a new attribute definition
+router.post('/customAttributes', async (req, res) => {
+    try {
+        const def = await customAttributesInstance.createDefinition(req.body);
+        res.status(201).json({ success: true, attribute: def, message: 'Attribute created' });
+    } catch (error) {
+        console.error('Error creating custom attribute:', error.message);
+        res.status(error.status || 500).json({ success: false, message: error.message || 'Error creating attribute' });
+    }
+});
+
+// Update an attribute definition
+router.put('/customAttributes/:attrId', async (req, res) => {
+    try {
+        const ok = await customAttributesInstance.updateDefinition(req.params.attrId, req.body);
+        if (!ok) return res.status(400).json({ success: false, message: 'No changes applied' });
+        res.status(200).json({ success: true, message: 'Attribute updated' });
+    } catch (error) {
+        console.error('Error updating custom attribute:', error.message);
+        res.status(error.status || 500).json({ success: false, message: error.message || 'Error updating attribute' });
+    }
+});
+
+// Get attributes (defs + values) for a contact
+router.get('/contact/:id/attributes', async (req, res) => {
+    try {
+        const attrs = await customAttributesInstance.getContactAttributes(req.params.id);
+        res.status(200).json({ success: true, attributes: attrs });
+    } catch (error) {
+        console.error('Error getting contact attributes:', error.message);
+        res.status(error.status || 500).json({ success: false, message: error.message || 'Error retrieving attributes' });
+    }
+});
+
+// Upsert contact attribute values
+router.put('/contact/:id/attributes', async (req, res) => {
+    try {
+        const { values } = req.body;
+        await customAttributesInstance.upsertContactAttributes(req.params.id, values);
+        res.status(200).json({ success: true, message: 'Attributes saved' });
+    } catch (error) {
+        console.error('Error saving contact attributes:', error.message);
+        res.status(error.status || 500).json({ success: false, message: error.message || 'Error saving attributes' });
+    }
+});

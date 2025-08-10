@@ -3,6 +3,7 @@ const ensureAppUserTable = require('./schemas/userSchema');
 const ensureContactsTable = require('./schemas/contactSchema');
 const ensureGroupsTable = require('./schemas/groupSchema');
 const ensureNotesTable = require('./schemas/notesSchema');
+const ensureCustomAttributesTables = require('./schemas/customAttributesSchema');
 
 /**
  * Initialize all database schemas and tables
@@ -45,6 +46,10 @@ const initializeDatabase = async () => {
         await ensureNotesTable();
         console.log('  ✅ Notes schema initialized');
 
+    console.log('  └── Creating custom attributes tables...');
+    await ensureCustomAttributesTables();
+    console.log('  ✅ Custom attributes schema initialized');
+
         const endTime = Date.now();
         const duration = endTime - startTime;
         
@@ -86,7 +91,7 @@ const verifyDatabaseSchema = async () => {
         const pool = await initDB();
         
         // Check if all required tables exist
-        const requiredTables = ['app_user', 'contacts', 'contact_tags', 'contact_tag_mapping', 'groups', 'group_members', 'notes', 'note_keywords'];
+    const requiredTables = ['app_user', 'contacts', 'contact_tags', 'contact_tag_mapping', 'groups', 'group_members', 'notes', 'note_keywords', 'custom_attributes', 'contact_attribute_values'];
         const existingTables = [];
         
         for (const tableName of requiredTables) {

@@ -230,6 +230,37 @@ textarea.input {
   font-size: 1.1rem;
 }
 
+.sectionTitle {
+  margin: 1.5rem 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.customFieldsSection {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  background-color: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 6px;
+}
+
+.formSection {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  background-color: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 6px;
+}
+
+.customFieldsGrid {
+  display: grid;
+  gap: 12px;
+}
+
 .tagsSection {
   margin: 1.5rem 0;
   position: relative;

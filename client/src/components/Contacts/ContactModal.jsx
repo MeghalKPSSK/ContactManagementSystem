@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faStar, faSave } from '@fortawesome/free-solid-svg-icons';
 import styles from './ContactModal.module.css';
 import { toast } from 'react-toastify';
+import apiService from '../../services/apiService';
 
 const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -35,18 +36,43 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
     alt_phone: '',
     mobile: ''
   });
+  const [customDefs, setCustomDefs] = useState([]);
+  const [customValues, setCustomValues] = useState({});
 
   useEffect(() => {
     if (mode !== 'add' && contact) {
       fetchContactDetails(contact);
     } else {
-      setFormData({
-        ...formData,
+      setFormData(prev => ({
+        ...prev,
         user_id: JSON.parse(localStorage.getItem('user')).uid
-      });
+      }));
       setLoading(false);
     }
   }, [contact, mode]);
+
+  // Load custom field definitions for current user, and values if editing
+  useEffect(() => {
+    const u = JSON.parse(localStorage.getItem('user'));
+    if (!u?.uid) return;
+    (async () => {
+      try {
+        const defsRes = await apiService.getCustomAttributes(u.uid);
+        setCustomDefs(defsRes.attributes || []);
+        if (mode !== 'add' && contact) {
+          const valRes = await apiService.getContactAttributes(contact);
+          const byKey = {};
+          (valRes.attributes || []).forEach(a => { byKey[a.key_name] = a.value ?? ''; });
+          setCustomValues(byKey);
+        } else {
+          setCustomValues({});
+        }
+      } catch (e) {
+        // Non-blocking
+        console.error('Custom fields load error', e);
+      }
+    })();
+  }, [mode, contact]);
 
   useEffect(() => {
     fetchTags();
@@ -261,6 +287,19 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
 
         const data = await response.json();
         if (data.success) {
+            // Upsert custom attribute values after core save/update
+            const contactUid = mode === 'add' ? data.uid : contact;
+            if (customDefs.length) {
+              const values = customDefs
+                .filter(d => d.is_active)
+                .map(d => ({ key_name: d.key_name, value: normalizeValueForType(customValues[d.key_name], d.type) }));
+              try {
+                await apiService.upsertContactAttributes(contactUid, values);
+              } catch (err) {
+                toast.error(err.message || 'Failed to save custom fields');
+                return; // stop further flow to let user correct
+              }
+            }
             toast.success(data.message);
             onSubmit();
         }
@@ -268,6 +307,56 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
         toast.error(`Error ${mode === 'add' ? 'saving' : 'updating'} contact: ${error.message}`);
     }
 };
+
+  const normalizeValueForType = (val, type) => {
+    if (val === undefined) return '';
+    switch (type) {
+      case 'number':
+        return val === '' ? '' : Number(val);
+      case 'boolean':
+        if (val === true || val === 'true') return true;
+        if (val === false || val === 'false') return false;
+        return '';
+      default:
+        return val;
+    }
+  };
+
+  const renderCustomField = (def) => {
+    const value = customValues[def.key_name] ?? '';
+    const setVal = (v) => setCustomValues(prev => ({ ...prev, [def.key_name]: v }));
+  const common = { disabled: mode === 'view', required: def.is_required && mode !== 'view' };
+    switch (def.type) {
+      case 'text':
+        return <input type="text" className={styles.input} value={value} onChange={e => setVal(e.target.value)} {...common} />;
+      case 'number':
+        return <input type="number" className={styles.input} value={value} onChange={e => setVal(e.target.value)} {...common} />;
+      case 'date':
+        return <input type="date" className={styles.input} value={value} onChange={e => setVal(e.target.value)} {...common} />;
+      case 'boolean':
+        return <input type="checkbox" checked={value === true || value === 'true'} onChange={e => setVal(e.target.checked)} {...common} />;
+      case 'select':
+        return (
+          <select className={styles.input} value={value} onChange={e => setVal(e.target.value)} {...common}>
+            <option value="">Select...</option>
+            {(def.options || []).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          </select>
+        );
+      case 'radio':
+        return (
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            {(def.options || []).map(opt => (
+              <label key={opt} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input type="radio" name={`ra_${def.key_name}`} value={opt} checked={value === opt} onChange={() => setVal(opt)} {...common} />
+                {opt}
+              </label>
+            ))}
+          </div>
+        );
+      default:
+        return <input type="text" className={styles.input} value={value} onChange={e => setVal(e.target.value)} {...common} />;
+    }
+  };
 
   if (loading) {
     return <div className={styles.loading}>Loading...</div>;
@@ -285,7 +374,8 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
 
         <form onSubmit={handleSubmit} className={styles.contactForm}>
           {/* First row - Name fields */}
-          <div className={styles.formRow}>
+          <div className={styles.formSection}>
+            <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label data-required="true">First Name</label>
               <input
@@ -311,10 +401,12 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
                 disabled={mode === 'view'}
               />
             </div>
+            </div>
           </div>
 
           {/* Phone fields */}
-          <div className={styles.formRow}>
+          <div className={styles.formSection}>
+            <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label data-required="true">Primary Phone</label>
               <input
@@ -342,10 +434,12 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
               />
               {phoneErrors.alt_phone && <span className={styles.errorText}>{phoneErrors.alt_phone}</span>}
             </div>
+            </div>
           </div>
 
-          {/* Mobile field */}
-          <div className={styles.formRow}>
+          {/* Mobile and Email */}
+          <div className={styles.formSection}>
+            <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label>Mobile</label>
               <input
@@ -372,25 +466,29 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
                 required
               />
             </div>
+            </div>
           </div>
 
-          {/* Address field */}
-          <div className={styles.formGroup}>
-            <label>Address</label>
-            <input
-              type="text"
-              name="address_line"
-              className={styles.input}
-              placeholder="Enter street address"
-              value={formData.address_line}
-              onChange={handleChange}
-              rows={5}
-              disabled={mode === 'view'}
-            />
+          {/* Address */}
+          <div className={styles.formSection}>
+            <div className={styles.formGroup}>
+              <label>Address</label>
+              <input
+                type="text"
+                name="address_line"
+                className={styles.input}
+                placeholder="Enter street address"
+                value={formData.address_line}
+                onChange={handleChange}
+                rows={5}
+                disabled={mode === 'view'}
+              />
+            </div>
           </div>
 
           {/* City and State */}
-          <div className={styles.formRow}>
+          <div className={styles.formSection}>
+            <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label>City</label>
               <input
@@ -415,10 +513,12 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
                 disabled={mode === 'view'}
               />
             </div>
+            </div>
           </div>
 
           {/* Postal Code and Country */}
-          <div className={styles.formRow}>
+          <div className={styles.formSection}>
+            <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label>Postal Code</label>
               <input
@@ -443,10 +543,12 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
                 disabled={mode === 'view'}
               />
             </div>
+            </div>
           </div>
 
           {/* Company and Job Title */}
-          <div className={styles.formRow}>
+          <div className={styles.formSection}>
+            <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label>Company</label>
               <input
@@ -471,24 +573,44 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
                 disabled={mode === 'view'}
               />
             </div>
+            </div>
           </div>
 
-          {/* Notes field */}
-          <div className={styles.formGroup}>
-            <label>Notes</label>
-            <textarea
-              name="notes"
-              className={styles.input}
-              placeholder="Enter additional notes"
-              value={formData.notes}
-              onChange={handleChange}
-              disabled={mode === 'view'}
-              rows={4}
-            />
+          {/* Notes */}
+          <div className={styles.formSection}>
+            <div className={styles.formGroup}>
+              <label>Notes</label>
+              <textarea
+                name="notes"
+                className={styles.input}
+                placeholder="Enter additional notes"
+                value={formData.notes}
+                onChange={handleChange}
+                disabled={mode === 'view'}
+                rows={4}
+              />
+            </div>
           </div>
+
+          {/* Custom Fields */}
+          {customDefs && customDefs.filter(d => d.is_active).length > 0 && (
+            <div className={styles.customFieldsSection}>
+              <div className={styles.sectionTitle}>Custom Fields</div>
+              <div className={styles.customFieldsGrid}>
+                {customDefs.filter(d => d.is_active).map(def => (
+                  <div key={def.key_name} className={styles.formGroup}>
+                    <label data-required={def.is_required ? 'true' : undefined} aria-required={def.is_required ? 'true' : undefined}>
+                      {def.label}
+                    </label>
+                    {renderCustomField(def)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Tags Section */}
-          <div className={styles.tagsSection}>
+          <div className={`${styles.formSection} ${styles.tagsSection}`}>
             <label>Tags</label>
             <div className={styles.tagInput}>
               <input

@@ -48,7 +48,7 @@ const userModel = async () => {
             const hashedPassword = passCrypto.encrypt16Bit(loginPassword);
             
             const [rows] = await pool.execute(`SELECT (select encryptId(pk_id)) uid, firstName, lastName, phone, email, 
-                username, profileImage, status, registeredOn, modifiedOn, now() lastLogin FROM app_user WHERE username = ? AND password = ? 
+                username, profileImage, status, registeredOn, modifiedOn, COALESCE(NULLIF(plan, ''), 'free') AS plan, role, now() lastLogin FROM app_user WHERE username = ? AND password = ? 
                 AND status = 'Active' AND is_deleted = 0`, [loginUsername, hashedPassword]);
             if (rows.length === 0) {
                 throw new Error("Invalid username or password");
@@ -63,7 +63,7 @@ const userModel = async () => {
     const getUserById = async (userId) => {
         try {
             const [rows] = await pool.execute(`SELECT (select encryptId(pk_id)) uid, firstName, lastName, phone, email, 
-                username, profileImage, status, registeredOn, modifiedOn FROM app_user WHERE pk_id in (select decryptId(?)) AND is_deleted = 0`, [userId]);
+                username, profileImage, status, registeredOn, modifiedOn, COALESCE(NULLIF(plan, ''), 'free') AS plan, role FROM app_user WHERE pk_id in (select decryptId(?)) AND is_deleted = 0`, [userId]);
             return rows[0];
         } catch (error) {
             console.error(`Error fetching user: ${error}`);
@@ -121,11 +121,47 @@ const userModel = async () => {
     const getUsersList = async () => {
         try {
             const [rows] = await pool.execute(`SELECT (select encryptId(pk_id)) uid, firstName, lastName, phone, email, 
-                username, status, registeredOn, modifiedOn FROM app_user WHERE is_deleted = 0 ORDER BY pk_id DESC`);
+                username, status, registeredOn, modifiedOn, COALESCE(NULLIF(plan, ''), 'free') AS plan, role FROM app_user WHERE is_deleted = 0 ORDER BY pk_id DESC`);
             console.log(`rows: ${JSON.stringify(rows)}`);
             return rows;
         } catch (error) {
             console.error(`Error fetching users list: ${error}`);
+            throw error;
+        }
+    };
+
+    const updatePlan = async (userId, plan) => {
+        try {
+            const normalized = (plan || '').toString().toLowerCase();
+            const validPlans = new Set(['free', 'pro', 'enterprise']);
+            if (!validPlans.has(normalized)) {
+                throw new Error('Invalid plan');
+            }
+
+            // Prevent downgrading below current active custom fields
+            // Count active custom attribute definitions for this user
+            try {
+                const [[{ cnt }]] = await pool.query(
+                    `SELECT COUNT(*) AS cnt FROM custom_attributes WHERE user_id = (SELECT decryptId(?)) AND is_active = 1`,
+                    [userId]
+                );
+                const limits = { free: 3, pro: 5, enterprise: 10 };
+                const limit = limits[normalized] ?? 3;
+                if (cnt > limit) {
+                    throw new Error(`Cannot set plan to '${normalized}': you have ${cnt} active custom fields, limit is ${limit}. Deactivate some fields first.`);
+                }
+            } catch (planCheckErr) {
+                // Re-throw as-is for client visibility
+                throw planCheckErr;
+            }
+
+            const [result] = await pool.execute(
+                `UPDATE app_user SET plan = ?, modifiedOn = NOW() WHERE pk_id = (SELECT decryptId(?)) AND is_deleted = 0`,
+                [normalized, userId]
+            );
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error(`Error updating plan: ${error}`);
             throw error;
         }
     };
@@ -176,7 +212,8 @@ const userModel = async () => {
         getUsersList,
         loginUser,
         deleteUser,
-        changePassword
+    changePassword,
+    updatePlan
     };
 };
 module.exports = userModel;

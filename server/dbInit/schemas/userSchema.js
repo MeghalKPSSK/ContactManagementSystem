@@ -31,7 +31,8 @@ const ensureAppUserTable = async () => {
                     is_deleted BOOLEAN DEFAULT FALSE,
                     registeredOn DATETIME DEFAULT CURRENT_TIMESTAMP,
                     modifiedOn DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    role VARCHAR(50) DEFAULT 'User'
+                    role VARCHAR(50) DEFAULT 'User',
+                    plan VARCHAR(20) DEFAULT 'free'
                 )
             `);
             console.log('app_user table created successfully.');
@@ -54,6 +55,22 @@ const ensureAppUserTable = async () => {
                     ADD COLUMN profileImage VARCHAR(500) AFTER password
                 `);
                 console.log('profileImage column added to app_user table.');
+            }
+            
+            // Ensure 'plan' column exists with a safe default
+            const [planCol] = await pool.query(`
+                SELECT COLUMN_NAME 
+                FROM information_schema.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'app_user' 
+                AND COLUMN_NAME = 'plan'
+            `);
+            if (planCol.length === 0) {
+                await pool.query(`
+                    ALTER TABLE app_user 
+                    ADD COLUMN plan VARCHAR(20) DEFAULT 'free' AFTER role
+                `);
+                console.log("plan column added to app_user table with default 'free'.");
             }
             
             return 0;

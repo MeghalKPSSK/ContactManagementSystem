@@ -182,4 +182,27 @@ router.post('/uploadProfileImage/:id', upload.single('profileImage'), async (req
     }
 });
 
+// Update user plan (no payment integration for now)
+router.put('/updatePlan/:id', async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const { plan } = req.body;
+        if (!plan) {
+            return res.status(400).json({ success: false, message: 'Plan is required' });
+        }
+
+        const updated = await userModelInstance.updatePlan(userId, plan);
+        if (!updated) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Return fresh user data
+        const user = await userModelInstance.getUserById(userId);
+        res.status(200).json({ success: true, message: 'Plan updated successfully', user });
+    } catch (error) {
+        console.error(`Error updating plan: ${error.message}`);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 module.exports = router;

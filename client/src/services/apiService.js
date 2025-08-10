@@ -73,6 +73,13 @@ class ApiService {
         });
     }
 
+    async updateUserPlan(userId, plan) {
+        return this.fetch(`/users/updatePlan/${userId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ plan })
+        });
+    }
+
     async loginUser(credentials) {
         return this.fetch('/users/login', {
             method: 'POST',
@@ -237,6 +244,37 @@ class ApiService {
 
     async getNoteHighlights(noteId) {
         return this.fetch(`/notes/getHighlights/${noteId}`);
+    }
+
+    // Custom Attributes API methods
+    async getCustomAttributes(userId) {
+        const query = new URLSearchParams({ userId: String(userId) }).toString();
+        return this.fetch(`/contacts/customAttributes?${query}`);
+    }
+
+    async createCustomAttribute(definition) {
+        return this.fetch('/contacts/customAttributes', {
+            method: 'POST',
+            body: JSON.stringify(definition)
+        });
+    }
+
+    async updateCustomAttribute(attrId, patch) {
+        return this.fetch(`/contacts/customAttributes/${attrId}`, {
+            method: 'PUT',
+            body: JSON.stringify(patch)
+        });
+    }
+
+    async getContactAttributes(contactId) {
+        return this.fetch(`/contacts/contact/${contactId}/attributes`);
+    }
+
+    async upsertContactAttributes(contactId, values) {
+        return this.fetch(`/contacts/contact/${contactId}/attributes`, {
+            method: 'PUT',
+            body: JSON.stringify({ values })
+        });
     }
 
     // Utility methods

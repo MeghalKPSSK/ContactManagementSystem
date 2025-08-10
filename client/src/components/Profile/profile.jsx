@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faEyeSlash, faKey, faSave, faTimes, faCamera, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faKey, faSave, faTimes, faCamera, faUser, faArrowUp } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import styles from './profile.module.css';
+import CustomFields from './CustomFields';
 import apiService from '../../services/apiService';
 import { dispatchProfileUpdate } from '../../utils/eventUtils';
 
@@ -10,6 +11,8 @@ const Profile = () => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [showCustomFields, setShowCustomFields] = useState(false);
+    const [showPlanModal, setShowPlanModal] = useState(false);
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -260,6 +263,26 @@ const Profile = () => {
             </div>
             <div className={styles.profileCard}>
                 <form onSubmit={handleSubmit} className={styles.profileForm}>
+                    {/* Plan Section */}
+                    {user && (
+                        <div className={styles.formGroup}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <span style={{ padding: '0.4rem 0.75rem', border: '1px solid var(--accent-border)', borderRadius: 6, textTransform: 'capitalize' }}>
+                                   Plan: {user.plan.toUpperCase() || 'FREE'}
+                                </span>
+                                <button
+                                    type="button"
+                                    className={`${styles.iconButton} ${styles.upgradeIcon}`}
+                                    onClick={() => setShowPlanModal(true)}
+                                    title="Upgrade Plan"
+                                    aria-label="Upgrade Plan"
+                                >
+                                    <FontAwesomeIcon icon={faArrowUp} />
+                                </button>
+                                <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Upgrade your plan</span>
+                            </div>
+                        </div>
+                    )}
                     {/* Profile Image Section */}
                     <div className={styles.profileImageSection}>
                         <div className={styles.imageUploadContainer}>
@@ -384,6 +407,13 @@ const Profile = () => {
                         >
                             <FontAwesomeIcon icon={faKey} />
                         </button>
+                        <button
+                            type="button"
+                            className={styles.updateButton}
+                            onClick={() => setShowCustomFields(true)}
+                        >
+                            Manage Custom Fields
+                        </button>
                     </div>
                 </form>
             </div>
@@ -469,6 +499,63 @@ const Profile = () => {
                     </div>
                 </div>
             )}
+            {showPlanModal && user && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContent}>
+                        <div className={styles.modalHeader}>
+                            <h3>Choose a Plan</h3>
+                            <button 
+                                className={styles.closeButton} 
+                                onClick={() => setShowPlanModal(false)}
+                                title="Close"
+                            >
+                                <FontAwesomeIcon icon={faTimes} />
+                            </button>
+                        </div>
+                        <form onSubmit={async (e) => {
+                            e.preventDefault();
+                            const form = new FormData(e.currentTarget);
+                            const plan = form.get('plan');
+                            try {
+                                const resp = await apiService.updateUserPlan(user.uid, plan);
+                                if (resp.success) {
+                                    toast.success('Plan updated successfully');
+                                    setUser(resp.user);
+                                    // Update localStorage copy
+                                    const localUser = JSON.parse(localStorage.getItem('user')) || {};
+                                    localStorage.setItem('user', JSON.stringify({ ...localUser, ...resp.user }));
+                                    // Inform other parts of app (e.g., custom fields modal)
+                                    dispatchProfileUpdate(resp.user);
+                                    setShowPlanModal(false);
+                                } else {
+                                    toast.error(resp.message || 'Failed to update plan');
+                                }
+                            } catch (err) {
+                                toast.error(err.message || 'Failed to update plan');
+                            }
+                        }}>
+                            <div style={{ padding: '1.5rem' }}>
+                                <div className={styles.formGroup}>
+                                    <label>Select Plan</label>
+                                    <div className={styles.textInput}>
+                                        <select name="plan" defaultValue={(user.plan || 'free').toLowerCase()} required>
+                                            <option value="free">Free (3 custom fields)</option>
+                                            <option value="pro">Pro (5 custom fields)</option>
+                                            <option value="enterprise">Enterprise (10 custom fields)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className={styles.buttonGroup}>
+                                <button type="button" className={styles.cancelButton} onClick={() => setShowPlanModal(false)}>Cancel</button>
+                                <button type="submit" className={styles.submitButton}>Save Plan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            {/* Custom Fields Management */}
+            <CustomFields open={showCustomFields} onClose={() => setShowCustomFields(false)} plan={user?.plan} />
         </div>
     );
 };

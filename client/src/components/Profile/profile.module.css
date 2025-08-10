@@ -37,6 +37,17 @@
     transition: all 0.2s ease;
 }
 
+.textInput select {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 1.5px solid var(--accent-border);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background-color: var(--primary-bg);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
 .textInput input.error {
     border-color: var(--error-color);
 }
@@ -225,6 +236,30 @@
     color: var(--text-primary-dark);
     border-color: var(--text-primary-dark);
     transform: scale(1.05);
+}
+
+/* Noticeable accent for upgrade plan icon */
+.upgradeIcon {
+    background-color: var(--secondary-dark);
+    color: #fff;
+    border-color: var(--secondary-dark);
+    width: 46px;
+    height: 46px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: upgradePulse 2.2s ease-in-out infinite;
+}
+
+.upgradeIcon:hover {
+    animation: none;
+    transform: translateY(-1px) scale(1.06);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+}
+
+@keyframes upgradePulse {
+    0%, 70%, 100% { transform: none; }
+    75% { transform: scale(1.08); }
+    85% { transform: scale(1); }
+    95% { transform: scale(1.08); }
 }
 
 .profileHeader {
