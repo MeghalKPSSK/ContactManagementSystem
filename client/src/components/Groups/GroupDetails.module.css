@@ -1,7 +1,7 @@
 .detailsContainer {
   width: 100%;
-  max-width: 98vw;
-  padding: 1px;
+  /* max-width: 98vw; */
+  padding: 1rem;
   background: var(--primary-bg);
   box-shadow: 0 4px 24px rgba(0,0,0,0.08);
   position: relative;
@@ -23,27 +23,21 @@
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  /* transition: all 0.3s ease; */
   text-decoration: none;
   z-index: 10;
-  box-shadow: 0 4px 16px rgba(29, 66, 171, 0.2);
+  /* box-shadow: 0 4px 16px rgba(29, 66, 171, 0.2); */
 }
 
-.backButton:hover {
-  background: rgba(29, 66, 171, 0.25);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(29, 66, 171, 0.3);
-  border-color: rgba(29, 66, 171, 0.4);
-}
 
 .backButton:active {
   transform: translateY(0);
 }
 
 .headerStrip {
-  background: linear-gradient(135deg, #1d42ab 0%, #2563eb 100%);
-  padding: 1rem 1.5rem; /* Reduced from 2rem to 1rem vertical, 2rem to 1.5rem horizontal */
-  border-radius: 12px;
+  background-color: #1d42ab;
+  padding: 4px 2px; /* Reduced from 2rem to 1rem vertical, 2rem to 1.5rem horizontal */
+  border-radius: 4px;
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -123,7 +117,7 @@
 }
 
 .groupDescription {
-  font-size: 1.1rem;
+  font-size: 15px;
   margin: 0;
   color: rgba(255, 255, 255, 0.9);
   font-weight: 400;
@@ -133,7 +127,7 @@
 
 .membersSection {
   background: white;
-  border-radius: 16px;
+  border-radius: 4px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
   border: 1px solid #e2e8f0;
   overflow: hidden;
@@ -144,8 +138,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 3px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 2px 3px;
+  /* background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); */
   border-bottom: 1px solid #e2e8f0;
   position: relative;
 }
@@ -162,11 +156,11 @@
 }
 
 .addButton {
-  background: linear-gradient(135deg, #4c6ef5 0%, #6366f1 100%);
+  background-color: #1d42ab;
   color: white;
   border: none;
-  padding: 0.875rem 1.75rem;
-  border-radius: 12px;
+  /* padding: 0.875rem 1.75rem; */
+  border-radius: 4px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -180,9 +174,9 @@
 }
 
 .addButton:hover {
-  transform: translateY(-2px);
+  /* transform: translateY(-2px); */
   box-shadow: 0 8px 25px rgba(76, 110, 245, 0.35);
-  background: linear-gradient(135deg, #3b5bdb 0%, #5b5ff1 100%);
+  background-color: #1d42ab;
 }
 
 .addButton:active {
@@ -208,6 +202,8 @@
   background: var(--primary-bg);
   overflow-x: auto;
   position: relative;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
 }
 
 .membersTable {
@@ -219,34 +215,34 @@
 
 .membersTable th,
 .membersTable td {
-  padding: 1.25rem 1.5rem;
+  padding: 1rem 1.5rem;
   text-align: left;
   vertical-align: middle;
   position: relative;
 }
 
 .membersTable th {
-  background: linear-gradient(135deg, #4c6ef5 0%, #6366f1 100%);
+  background-color: #1d42ab;
   color: white;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.95rem;
-  text-transform: uppercase;
   letter-spacing: 0.5px;
   border: none;
   position: sticky;
   top: 0;
   z-index: 10;
+
   box-shadow: 0 2px 8px rgba(76, 110, 245, 0.15);
 }
 
 .membersTable th:first-child {
-  border-top-left-radius: 0;
+  /* border-top-left-radius: 0; */
   width: 80px;
   text-align: center;
 }
 
 .membersTable th:last-child {
-  border-top-right-radius: 0;
+  /* border-top-right-radius: 0; */
   width: 120px;
 }
 
@@ -262,24 +258,24 @@
 .membersTable td {
   border-bottom: 1px solid #f1f5f9;
   font-size: 0.95rem;
-  color: #475569;
-  font-weight: 500;
+  /* color: #475569; */
+  font-weight: 400;
 }
 
 .membersTable td:first-child {
   text-align: center;
-  font-weight: 700;
-  color: #6366f1;
-  font-size: 1rem;
+  font-weight: 400;
+  color: 475569;
+  font-size: 0.95rem;
 }
 
 .membersTable td:nth-child(2) {
-  font-weight: 600;
-  color: #1e293b;
+  font-weight: 400;
+  /* color: #1e293b; */
 }
 
 .membersTable td:nth-child(3) {
-  color: #64748b;
+  /* color: #64748b; */
 }
 
 .membersTable tbody tr:last-child td {
@@ -287,37 +283,29 @@
 }
 
 .actionButton {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  color: #dc2626;
-  font-size: 0.9rem;
+  padding: 0.5rem;
+  border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 36px;
-  height: 36px;
+  transition: all 0.2s ease;
+  background: transparent;
+  border-radius: 4px;
+  color: var(--secondary-bg);
 }
 
 .actionButton:hover {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--secondary-light);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
 .deleteButton {
   color: #dc2626;
 }
 
-.deleteButton:hover {
+/* .deleteButton:hover {
   background: rgba(239, 68, 68, 0.2);
   border-color: rgba(239, 68, 68, 0.4);
   color: #b91c1c;
-}
+} */
 
 .noMembers {
   text-align: center;
@@ -438,7 +426,7 @@
   
   .membersTable th,
   .membersTable td {
-    padding: 0.5rem 0.25rem;
+    padding: 0.2rem 0.15rem;
     font-size: 0.85rem;
   }
   

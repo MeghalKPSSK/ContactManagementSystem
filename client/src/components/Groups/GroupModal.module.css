@@ -46,7 +46,7 @@
   align-items: center;
   padding: 1.25rem 2rem;
   border-bottom: 1px solid var(--accent-border);
-  background: linear-gradient(135deg, var(--secondary-bg) 0%, #4c6ef5 100%);
+  background-color: #1d42ab;
   border-radius: 8px 8px 0 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -484,7 +484,7 @@
 
 .searchButton {
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #4c6ef5 0%, #6c5ce7 100%);
+  background-color: #1d42ab;
   color: white;
   border: none;
   border-radius: 6px;
@@ -494,11 +494,11 @@
   white-space: nowrap;
 }
 
-.searchButton:hover {
+/* .searchButton:hover {
   background: linear-gradient(135deg, #3b5bdb 0%, #5a52d5 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(76, 110, 245, 0.3);
-}
+} */
 
 .profileImageSection {
   display: flex;
@@ -673,7 +673,7 @@
 }
 
 .contactsTable thead {
-  background: linear-gradient(135deg, var(--secondary-bg) 0%, #4c6ef5 100%);
+  background-color: #1d42ab;
   color: white;
   position: sticky;
   top: 0;
