@@ -1,17 +1,26 @@
 {
   "name": "contactmanagementsystem",
   "version": "1.0.0",
-  "description": "Welcome to the **Contact Management System**! This project is designed to help you efficiently manage and organize your contacts.",
-  "main": "index.js",
+  "private": true,
+  "description": "Contact Management System - Turborepo Monorepo",
+  "packageManager": "pnpm@11.18.0",
   "scripts": {
-    "dev": "concurrently \"npm run server:dev\" \"npm run client\"",
-    "start": "concurrently \"npm run server:prod\" \"npm run client\"",
-    "server:dev": "cd server && npm run dev",
-    "server:prod": "cd server && npm run start",
-    "client": "cd client && npm run dev"
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "turbo run db:migrate",
+    "db:push": "turbo run db:push",
+    "db:functions": "pnpm --filter api db:functions",
+    "db:studio": "turbo run db:studio",
+    "api:dev": "pnpm --filter api dev",
+    "api:start": "pnpm --filter api start",
+    "web:dev": "pnpm --filter web dev",
+    "web:build": "pnpm --filter web build"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "turbo": "^2.4.4"
   },
   "repository": {
     "type": "git",

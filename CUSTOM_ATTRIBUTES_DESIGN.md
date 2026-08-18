@@ -21,7 +21,7 @@ This document proposes a complete, incremental plan to add per-user, dynamic cus
 
 ## Current System References
 - DB: MySQL with helper SQL functions `encryptId(...)` and `decryptId(...)` used at the SQL layer.
-- Server: Express routes under `/contacts`, `/users`, etc.; models per domain in `server/models`.
+- Server: Express routes under `/contacts`, `/users`, etc.; models per domain in `apps/api/models`.
 - Encryption: Encrypted IDs are returned to clients; API accepts encrypted IDs in params/bodies.
 - Contact tags already exist and provide a similar mapping pattern you can mirror.
 
@@ -74,7 +74,7 @@ Notes
 - Use `is_active` to soft-disable an attribute without losing historical values.
 
 Migration wiring
-- Create `server/dbInit/schemas/customAttributesSchema.js` mirroring the style of `contactSchema.js` and `userSchema.js`.
+- Create `apps/api/dbInit/schemas/customAttributesSchema.js` mirroring the style of `contactSchema.js` and `userSchema.js`.
 - Update `dbInit/init.js` to call your new ensure function so tables are created/validated on startup.
 
 ### 2. Subscription & Limits
@@ -88,7 +88,7 @@ Enforcement points
 - Optionally, prevent re-activation if the limit would be exceeded.
 
 ### 3. APIs (proposed)
-Add routes to `server/Routes/contactRoutes.js` (co-locate with contacts domain):
+Add routes to `apps/api/Routes/contactRoutes.js` (co-locate with contacts domain):
 
 Attribute definitions
 - GET `/contacts/customAttributes?userId=<uid>` → list active + inactive (optionally filter by `is_active`)
@@ -160,7 +160,7 @@ Data contracts
 - `is_active=false`: read-only (show existing values but don’t allow updates) unless explicitly allowed
 
 ### 5. Model Layer (new or extend existing)
-Recommended: add a new `customAttributesModel.js` in `server/models/` to keep concerns separate, but you can also co-locate small helpers in `contactModel.js`.
+Recommended: add a new `customAttributesModel.js` in `apps/api/models/` to keep concerns separate, but you can also co-locate small helpers in `contactModel.js`.
 
 Core functions (pseudocode hints use your existing SQL encryption style)
 - `listDefinitions(userId)`
@@ -197,7 +197,7 @@ Core functions (pseudocode hints use your existing SQL encryption style)
 ## Frontend (Level 2)
 
 ### 1. API Service
-Extend `client/src/services/apiService.js` with methods that match the endpoints. Use the existing `fetch` wrapper and `configService`.
+Extend `apps/web/src/services/apiService.js` with methods that match the endpoints. Use the existing `fetch` wrapper and `configService`.
 - `getCustomAttributes(userId)` → GET `/contacts/customAttributes?userId=...`
 - `createCustomAttribute(def)` → POST `/contacts/customAttributes`
 - `updateCustomAttribute(attrId, patch)` → PUT `/contacts/customAttributes/:attrId`
@@ -213,7 +213,7 @@ Add a simple screen to manage custom fields (e.g., under Profile/Settings):
 - Validate `key_name` and options on the client before sending.
 
 Suggested placement
-- `client/src/components/Profile/CustomFields.jsx` (or a new Settings folder), with a menu entry in sidebar if desired.
+- `apps/web/src/components/Profile/CustomFields.jsx` (or a new Settings folder), with a menu entry in sidebar if desired.
 
 ### 3. ContactModal dynamic rendering
 In `ContactModal.jsx`:

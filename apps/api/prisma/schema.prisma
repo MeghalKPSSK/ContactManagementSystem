@@ -1,0 +1,215 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model AppUser {
+  pk_id        Int       @id @default(autoincrement())
+  username     String    @db.VarChar(255)
+  firstName    String    @db.VarChar(255)
+  lastName     String?   @db.VarChar(255)
+  phone        String    @db.VarChar(255)
+  email        String    @db.VarChar(255)
+  password     String    @db.VarChar(255)
+  profileImage String?   @db.VarChar(500)
+  lastLogin    DateTime? @db.DateTime(0)
+  status       String    @default("Active") @db.VarChar(50)
+  is_deleted   Boolean   @default(false)
+  registeredOn DateTime  @default(now()) @db.DateTime(0)
+  modifiedOn   DateTime  @default(now()) @updatedAt @db.DateTime(0)
+  role         String?   @default("User") @db.VarChar(50)
+  plan         String?   @default("free") @db.VarChar(20)
+
+  contacts         Contact[]
+  contactTags      ContactTag[]
+  groups           Group[]
+  notes            Note[]
+  customAttributes CustomAttribute[]
+
+  @@map("app_user")
+}
+
+model Contact {
+  pk_id        Int      @id @default(autoincrement())
+  user_id      Int
+  firstName    String   @db.VarChar(50)
+  lastName     String?  @db.VarChar(50)
+  email        String?  @db.VarChar(100)
+  phone        String?  @db.VarChar(20)
+  mobile       String?  @db.VarChar(20)
+  alt_phone    String?  @db.VarChar(20)
+  address_line String?  @db.Text
+  city         String?  @db.VarChar(50)
+  state        String?  @db.VarChar(50)
+  postal_code  String?  @db.VarChar(20)
+  country      String?  @db.VarChar(50)
+  company      String?  @db.VarChar(100)
+  is_favorite  Boolean  @default(false)
+  job_title    String?  @db.VarChar(100)
+  notes        String?  @db.Text
+  status       String   @default("Active") @db.VarChar(50)
+  is_deleted   Boolean  @default(false)
+  createdOn    DateTime @default(now()) @db.DateTime(0)
+  modifiedOn   DateTime @default(now()) @updatedAt @db.DateTime(0)
+
+  user            AppUser                 @relation(fields: [user_id], references: [pk_id], onDelete: Cascade)
+  tagMappings     ContactTagMapping[]
+  groupMembers    GroupMember[]
+  attributeValues ContactAttributeValue[]
+  notesList       Note[]
+
+  @@index([user_id], map: "idx_user_id")
+  @@index([firstName], map: "idx_firstName")
+  @@index([lastName], map: "idx_lastName")
+  @@index([email], map: "idx_email")
+  @@index([mobile], map: "idx_mobile")
+  @@index([is_favorite], map: "idx_favorite")
+  @@index([firstName, lastName], map: "idx_name_combined")
+  @@map("contacts")
+}
+
+model ContactTag {
+  pk_id     Int      @id @default(autoincrement())
+  name      String   @db.VarChar(50)
+  user_id   Int
+  createdOn DateTime @default(now()) @db.DateTime(0)
+
+  user        AppUser             @relation(fields: [user_id], references: [pk_id], onDelete: Cascade)
+  tagMappings ContactTagMapping[]
+
+  @@unique([name, user_id], map: "unique_tag")
+  @@index([user_id], map: "idx_user_tags")
+  @@map("contact_tags")
+}
+
+model ContactTagMapping {
+  contact_id Int
+  tag_id     Int
+  createdOn  DateTime @default(now()) @db.DateTime(0)
+
+  contact Contact    @relation(fields: [contact_id], references: [pk_id], onDelete: Cascade)
+  tag     ContactTag @relation(fields: [tag_id], references: [pk_id], onDelete: Cascade)
+
+  @@id([contact_id, tag_id])
+  @@index([contact_id], map: "idx_contact_tags")
+  @@map("contact_tag_mapping")
+}
+
+model Group {
+  pk_id       Int      @id @default(autoincrement())
+  user_id     Int
+  name        String   @db.VarChar(50)
+  description String?  @db.Text
+  is_deleted  Boolean  @default(false)
+  group_icon  String?  @db.VarChar(255)
+  createdOn   DateTime @default(now()) @db.DateTime(0)
+  modifiedOn  DateTime @default(now()) @updatedAt @db.DateTime(0)
+
+  user    AppUser       @relation(fields: [user_id], references: [pk_id], onDelete: Cascade)
+  members GroupMember[]
+  notes   Note[]
+
+  @@index([user_id], map: "idx_user_id")
+  @@index([name], map: "idx_name")
+  @@map("groups")
+}
+
+model GroupMember {
+  pk_id      Int      @id @default(autoincrement())
+  group_id   Int
+  contact_id Int
+  createdOn  DateTime @default(now()) @db.DateTime(0)
+  modifiedOn DateTime @default(now()) @updatedAt @db.DateTime(0)
+
+  group   Group   @relation(fields: [group_id], references: [pk_id], onDelete: Cascade)
+  contact Contact @relation(fields: [contact_id], references: [pk_id], onDelete: Cascade)
+
+  @@index([group_id], map: "idx_group_id")
+  @@index([contact_id], map: "idx_contact_id")
+  @@map("group_members")
+}
+
+model Note {
+  pk_id        Int      @id @default(autoincrement())
+  user_id      Int
+  title        String   @db.VarChar(255)
+  content      String   @db.Text
+  note_type    String   @default("personal") @db.VarChar(20)
+  contact_id   Int?
+  group_id     Int?
+  color        String   @default("blue") @db.VarChar(20)
+  is_important Boolean  @default(false)
+  is_deleted   Boolean  @default(false)
+  createdOn    DateTime @default(now()) @db.DateTime(0)
+  modifiedOn   DateTime @default(now()) @updatedAt @db.DateTime(0)
+
+  user     AppUser       @relation(fields: [user_id], references: [pk_id], onDelete: Cascade)
+  contact  Contact?      @relation(fields: [contact_id], references: [pk_id], onDelete: Cascade)
+  group    Group?        @relation(fields: [group_id], references: [pk_id], onDelete: Cascade)
+  keywords NoteKeyword[]
+
+  @@index([user_id], map: "idx_user_id")
+  @@index([note_type], map: "idx_note_type")
+  @@index([contact_id], map: "idx_contact_id")
+  @@index([group_id], map: "idx_group_id")
+  @@index([is_important], map: "idx_is_important")
+  @@index([createdOn], map: "idx_created_on")
+  @@index([title], map: "idx_title")
+  @@map("notes")
+}
+
+model NoteKeyword {
+  pk_id     Int      @id @default(autoincrement())
+  note_id   Int
+  keyword   String   @db.VarChar(100)
+  createdOn DateTime @default(now()) @db.DateTime(0)
+
+  note Note @relation(fields: [note_id], references: [pk_id], onDelete: Cascade)
+
+  @@unique([note_id, keyword], map: "unique_note_keyword")
+  @@index([note_id], map: "idx_note_id")
+  @@index([keyword], map: "idx_keyword")
+  @@map("note_keywords")
+}
+
+model CustomAttribute {
+  pk_id        Int      @id @default(autoincrement())
+  user_id      Int
+  key_name     String   @db.VarChar(64)
+  label        String   @db.VarChar(100)
+  type         String   @db.VarChar(20)
+  options_json Json?
+  is_required  Boolean  @default(false)
+  is_active    Boolean  @default(true)
+  sort_order   Int      @default(0)
+  createdOn    DateTime @default(now()) @db.DateTime(0)
+  modifiedOn   DateTime @default(now()) @updatedAt @db.DateTime(0)
+
+  user   AppUser                 @relation(fields: [user_id], references: [pk_id], onDelete: Cascade)
+  values ContactAttributeValue[]
+
+  @@unique([user_id, key_name], map: "unique_user_key")
+  @@index([user_id], map: "idx_user")
+  @@index([is_active], map: "idx_active")
+  @@map("custom_attributes")
+}
+
+model ContactAttributeValue {
+  contact_id   Int
+  attribute_id Int
+  value_text   String?  @db.Text
+  createdOn    DateTime @default(now()) @db.DateTime(0)
+  modifiedOn   DateTime @default(now()) @updatedAt @db.DateTime(0)
+
+  contact   Contact         @relation(fields: [contact_id], references: [pk_id], onDelete: Cascade)
+  attribute CustomAttribute @relation(fields: [attribute_id], references: [pk_id], onDelete: Cascade)
+
+  @@id([contact_id, attribute_id])
+  @@index([contact_id], map: "idx_contact")
+  @@index([attribute_id], map: "idx_attribute")
+  @@map("contact_attribute_values")
+}
