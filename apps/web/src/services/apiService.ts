@@ -250,7 +250,20 @@ class ApiService {
 
   getImageUrl(imagePath: string | null | undefined): string | null {
     if (!imagePath) return null;
-    return `${configService.getConfig().baseUrl}${imagePath}`;
+    if (imagePath.startsWith('data:')) return imagePath;
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) return imagePath;
+
+    if (imagePath.includes('/uploads/')) {
+      const uploadsIndex = imagePath.indexOf('/uploads/');
+      const relativeUploadsPath = imagePath.slice(uploadsIndex);
+      return `${configService.getConfig().baseUrl}${relativeUploadsPath}`;
+    }
+
+    if (imagePath.startsWith('/')) {
+      return `${configService.getConfig().baseUrl}${imagePath}`;
+    }
+
+    return imagePath;
   }
 }
 

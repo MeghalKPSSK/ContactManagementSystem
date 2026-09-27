@@ -4,6 +4,15 @@ exports.removeGroupMember = exports.addGroupMembers = exports.updateGroup = expo
 const groupModel_1 = require("../models/groupModel");
 const dbEncryption_1 = require("../utils/dbEncryption");
 const errors_1 = require("../utils/errors");
+const normalizeGroupIconRef = (value) => {
+    if (!value)
+        return null;
+    if (value.startsWith('data:') || value.startsWith('http://') || value.startsWith('https://'))
+        return value;
+    if (value.startsWith('/uploads/'))
+        return value;
+    return `/uploads/group_icons/${value}`;
+};
 const groupSave = async (groupData) => {
     const { user_id, name, description, group_icon } = groupData;
     const decryptedUserId = (0, dbEncryption_1.decryptIdToNumber)(user_id);
@@ -21,7 +30,7 @@ const groupSave = async (groupData) => {
     return newGroup.pk_id;
 };
 exports.groupSave = groupSave;
-const getGroupById = async (groupId) => {
+const getGroupById = async (groupId, page = 1, pageSize = 10) => {
     const decryptedGroupId = (0, dbEncryption_1.decryptIdToNumber)(groupId);
     if (!decryptedGroupId)
         return null;
@@ -29,10 +38,14 @@ const getGroupById = async (groupId) => {
         where: { pk_id: decryptedGroupId, is_deleted: false },
         include: {
             members: {
+                orderBy: { pk_id: 'asc' },
+                skip: (page - 1) * pageSize,
+                take: pageSize,
                 include: {
                     contact: { select: { pk_id: true, firstName: true, lastName: true, email: true } },
                 },
             },
+            _count: { select: { members: true } },
         },
     });
     if (!group)
@@ -47,9 +60,10 @@ const getGroupById = async (groupId) => {
         uid: (0, dbEncryption_1.encryptId)(group.pk_id),
         name: group.name,
         description: group.description,
-        group_icon: group.group_icon,
+        group_icon: normalizeGroupIconRef(group.group_icon),
         user_id: (0, dbEncryption_1.encryptId)(group.user_id),
         members,
+        membersTotal: group._count.members,
     };
 };
 exports.getGroupById = getGroupById;
@@ -78,7 +92,7 @@ const getGroupsList = async (userId, filter = '', page = 1, pageSize = 10) => {
         name: g.name,
         createdOn: g.createdOn,
         modifiedOn: g.modifiedOn,
-        group_icon: g.group_icon,
+        group_icon: normalizeGroupIconRef(g.group_icon),
         description: g.description,
         user_id: (0, dbEncryption_1.encryptId)(g.user_id),
         group_members: g._count.members,

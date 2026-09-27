@@ -1,13 +1,17 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
 import ReactApexChart from 'react-apexcharts';
+import ApexCharts from 'apexcharts';
+import * as XLSX from 'xlsx';
 import { Card, List, Tag, Space, Select, Typography, Spin } from 'antd';
 import { StarFilled, StarOutlined } from '@ant-design/icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTachometerAlt } from '@fortawesome/free-solid-svg-icons';
+import { faFileExcel, faImage, faTachometerAlt } from '@fortawesome/free-solid-svg-icons';
+import { toast } from 'react-toastify';
 import styles from './Dashboard.module.css';
 import apiService from '../../services/apiService';
 import PaginationBar from '../Pagination/PaginationBar';
+import { useThemePreferences } from '../../contexts/ThemePreferencesContext';
 
 const { Title } = Typography;
 
@@ -30,6 +34,10 @@ function Dashboard() {
   const [contacts, setContacts] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tags, setTags] = useState([]);
+  const { preferences } = useThemePreferences();
+  const [tagDistribution, setTagDistribution] = useState({ labels: [], counts: [] });
+  const [favoritesData, setFavoritesData] = useState({ favorite: 0, regular: 0 });
+  const [groupDistribution, setGroupDistribution] = useState({ labels: [], groupContactsData: [], tagContactsData: [] });
   const [loading, setLoading] = useState({
     contacts: false,
     charts: false,
@@ -98,9 +106,9 @@ function Dashboard() {
         }
       },
       responsive: [{
-        breakpoint: 480,
+        breakpoint: 768,
         options: {
-          chart: { width: 200 },
+          chart: { height: 260 },
           legend: { position: 'bottom' }
         }
       }],
@@ -286,10 +294,16 @@ function Dashboard() {
           formatter: (value) => `${value} contacts`
         },
         theme: 'light'
-      }
+      },
+      responsive: [{
+        breakpoint: 768,
+        options: {
+          chart: { height: 260 },
+          legend: { position: 'bottom' }
+        }
+      }]
     }
   });
-
   const [groupsOptions, setGroupsOptions] = useState({
     series: [{
       name: 'Group Contacts',
@@ -516,7 +530,8 @@ function Dashboard() {
       ]);
 
       if (tagsData.success && favoritesData.success) {
-        updateChartOptions(tagsData, favoritesData);
+        setTagDistribution({ labels: tagsData.labels || [], counts: tagsData.counts || [] });
+        setFavoritesData({ favorite: favoritesData.favorite || 0, regular: favoritesData.regular || 0 });
       }
     } catch (error) {
       console.error('Error fetching chart data:', error);
@@ -585,30 +600,7 @@ function Dashboard() {
           tagContactsData = [0];
         }
         
-        console.log('Combined labels:', allLabels);
-        console.log('Group contacts data:', groupContactsData);
-        console.log('Tag contacts data:', tagContactsData);
-        
-        setGroupsOptions(prev => ({
-          ...prev,
-          series: [{
-            name: 'Group Contacts',
-            type: 'line',
-            data: groupContactsData
-          }, {
-            name: 'Tag Contacts',
-            type: 'bar',
-            data: tagContactsData
-          }],
-          options: {
-            ...prev.options,
-            labels: allLabels,
-            xaxis: {
-              ...prev.options.xaxis,
-              categories: allLabels
-            }
-          }
-        }));
+        setGroupDistribution({ labels: allLabels, groupContactsData, tagContactsData });
       } else {
         console.error('Groups API failed:', groupsData);
       }
@@ -619,54 +611,80 @@ function Dashboard() {
     }
   }, []);
 
-  // Helper function to update chart options
-  const updateChartOptions = (tagsData, favoritesData) => {
-    setPieOptions(prev => ({
-      ...prev,
-      series: tagsData.counts,
+  useEffect(() => {
+    const palette = preferences.dashboardColors;
+    const tagsType = preferences.dashboardChartTypes.tags;
+    const favoritesType = preferences.dashboardChartTypes.favorites;
+
+    setPieOptions((previous) => ({
+      ...previous,
+      series: tagDistribution.counts,
       options: {
-        ...prev.options,
-        labels: tagsData.labels,
-        colors: chartColors.pie.slice(0, tagsData.labels.length), // Only use as many colors as needed
-        legend: {
-          ...prev.options.legend,
-          markers: {
-            ...prev.options.legend.markers,
-            fillColors: chartColors.pie.slice(0, tagsData.labels.length)
-          }
-        }
-      }
+        ...previous.options,
+        chart: { ...previous.options.chart, id: 'dashboard-tags-chart', type: tagsType, toolbar: { ...previous.options.chart.toolbar, show: false } },
+        labels: tagDistribution.labels,
+        colors: palette,
+        plotOptions: {
+          ...previous.options.plotOptions,
+          pie: {
+            ...previous.options.plotOptions.pie,
+            donut: { ...previous.options.plotOptions.pie.donut, size: tagsType === 'donut' ? '58%' : '0%' },
+          },
+        },
+        legend: { ...previous.options.legend, markers: { ...previous.options.legend.markers, fillColors: palette } },
+      },
     }));
 
-    setBarOptions(prev => ({
-      ...prev,
-      series: [{
-        name: 'Contacts',
-        data: [favoritesData.favorite, favoritesData.regular]
-      }],
+    setBarOptions((previous) => ({
+      ...previous,
+      series: [{ name: 'Contacts', data: [favoritesData.favorite, favoritesData.regular] }],
       options: {
-        ...prev.options,
-        colors: chartColors.bar,
+        ...previous.options,
+        chart: { ...previous.options.chart, id: 'dashboard-favorites-chart', type: favoritesType, toolbar: { ...previous.options.chart.toolbar, show: false } },
+        colors: palette.slice(0, 2),
+        dataLabels: { ...previous.options.dataLabels, enabled: false },
         plotOptions: {
-          ...prev.options.plotOptions,
+          ...previous.options.plotOptions,
           bar: {
-            ...prev.options.plotOptions.bar,
+            ...previous.options.plotOptions.bar,
             colors: {
-              ranges: [{
-                from: 0,
-                to: 0,
-                color: chartColors.bar[0]
-              }, {
-                from: 1,
-                to: 1,
-                color: chartColors.bar[1]
-              }]
-            }
-          }
-        }
-      }
+              ranges: [
+                { from: 0, to: 0, color: palette[0] },
+                { from: 1, to: 1, color: palette[1] },
+              ],
+            },
+          },
+        },
+        legend: { ...previous.options.legend, markers: { ...previous.options.legend.markers, fillColors: palette.slice(0, 2) } },
+      },
     }));
-  };
+  }, [preferences.dashboardChartTypes, preferences.dashboardColors, tagDistribution, favoritesData]);
+
+  useEffect(() => {
+    const chartType = preferences.dashboardChartTypes.groups;
+    const isMixed = chartType === 'mixed';
+    const groupSeriesType = isMixed ? 'line' : chartType;
+    const tagSeriesType = isMixed ? 'bar' : chartType;
+    const palette = preferences.dashboardColors.slice(0, 2);
+
+    setGroupsOptions((previous) => ({
+      ...previous,
+      series: [
+        { ...previous.series[0], type: groupSeriesType, data: groupDistribution.groupContactsData },
+        { ...previous.series[1], type: tagSeriesType, data: groupDistribution.tagContactsData },
+      ],
+      options: {
+        ...previous.options,
+        chart: { ...previous.options.chart, id: 'dashboard-groups-chart', type: isMixed ? 'line' : chartType, toolbar: { ...previous.options.chart.toolbar, show: false } },
+        colors: palette,
+        labels: groupDistribution.labels,
+        xaxis: { ...previous.options.xaxis, categories: groupDistribution.labels },
+        stroke: { ...previous.options.stroke, width: isMixed ? [3, 0] : [3, 3] },
+        fill: { ...previous.options.fill, opacity: chartType === 'area' ? 0.28 : 0.9 },
+        legend: { ...previous.options.legend, markers: { ...previous.options.legend.markers, fillColors: palette } },
+      },
+    }));
+  }, [preferences.dashboardChartTypes.groups, preferences.dashboardColors, groupDistribution]);
 
   const handlePageChange = (page) => {
     fetchContactsData(page);
@@ -681,6 +699,32 @@ function Dashboard() {
     fetchContactsData(pagination.current, pagination.pageSize);
     fetchChartData();
     fetchGroupsData();
+  };
+
+  const exportChartPng = async (chartId, fileName) => {
+    try {
+      const chartImage = await ApexCharts.exec(chartId, 'dataURI');
+      if (!chartImage?.imgURI) throw new Error('Chart image is not ready');
+      const downloadLink = document.createElement('a');
+      downloadLink.href = chartImage.imgURI;
+      downloadLink.download = `${fileName}.png`;
+      downloadLink.click();
+    } catch (error) {
+      console.error('Error exporting dashboard chart:', error);
+      toast.error('Could not export chart as PNG');
+    }
+  };
+
+  const exportChartExcel = (fileName, worksheetName, rows) => {
+    try {
+      const worksheet = XLSX.utils.aoa_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, worksheetName);
+      XLSX.writeFile(workbook, `${fileName}.xlsx`);
+    } catch (error) {
+      console.error('Error exporting dashboard data:', error);
+      toast.error('Could not export chart data as Excel');
+    }
   };
 
   // Initial data fetch
@@ -711,16 +755,24 @@ function Dashboard() {
     <div className={styles.dashboard}>
       {(loading.contacts && loading.charts && loading.groupsChart) ? (
         <div className={styles.loading}>
-          <FontAwesomeIcon icon={faTachometerAlt} spin style={{ color: '#6c757d' }} />
-          <p style={{ marginTop: 16, color: '#6c757d', fontSize: '1.2rem' }}>Loading dashboard...</p>
+          <FontAwesomeIcon icon={faTachometerAlt} spin style={{ color: 'var(--text-secondary)' }} />
+          <p style={{ marginTop: 16, color: 'var(--text-secondary)', fontSize: '1.2rem' }}>Loading dashboard...</p>
         </div>
       ) : (
         <>
       <div className={styles.chartsContainer}>
         <Card className={styles.chartCard}>
-          <Title level={4} style={{ marginBottom: 20, color: '#1f2937', fontWeight: 600 }}>
-            Contacts by Tags
-          </Title>
+          <div className={styles.chartHeader}>
+            <Title level={4} className={styles.chartTitle}>Contacts by Tags</Title>
+            <div className={styles.chartActions}>
+              <button type="button" onClick={() => exportChartPng('dashboard-tags-chart', 'contacts-by-tags')} disabled={loading.charts} title="Download chart as PNG" aria-label="Download contacts by tags chart as PNG">
+                <FontAwesomeIcon icon={faImage} />
+              </button>
+              <button type="button" onClick={() => exportChartExcel('contacts-by-tags', 'Tags', [['Tag', 'Contacts'], ...tagDistribution.labels.map((label, index) => [label, tagDistribution.counts[index]])])} title="Download chart data as Excel" aria-label="Download contacts by tags data as Excel">
+                <FontAwesomeIcon icon={faFileExcel} />
+              </button>
+            </div>
+          </div>
           {loading.charts ? (
             <div className={styles.chartLoader}>
               <Spin size="large" />
@@ -729,15 +781,23 @@ function Dashboard() {
             <ReactApexChart 
               options={pieOptions.options}
               series={pieOptions.series}
-              type="pie"
+              type={preferences.dashboardChartTypes.tags}
               height={350}
             />
           )}
         </Card>
         <Card className={styles.chartCard}>
-          <Title level={4} style={{ marginBottom: 20, color: '#1f2937', fontWeight: 600 }}>
-            Favorite vs Regular Contacts
-          </Title>
+          <div className={styles.chartHeader}>
+            <Title level={4} className={styles.chartTitle}>Favorite vs Regular Contacts</Title>
+            <div className={styles.chartActions}>
+              <button type="button" onClick={() => exportChartPng('dashboard-favorites-chart', 'favorite-vs-regular')} disabled={loading.charts} title="Download chart as PNG" aria-label="Download favorites chart as PNG">
+                <FontAwesomeIcon icon={faImage} />
+              </button>
+              <button type="button" onClick={() => exportChartExcel('favorite-vs-regular', 'Favorites', [['Contact type', 'Contacts'], ['Favorites', favoritesData.favorite], ['Regular', favoritesData.regular]])} title="Download chart data as Excel" aria-label="Download favorites data as Excel">
+                <FontAwesomeIcon icon={faFileExcel} />
+              </button>
+            </div>
+          </div>
           {loading.charts ? (
             <div className={styles.chartLoader}>
               <Spin size="large" />
@@ -746,7 +806,7 @@ function Dashboard() {
             <ReactApexChart 
               options={barOptions.options}
               series={barOptions.series}
-              type="bar"
+              type={preferences.dashboardChartTypes.favorites}
               height={350}
             />
           )}
@@ -754,11 +814,19 @@ function Dashboard() {
       </div>
       
       {/* Groups & Tags Statistics Chart - Separate Row */}
-      <div style={{ marginBottom: '24px' }}>
+      <div className={styles.wideChart}>
         <Card className={styles.chartCard}>
-          <Title level={4} style={{ marginBottom: 20, color: '#1f2937', fontWeight: 600 }}>
-            Groups vs Tags Contact Distribution
-          </Title>
+          <div className={styles.chartHeader}>
+            <Title level={4} className={styles.chartTitle}>Groups vs Tags Contact Distribution</Title>
+            <div className={styles.chartActions}>
+              <button type="button" onClick={() => exportChartPng('dashboard-groups-chart', 'groups-vs-tags')} disabled={loading.groupsChart} title="Download chart as PNG" aria-label="Download groups and tags chart as PNG">
+                <FontAwesomeIcon icon={faImage} />
+              </button>
+              <button type="button" onClick={() => exportChartExcel('groups-vs-tags', 'Groups and tags', [['Name', 'Group contacts', 'Tag contacts'], ...groupDistribution.labels.map((label, index) => [label, groupDistribution.groupContactsData[index], groupDistribution.tagContactsData[index]])])} title="Download chart data as Excel" aria-label="Download groups and tags data as Excel">
+                <FontAwesomeIcon icon={faFileExcel} />
+              </button>
+            </div>
+          </div>
           {loading.groupsChart ? (
             <div className={styles.chartLoader}>
               <Spin size="large" />
@@ -767,7 +835,7 @@ function Dashboard() {
             <ReactApexChart 
               options={groupsOptions.options}
               series={groupsOptions.series}
-              type="line"
+              type={preferences.dashboardChartTypes.groups === 'mixed' ? 'line' : preferences.dashboardChartTypes.groups}
               height={400}
             />
           )}
@@ -776,7 +844,7 @@ function Dashboard() {
       
       <Card className={styles.contactsList}>
         <Space className={styles.filterContainer}>
-          <Title level={4} style={{ marginBottom: 16, color: '#1f2937', fontWeight: 600 }}>
+          <Title level={4} className={styles.contactsTitle}>
             Contacts List
           </Title>
           <Select
@@ -791,6 +859,7 @@ function Dashboard() {
             }))}
             style={{ minWidth: 200 }}
             className={styles.tagFilter}
+            classNames={{ popup: { root: styles.tagFilterDropdown } }}
             allowClear
             loading={loading.contacts}
           />
@@ -810,7 +879,7 @@ function Dashboard() {
           dataSource={contacts}
           pagination={false}
           renderItem={contact => (
-            <List.Item key={contact.uid} style={{ borderRadius: '7px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
+            <List.Item key={contact.uid} className={styles.contactListItem}>
               <Card 
                 className={styles.contactCard}
               >

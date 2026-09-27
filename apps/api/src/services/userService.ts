@@ -4,17 +4,38 @@ import { CustomAttributeModel } from '../models/customAttributesModel';
 import * as passCrypto from '../utils/passCrypto';
 import { encryptId, decryptId, decryptIdToNumber } from '../utils/dbEncryption';
 import { AppError } from '../utils/errors';
-import type { RegisterUserPayload, LoginPayload, UpdateUserPayload, UserDto, UserPreferences, SidebarItemKey } from '../types/user';
+import type {
+  RegisterUserPayload,
+  LoginPayload,
+  UpdateUserPayload,
+  UserDto,
+  UserPreferences,
+  SidebarItemKey,
+  DashboardChartTypes,
+} from '../types/user';
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{6,12}$/;
 const SIDEBAR_ITEM_KEYS: SidebarItemKey[] = ['dragon', 'dashboard', 'contacts', 'notes', 'profile', 'groups', 'settings'];
+const normalizeProfileImageRef = (value: string | null | undefined): string | null => {
+  if (!value) return null;
+  if (value.startsWith('data:') || value.startsWith('http://') || value.startsWith('https://')) return value;
+  if (value.startsWith('/uploads/')) return value;
+  if (value.includes('/uploads/')) {
+    return value.slice(value.indexOf('/uploads/'));
+  }
+  return `/uploads/profiles/${value}`;
+};
+
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
+  themeMode: 'light',
   primaryColor: '#138b7c',
   secondaryColor: '#087568',
   backgroundColor: '#f2f7f5',
   surfaceColor: '#ffffff',
   textColor: '#203a39',
   sidebarOrder: [...SIDEBAR_ITEM_KEYS],
+  dashboardChartTypes: { tags: 'donut', favorites: 'bar', groups: 'mixed' },
+  dashboardColors: ['#138b7c', '#d78248', '#4a92a4', '#b85f69', '#809958', '#af85bc'],
 };
 
 const normalizePreferences = (value: unknown): UserPreferences => {
@@ -30,13 +51,32 @@ const normalizePreferences = (value: unknown): UserPreferences => {
     if (!sidebarOrder.includes(key)) sidebarOrder.push(key);
   });
 
+  const chartTypeCandidate = candidate.dashboardChartTypes as Partial<DashboardChartTypes> | undefined;
+  const chartTypeDefaults = DEFAULT_USER_PREFERENCES.dashboardChartTypes;
+  const dashboardChartTypes: DashboardChartTypes = {
+    tags: chartTypeCandidate?.tags === 'pie' || chartTypeCandidate?.tags === 'donut' ? chartTypeCandidate.tags : chartTypeDefaults.tags,
+    favorites: chartTypeCandidate?.favorites === 'bar' || chartTypeCandidate?.favorites === 'line'
+      ? chartTypeCandidate.favorites
+      : chartTypeDefaults.favorites,
+    groups: ['mixed', 'line', 'bar', 'area'].includes(String(chartTypeCandidate?.groups))
+      ? chartTypeCandidate?.groups as DashboardChartTypes['groups']
+      : chartTypeDefaults.groups,
+  };
+  const dashboardColors = DEFAULT_USER_PREFERENCES.dashboardColors.map((fallback, index) =>
+    validColor(candidate.dashboardColors?.[index], fallback)
+  );
+  const themeMode = candidate.themeMode === 'dark' ? 'dark' : 'light';
+
   return {
+    themeMode,
     primaryColor: validColor(candidate.primaryColor, DEFAULT_USER_PREFERENCES.primaryColor),
     secondaryColor: validColor(candidate.secondaryColor, DEFAULT_USER_PREFERENCES.secondaryColor),
     backgroundColor: validColor(candidate.backgroundColor, DEFAULT_USER_PREFERENCES.backgroundColor),
     surfaceColor: validColor(candidate.surfaceColor, DEFAULT_USER_PREFERENCES.surfaceColor),
     textColor: validColor(candidate.textColor, DEFAULT_USER_PREFERENCES.textColor),
     sidebarOrder,
+    dashboardChartTypes,
+    dashboardColors,
   };
 };
 
@@ -136,7 +176,7 @@ export const loginUser = async (userData: LoginPayload): Promise<UserDto> => {
     phone: user.phone,
     email: user.email,
     username: user.username,
-    profileImage: user.profileImage,
+    profileImage: normalizeProfileImageRef(user.profileImage),
     status: user.status,
     registeredOn: user.registeredOn,
     modifiedOn: user.modifiedOn,
@@ -163,7 +203,7 @@ export const getUserById = async (userId: string): Promise<UserDto | null> => {
     phone: user.phone,
     email: user.email,
     username: user.username,
-    profileImage: user.profileImage,
+    profileImage: normalizeProfileImageRef(user.profileImage),
     status: user.status,
     registeredOn: user.registeredOn,
     modifiedOn: user.modifiedOn,

@@ -39,6 +39,19 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [configLoading, setConfigLoading] = useState(true);
 
+  const parseStoredUser = () => {
+    const raw = localStorage.getItem('user');
+    if (!raw || raw === 'undefined' || raw === 'null') return null;
+
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      localStorage.removeItem('user');
+      return null;
+    }
+  };
+
   // Load config on app initialization
   useEffect(() => {
     const initializeApp = async () => {
@@ -58,19 +71,17 @@ function App() {
 
   // Load user on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const storedUser = parseStoredUser();
+    if (storedUser) setUser(storedUser);
     setLoading(false);
   }, []);
 
   // Detect login via localStorage and trigger state update
   useEffect(() => {
     const interval = setInterval(() => {
-      const storedUser = localStorage.getItem('user');
+      const storedUser = parseStoredUser();
       if (storedUser && !user) {
-        setUser(JSON.parse(storedUser)); // user just logged in
+        setUser(storedUser); // user just logged in
       } else if (!storedUser && user) {
         setUser(null); // session cleared or logged out
         toast.error('Session expired. Please login again.');
@@ -118,6 +129,7 @@ function App() {
         <ToastContainer
           position="top-right"
           autoClose={3000}
+          limit={2}
           hideProgressBar={false}
           closeOnClick
           pauseOnHover

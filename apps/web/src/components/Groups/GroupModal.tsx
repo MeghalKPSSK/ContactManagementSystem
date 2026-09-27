@@ -4,8 +4,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faSave, faCamera, faUsers } from '@fortawesome/free-solid-svg-icons';
 import styles from './GroupModal.module.css';
 import { toast } from 'react-toastify';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
+import apiService from '../../services/apiService';
 
 const GroupModal = ({ mode, group, onClose, onSubmit, initialMemberIds = [], sourceTag = '' }) => {
+  useBodyScrollLock(true);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -14,6 +17,7 @@ const GroupModal = ({ mode, group, onClose, onSubmit, initialMemberIds = [], sou
   const [originalGroupName, setOriginalGroupName] = useState('');
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [nameError, setNameError] = useState('');
 
   useEffect(() => {
     if (mode !== 'add' && group) {
@@ -53,7 +57,7 @@ const GroupModal = ({ mode, group, onClose, onSubmit, initialMemberIds = [], sou
         console.log('Group icon from server:', data.group.group_icon); // Debug log
         
         if (data.group.group_icon) {
-          const iconUrl = `${config.apiUrl.replace('/api', '')}/uploads/group_icons/${data.group.group_icon}`;
+          const iconUrl = apiService.getImageUrl(data.group.group_icon);
           console.log('Setting preview URL:', iconUrl); // Debug log
           setPreview(iconUrl);
         } else {
@@ -74,30 +78,58 @@ const GroupModal = ({ mode, group, onClose, onSubmit, initialMemberIds = [], sou
       ...prev,
       [name]: value,
     }));
+    if (name === 'name') setNameError('');
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setFormData((prev) => ({
-        ...prev,
-        group_icon: file,
-      }));
-      setPreview(URL.createObjectURL(file));
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Choose a JPEG, PNG, GIF, or WebP image');
+      e.target.value = '';
+      return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5 MB');
+      e.target.value = '';
+      return;
+    }
+
+    setFormData((prev) => ({ ...prev, group_icon: file }));
+    const reader = new FileReader();
+    reader.onload = (event) => setPreview(event.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveIcon = () => {
+    setFormData((prev) => ({ ...prev, group_icon: null }));
+    setPreview(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const groupName = formData.name.trim();
+    if (!groupName) {
+      setNameError('Enter a group name');
+      return;
+    }
+    if (groupName.length > 50) {
+      setNameError('Group name must be 50 characters or fewer');
+      return;
+    }
 
     try {
       const config = await fetch('/config.json').then((res) => res.json());
       const payload = new FormData();
-      payload.append('name', formData.name);
+      payload.append('name', groupName);
       payload.append('description', formData.description);
       payload.append('user_id', formData.user_id);
       if (formData.group_icon) {
         payload.append('group_icon', formData.group_icon);
+      } else if (mode !== 'add' && !preview) {
+        payload.append('group_icon', '');
       }
 
       const url =
@@ -163,7 +195,7 @@ const GroupModal = ({ mode, group, onClose, onSubmit, initialMemberIds = [], sou
             <FontAwesomeIcon icon={faTimes} />
           </button>
         </div>
-        <form className={styles.groupForm} onSubmit={handleSubmit}>
+        <form noValidate className={styles.groupForm} onSubmit={handleSubmit}>
           {mode === 'add' && initialMemberIds.length > 0 && (
             <div className={styles.memberImportNotice}>
               <FontAwesomeIcon icon={faUsers} />
@@ -172,7 +204,12 @@ const GroupModal = ({ mode, group, onClose, onSubmit, initialMemberIds = [], sou
           )}
           <div className={styles.profileImageSection}>
               <div className={styles.imageUploadContainer}>
-                  <div className={styles.imagePreview} onClick={() => document.getElementById('groupImageInput').click()}>
+                  <div className={styles.imagePreview} onClick={() => document.getElementById('groupImageInput').click()} role="button" tabIndex={0} onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      document.getElementById('groupImageInput').click();
+                    }
+                  }}>
                       {preview ? (
                           <>
                               <img 
@@ -199,6 +236,11 @@ const GroupModal = ({ mode, group, onClose, onSubmit, initialMemberIds = [], sou
                           id="groupImageInput"
                       />
                   </div>
+                  {preview && (
+                    <button type="button" onClick={handleRemoveIcon} className={styles.removeButton}>
+                      <FontAwesomeIcon icon={faTimes} /> Remove Photo
+                    </button>
+                  )}
               </div>
           </div>
           <div className={styles.formGroup}>
@@ -210,8 +252,10 @@ const GroupModal = ({ mode, group, onClose, onSubmit, initialMemberIds = [], sou
               className={styles.input}
               value={formData.name}
               onChange={handleChange}
-              required
+              aria-invalid={Boolean(nameError)}
+              aria-describedby={nameError ? 'group-name-error' : undefined}
             />
+            {nameError && <span className={styles.formError} id="group-name-error">{nameError}</span>}
           </div>
           {/* Description field */}
           <div className={styles.formGroup}>

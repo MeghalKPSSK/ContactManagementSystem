@@ -1,6 +1,11 @@
 // @ts-nocheck
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { TextStyle } from '@tiptap/extension-text-style';
+import Color from '@tiptap/extension-color';
+import FontFamily from '@tiptap/extension-font-family';
 import styles from './NotesDetail.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -18,9 +23,17 @@ import {
   faAlignLeft,
   faAlignCenter,
   faAlignRight,
-  faSearch
+  faSearch,
+  faRotateLeft,
+  faTrash,
+  faBold,
+  faItalic,
+  faUnderline,
+  faStrikethrough
 } from '@fortawesome/free-solid-svg-icons';
 import apiService from '../../services/apiService';
+import { NOTE_FONT_OPTIONS, NOTE_FONT_STACKS } from '../../utils/noteAppearance';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 
 export default function NotesDetail() {
   const { id } = useParams();
@@ -42,6 +55,7 @@ export default function NotesDetail() {
   const [saving, setSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  useBodyScrollLock(showUnsavedWarning);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState({});
@@ -50,20 +64,95 @@ export default function NotesDetail() {
   const [associationLoading, setAssociationLoading] = useState(false);
   const [associationMessage, setAssociationMessage] = useState('');
   const [selectedAssociation, setSelectedAssociation] = useState(null);
+  const [editorMode, setEditorMode] = useState('write');
+  const [brushColor, setBrushColor] = useState('#203a39');
+  const [brushSize, setBrushSize] = useState(4);
+  const [, setEditorSelectionVersion] = useState(0);
+  // Tracks which surface (title or body) currently owns the cursor, so a single
+  // formatting toolbar can act on it - similar to Word's single ribbon.
+  const [activeSurface, setActiveSurface] = useState('title');
   
-  const titleRef = useRef(null);
-  const contentRef = useRef(null);
+  const canvasRef = useRef(null);
+  const activeStrokeRef = useRef(null);
   const initialNoteRef = useRef(null);
+  const pendingEditorTitleRef = useRef(null);
+  const pendingEditorContentRef = useRef(null);
+  const rememberedSelectionRef = useRef({ title: null, body: null });
+
+  const rememberSelection = (surface, activeEditor) => {
+    if (!activeEditor) return;
+    const { from, to } = activeEditor.state.selection;
+    rememberedSelectionRef.current[surface] = { from, to };
+  };
+
+  const titleEditor = useEditor({
+    extensions: [StarterKit, TextStyle, Color, FontFamily],
+    content: '',
+    editorProps: {
+      attributes: {
+        class: styles.richTitleEditor,
+        'aria-label': 'Note title',
+      },
+    },
+    onUpdate: ({ editor: activeEditor }) => {
+      const titleText = activeEditor.getText({ blockSeparator: ' ' }).trim();
+      const titleFormatting = activeEditor.getJSON();
+      setNote((previous) => ({ ...previous, title: titleText, title_formatting: titleFormatting }));
+      if (validationErrors.title && titleText) {
+        setValidationErrors((previous) => ({ ...previous, title: '' }));
+      }
+    },
+    onSelectionUpdate: ({ editor: activeEditor }) => {
+      rememberSelection('title', activeEditor);
+      setEditorSelectionVersion((version) => version + 1);
+    },
+    onFocus: ({ editor: activeEditor }) => {
+      setActiveSurface('title');
+      rememberSelection('title', activeEditor);
+    },
+  });
+
+  const editor = useEditor({
+    extensions: [StarterKit, TextStyle, Color, FontFamily],
+    content: '',
+    editorProps: {
+      attributes: {
+        class: styles.richTextEditor,
+        'aria-label': 'Note content',
+      },
+    },
+    onUpdate: ({ editor: activeEditor }) => {
+      const html = activeEditor.isEmpty ? '' : activeEditor.getHTML();
+      setNote((previous) => previous.content === html ? previous : { ...previous, content: html });
+      if (validationErrors.content && activeEditor.getText().trim()) {
+        setValidationErrors((previous) => ({ ...previous, content: '' }));
+      }
+    },
+    onSelectionUpdate: ({ editor: activeEditor }) => {
+      rememberSelection('body', activeEditor);
+      setEditorSelectionVersion((version) => version + 1);
+    },
+    onFocus: ({ editor: activeEditor }) => {
+      setActiveSurface('body');
+      rememberSelection('body', activeEditor);
+    },
+  });
+
+  // The single toolbar always acts on whichever editor currently owns the cursor.
+  const activeFormattingEditor = activeSurface === 'title' ? titleEditor : editor;
   
   const [note, setNote] = useState(() => {
     const requestedType = searchParams.get('note_type');
     return {
       title: '',
+      title_formatting: null,
       content: '',
       note_type: ['personal', 'contact', 'group'].includes(requestedType) ? requestedType : 'personal',
       contact_id: searchParams.get('contact_id') || '',
       group_id: searchParams.get('group_id') || '',
       color: 'blue',
+      font_family: 'handwritten',
+      drawing_data: { strokes: [] },
       is_important: false,
       keywords: []
     };
@@ -91,9 +180,170 @@ export default function NotesDetail() {
     return matches ? matches.map(tag => tag.substring(1)) : [];
   };
 
-  const handleContentChange = (e) => {
-    const newContent = e.target.value || '';
-    handleInputChange('content', newContent);
+  useEffect(() => {
+    if (!editor || pendingEditorContentRef.current === null) return;
+    editor.commands.setContent(pendingEditorContentRef.current, { emitUpdate: false });
+    pendingEditorContentRef.current = null;
+  }, [editor, loading]);
+
+  useEffect(() => {
+    if (!titleEditor || pendingEditorTitleRef.current === null) return;
+    titleEditor.commands.setContent(pendingEditorTitleRef.current, { emitUpdate: false });
+    pendingEditorTitleRef.current = null;
+  }, [titleEditor, loading]);
+
+  const plainNoteText = () => editor?.getText().trim() || note.content.replace(/<[^>]*>/g, ' ').trim();
+
+  const applyFontFamily = (fontFamily) => {
+    handleInputChange('font_family', fontFamily);
+  };
+
+  const runToolbarCommand = (targetEditor, surface, commandBuilder) => {
+    if (!targetEditor) return;
+
+    const rememberedSelection = rememberedSelectionRef.current[surface];
+    let chain = targetEditor.chain().focus(undefined, { scrollIntoView: false });
+    if (rememberedSelection) {
+      chain = chain.setTextSelection(rememberedSelection);
+    }
+
+    const didRun = commandBuilder(chain).run();
+    if (didRun) {
+      rememberSelection(surface, targetEditor);
+    }
+  };
+
+  const applyTextColorTo = (targetEditor, surface, color) => {
+    runToolbarCommand(targetEditor, surface, (chain) => chain.setColor(color));
+  };
+
+  // Touch taps on the toolbar must not steal focus/selection from the editor -
+  // mousedown alone isn't reliable on touch browsers, so also guard touchstart/pointerdown.
+  const preventFormattingBlur = (event) => event.preventDefault();
+
+  const renderFormattingToolbar = (targetEditor, surface, className = styles.richTextToolbar) => (
+    targetEditor && (
+      <div className={className} role="toolbar" aria-label="Selected text formatting">
+        <span className={styles.toolbarContext}>{surface === 'title' ? 'Title' : 'Body'}</span>
+        <button type="button" className={targetEditor.isActive('bold') ? styles.toolbarActive : ''} onMouseDown={preventFormattingBlur} onTouchStart={preventFormattingBlur} onPointerDown={preventFormattingBlur} onClick={() => runToolbarCommand(targetEditor, surface, (chain) => chain.toggleBold())} title="Bold" aria-label="Bold">
+          <FontAwesomeIcon icon={faBold} />
+        </button>
+        <button type="button" className={targetEditor.isActive('italic') ? styles.toolbarActive : ''} onMouseDown={preventFormattingBlur} onTouchStart={preventFormattingBlur} onPointerDown={preventFormattingBlur} onClick={() => runToolbarCommand(targetEditor, surface, (chain) => chain.toggleItalic())} title="Italic" aria-label="Italic">
+          <FontAwesomeIcon icon={faItalic} />
+        </button>
+        <button type="button" className={targetEditor.isActive('underline') ? styles.toolbarActive : ''} onMouseDown={preventFormattingBlur} onTouchStart={preventFormattingBlur} onPointerDown={preventFormattingBlur} onClick={() => runToolbarCommand(targetEditor, surface, (chain) => chain.toggleUnderline())} title="Underline" aria-label="Underline">
+          <FontAwesomeIcon icon={faUnderline} />
+        </button>
+        <button type="button" className={targetEditor.isActive('strike') ? styles.toolbarActive : ''} onMouseDown={preventFormattingBlur} onTouchStart={preventFormattingBlur} onPointerDown={preventFormattingBlur} onClick={() => runToolbarCommand(targetEditor, surface, (chain) => chain.toggleStrike())} title="Strikethrough" aria-label="Strikethrough">
+          <FontAwesomeIcon icon={faStrikethrough} />
+        </button>
+        <label className={styles.textColorControl} title="Selected text color">
+          <span>A</span>
+          <input type="color" defaultValue="#203a39" onChange={(event) => applyTextColorTo(targetEditor, surface, event.target.value)} aria-label="Selected text color" />
+        </label>
+      </div>
+    )
+  );
+
+  const getDrawingPoint = (event) => {
+    const canvas = canvasRef.current;
+    const bounds = canvas.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width)),
+      y: Math.max(0, Math.min(1, (event.clientY - bounds.top) / bounds.height)),
+    };
+  };
+
+  const drawStrokeSegment = (stroke, start, end) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext('2d');
+    const bounds = canvas.getBoundingClientRect();
+    if (!context || !bounds.width || !bounds.height) return;
+
+    const scaleX = canvas.width / bounds.width;
+    const scaleY = canvas.height / bounds.height;
+    context.setTransform(scaleX, 0, 0, scaleY, 0, 0);
+    context.strokeStyle = stroke.color;
+    context.fillStyle = stroke.color;
+    context.lineWidth = stroke.width;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.beginPath();
+    context.moveTo(start.x * bounds.width, start.y * bounds.height);
+    context.lineTo(end.x * bounds.width, end.y * bounds.height);
+    context.stroke();
+    if (start.x === end.x && start.y === end.y) {
+      context.beginPath();
+      context.arc(start.x * bounds.width, start.y * bounds.height, stroke.width / 2, 0, Math.PI * 2);
+      context.fill();
+    }
+  };
+
+  const handleCanvasPointerDown = (event) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.setPointerCapture(event.pointerId);
+    const point = getDrawingPoint(event);
+    activeStrokeRef.current = { color: brushColor, width: Number(brushSize), points: [point] };
+    drawStrokeSegment(activeStrokeRef.current, point, point);
+  };
+
+  const handleCanvasPointerMove = (event) => {
+    const activeStroke = activeStrokeRef.current;
+    if (!activeStroke) return;
+    const point = getDrawingPoint(event);
+    const lastPoint = activeStroke.points[activeStroke.points.length - 1];
+    drawStrokeSegment(activeStroke, lastPoint, point);
+    activeStrokeRef.current = { ...activeStroke, points: [...activeStroke.points, point] };
+  };
+
+  const handleCanvasPointerUp = () => {
+    const completedStroke = activeStrokeRef.current;
+    if (!completedStroke) return;
+    activeStrokeRef.current = null;
+    setNote((previous) => ({
+      ...previous,
+      drawing_data: { strokes: [...(previous.drawing_data?.strokes || []), completedStroke] },
+    }));
+  };
+
+  const redrawDrawing = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const bounds = canvas.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return;
+    const pixelRatio = window.devicePixelRatio || 1;
+    canvas.width = Math.round(bounds.width * pixelRatio);
+    canvas.height = Math.round(bounds.height * pixelRatio);
+    const strokes = note.drawing_data?.strokes || [];
+    strokes.forEach((stroke) => {
+      if (stroke.points.length === 1) drawStrokeSegment(stroke, stroke.points[0], stroke.points[0]);
+      for (let index = 1; index < stroke.points.length; index += 1) {
+        drawStrokeSegment(stroke, stroke.points[index - 1], stroke.points[index]);
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (editorMode !== 'draw' || !canvasRef.current) return undefined;
+    const canvas = canvasRef.current;
+    const observer = new ResizeObserver(redrawDrawing);
+    observer.observe(canvas);
+    redrawDrawing();
+    return () => observer.disconnect();
+  }, [editorMode, note.drawing_data]);
+
+  const undoLastStroke = () => {
+    setNote((previous) => ({
+      ...previous,
+      drawing_data: { strokes: (previous.drawing_data?.strokes || []).slice(0, -1) },
+    }));
+  };
+
+  const clearDrawing = () => {
+    activeStrokeRef.current = null;
+    setNote((previous) => ({ ...previous, drawing_data: { strokes: [] } }));
   };
 
   // Track changes to detect unsaved modifications
@@ -155,16 +405,21 @@ export default function NotesDetail() {
         if (response.success && response.note) {
           const noteData = {
             title: response.note.title || '',
+            title_formatting: response.note.title_formatting || null,
             content: response.note.content || '',
             note_type: response.note.note_type || 'personal',
             contact_id: response.note.contact_id || '',
             group_id: response.note.group_id || '',
             color: response.note.color || 'blue',
+            font_family: response.note.font_family || 'handwritten',
+            drawing_data: response.note.drawing_data || { strokes: [] },
             is_important: response.note.is_important === 1 || response.note.is_important === true,
             keywords: response.note.keywords || []
           };
           
           setNote(noteData);
+          pendingEditorContentRef.current = noteData.content;
+          pendingEditorTitleRef.current = noteData.title_formatting || noteData.title;
           if (noteData.note_type === 'contact' && noteData.contact_id) {
             const label = [response.note.contact_first_name, response.note.contact_last_name].filter(Boolean).join(' ');
             setSelectedAssociation({ id: noteData.contact_id, label: label || 'Selected contact' });
@@ -186,25 +441,26 @@ export default function NotesDetail() {
     fetchNoteDetails();
   }, [id, isEditMode]);
 
-  // Focus title input when creating new note
+  // Focus the title editor when creating a new note
   useEffect(() => {
-    if (!isEditMode && !loading && titleRef.current) {
-      titleRef.current.focus();
+    if (!isEditMode && !loading && titleEditor) {
+      titleEditor.commands.focus();
     }
-  }, [isEditMode, loading]);
+  }, [isEditMode, loading, titleEditor]);
 
   const validateNote = () => {
     const errors = {};
     
-    if (!note.title.trim()) {
+    const titleText = titleEditor?.getText({ blockSeparator: ' ' }).trim() || note.title.trim();
+    if (!titleText) {
       errors.title = 'Title is required';
-    } else if (note.title.trim().length < 3) {
+    } else if (titleText.length < 3) {
       errors.title = 'Title must be at least 3 characters';
-    } else if (note.title.trim().length > 100) {
+    } else if (titleText.length > 100) {
       errors.title = 'Title must be less than 100 characters';
     }
     
-    if (!note.content.trim()) {
+    if (!plainNoteText()) {
       errors.content = 'Content is required';
     }
 
@@ -224,10 +480,10 @@ export default function NotesDetail() {
     if (!validateNote()) {
       if (!isAutoSave) {
         // Focus first field with error
-        if (validationErrors.title && titleRef.current) {
-          titleRef.current.focus();
-        } else if (validationErrors.content && contentRef.current) {
-          contentRef.current.focus();
+        if (validationErrors.title && titleEditor) {
+          titleEditor.commands.focus();
+        } else if (validationErrors.content) {
+          editor?.commands.focus();
         }
       }
       return;
@@ -244,15 +500,18 @@ export default function NotesDetail() {
       }
 
       // Extract hashtags from content
-      const contentHashtags = extractHashtags(note.content);
+      const contentHashtags = extractHashtags(editor?.getText() || note.content.replace(/<[^>]*>/g, ' '));
 
       const noteData = {
-        title: note.title.trim(),
+        title: (titleEditor?.getText({ blockSeparator: ' ' }) || note.title).trim(),
+        title_formatting: titleEditor?.getJSON() || note.title_formatting || null,
         content: note.content.trim(),
         note_type: note.note_type,
         contact_id: note.note_type === 'contact' ? note.contact_id : null,
         group_id: note.note_type === 'group' ? note.group_id : null,
         color: note.color,
+        font_family: note.font_family,
+        drawing_data: note.drawing_data,
         is_important: note.is_important ? 1 : 0,
         user_id: userId,
         keywords: contentHashtags
@@ -501,12 +760,25 @@ export default function NotesDetail() {
                     onChange={(e) => handleInputChange('color', e.target.value)}
                     className={styles.colorSelect}
                     title="Select note color"
+                    aria-label="Note color"
                   >
                     <option value="blue">Blue</option>
                     <option value="pink">Pink</option>
                     <option value="yellow">Yellow</option>
                     <option value="green">Green</option>
                     <option value="purple">Purple</option>
+                  </select>
+
+                  <select
+                    value={note.font_family}
+                    onChange={(event) => applyFontFamily(event.target.value)}
+                    className={`${styles.colorSelect} ${styles.fontSelect}`}
+                    title="Select note font"
+                    aria-label="Note font"
+                  >
+                    {NOTE_FONT_OPTIONS.map((font) => (
+                      <option key={font.value} value={font.value}>{font.label}</option>
+                    ))}
                   </select>
                   
                   {/* Important Star Toggle */}
@@ -655,15 +927,13 @@ export default function NotesDetail() {
               
               {/* Editable title */}
               <div className={styles.titleContainer}>
-                <input
-                  ref={titleRef}
-                  type="text"
-                  value={note.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                  placeholder="Enter note title..."
-                  className={`${styles.noteTitle} ${validationErrors.title ? styles.hasError : ''}`}
-                  maxLength={100}
-                />
+                <div
+                  className={`${styles.richTitleSurface} ${validationErrors.title ? styles.hasError : ''}`}
+                  style={{ fontFamily: NOTE_FONT_STACKS[note.font_family] || NOTE_FONT_STACKS.handwritten }}
+                >
+                  <EditorContent editor={titleEditor} />
+                  {titleEditor?.isEmpty && <span className={styles.richTitlePlaceholder}>Enter note title...</span>}
+                </div>
                 {validationErrors.title && (
                   <p className={styles.errorText}>
                     <FontAwesomeIcon icon={faExclamationCircle} />
@@ -676,16 +946,69 @@ export default function NotesDetail() {
             {/* Lined paper content area */}
             <div className={styles.notepadContent}>
               <div className={styles.contentLines}>
+                <div className={styles.editorModeBar}>
+                  <div className={styles.modeToggle} role="group" aria-label="Note editor mode">
+                    <button
+                      type="button"
+                      className={editorMode === 'write' ? styles.modeActive : ''}
+                      onClick={() => setEditorMode('write')}
+                    >
+                      Write
+                    </button>
+                    <button
+                      type="button"
+                      className={editorMode === 'draw' ? styles.modeActive : ''}
+                      onClick={() => setEditorMode('draw')}
+                    >
+                      Draw
+                    </button>
+                  </div>
+
+                  {editorMode === 'write' && renderFormattingToolbar(activeFormattingEditor, activeSurface)}
+
+                  {editorMode === 'draw' && (
+                    <div className={styles.drawingTools}>
+                      <label className={styles.brushColorControl} title="Brush color">
+                        <span>Ink</span>
+                        <input type="color" value={brushColor} onChange={(event) => setBrushColor(event.target.value)} aria-label="Brush color" />
+                      </label>
+                      <label className={styles.brushSizeControl}>
+                        <span>Size</span>
+                        <input type="range" min="1" max="16" value={brushSize} onChange={(event) => setBrushSize(Number(event.target.value))} aria-label="Brush size" />
+                        <span>{brushSize}</span>
+                      </label>
+                      <button type="button" onClick={undoLastStroke} disabled={!note.drawing_data?.strokes?.length} title="Undo last stroke">
+                        <FontAwesomeIcon icon={faRotateLeft} />
+                      </button>
+                      <button type="button" onClick={clearDrawing} disabled={!note.drawing_data?.strokes?.length} title="Clear drawing">
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <div className={styles.textareaContainer}>
-                  <textarea
-                    ref={contentRef}
-                    value={note.content}
-                    onChange={handleContentChange}
-                    className={`${styles.noteContentTextarea} ${validationErrors.content ? styles.hasError : ''}`}
-                    style={{ textAlign: textAlign }}
-                    placeholder="Write your note content here... Use #hashtags to create searchable keywords!"
-                    rows={7}
-                  />
+                  {editorMode === 'write' ? (
+                    <div
+                      className={`${styles.richTextSurface} ${validationErrors.content ? styles.hasError : ''}`}
+                      style={{ textAlign, fontFamily: NOTE_FONT_STACKS[note.font_family] || NOTE_FONT_STACKS.handwritten }}
+                    >
+                      <EditorContent editor={editor} />
+                      {editor?.isEmpty && <span className={styles.richTextPlaceholder}>Write your note content here... Use #hashtags to create searchable keywords!</span>}
+                    </div>
+                  ) : (
+                    <canvas
+                      ref={canvasRef}
+                      className={styles.drawingCanvas}
+                      width={1200}
+                      height={420}
+                      aria-label="Draw on your note"
+                      onPointerDown={handleCanvasPointerDown}
+                      onPointerMove={handleCanvasPointerMove}
+                      onPointerUp={handleCanvasPointerUp}
+                      onPointerCancel={handleCanvasPointerUp}
+                    />
+                  )}
                 </div>
                 {validationErrors.content && (
                   <p className={styles.errorText}>

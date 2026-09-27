@@ -329,3 +329,43 @@ textarea.input {
   cursor: pointer;
   font-size: 0.875rem;
 }
+
+@media (max-width: 600px) {
+  .modalOverlay {
+    padding: 0;
+    align-items: stretch;
+    overflow-y: hidden;
+  }
+
+  .modalContent {
+    max-width: 100%;
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    margin: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modalHeader {
+    padding: 1rem 1.25rem;
+    border-radius: 0;
+    flex: 0 0 auto;
+  }
+
+  .contactForm {
+    padding: 1.25rem;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .formRow {
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 0;
+  }
+}

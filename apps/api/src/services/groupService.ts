@@ -5,6 +5,13 @@ import { AppError } from '../utils/errors';
 import type { GroupSavePayload, GroupUpdatePayload, GroupDetail, GroupSummary } from '../types/group';
 import type { PaginatedResult } from '../types/pagination';
 
+const normalizeGroupIconRef = (value: string | null): string | null => {
+  if (!value) return null;
+  if (value.startsWith('data:') || value.startsWith('http://') || value.startsWith('https://')) return value;
+  if (value.startsWith('/uploads/')) return value;
+  return `/uploads/group_icons/${value}`;
+};
+
 export const groupSave = async (groupData: GroupSavePayload): Promise<number> => {
   const { user_id, name, description, group_icon } = groupData;
   const decryptedUserId = decryptIdToNumber(user_id);
@@ -55,7 +62,7 @@ export const getGroupById = async (groupId: string, page = 1, pageSize = 10): Pr
     uid: encryptId(group.pk_id),
     name: group.name,
     description: group.description,
-    group_icon: group.group_icon,
+    group_icon: normalizeGroupIconRef(group.group_icon),
     user_id: encryptId(group.user_id),
     members,
     membersTotal: group._count.members,
@@ -95,7 +102,7 @@ export const getGroupsList = async (
     name: g.name,
     createdOn: g.createdOn,
     modifiedOn: g.modifiedOn,
-    group_icon: g.group_icon,
+    group_icon: normalizeGroupIconRef(g.group_icon),
     description: g.description,
     user_id: encryptId(g.user_id),
     group_members: g._count.members,

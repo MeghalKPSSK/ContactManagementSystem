@@ -24,7 +24,7 @@ const ensureAppUserTable = async () => {
                     phone VARCHAR(255) NOT NULL,
                     email VARCHAR(255) NOT NULL,
                     password VARCHAR(255) NOT NULL,
-                    profileImage VARCHAR(500),
+                  profileImage LONGTEXT,
                     lastLogin DATETIME,
                     status ENUM('Active', 'Inactive') DEFAULT 'Active',
                     is_deleted BOOLEAN DEFAULT FALSE,
@@ -49,10 +49,11 @@ const ensureAppUserTable = async () => {
         if (columns.length === 0) {
             await pool.query(`
                 ALTER TABLE app_user 
-                ADD COLUMN profileImage VARCHAR(500) AFTER password
+                ADD COLUMN profileImage LONGTEXT AFTER password
             `);
             console.log('profileImage column added to app_user table.');
         }
+        await pool.query('ALTER TABLE app_user MODIFY COLUMN profileImage LONGTEXT NULL');
         const [planCol] = (await pool.query(`
             SELECT COLUMN_NAME 
             FROM information_schema.COLUMNS 

@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-toastify';
 import apiService from '../../services/apiService';
 import styles from './CustomFields.module.css';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 
 const typeOptions = [
   { value: 'text', label: 'Text' },
@@ -14,6 +15,7 @@ const typeOptions = [
 ];
 
 export default function CustomFields({ open, onClose, plan: planProp }) {
+  useBodyScrollLock(open);
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [defs, setDefs] = useState([]);
@@ -223,7 +225,7 @@ export default function CustomFields({ open, onClose, plan: planProp }) {
             </div>
             <div className={styles.planInfo} title="Upgrade plan to increase your field limit">💡 Upgrade to add more fields</div>
           </div>
-          <form ref={formRef} className={styles.addForm} onSubmit={handleCreate}>
+          <form noValidate ref={formRef} className={styles.addForm} onSubmit={handleCreate}>
             <input type="text" placeholder="key_name (e.g. twitter_handle)" value={form.key_name} disabled={!!editing} onChange={e => setForm({ ...form, key_name: e.target.value })} />
             <input type="text" placeholder="Label" value={form.label} onChange={e => setForm({ ...form, label: e.target.value })} />
             <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
@@ -264,101 +266,103 @@ export default function CustomFields({ open, onClose, plan: planProp }) {
           ) : defs.length === 0 ? (
             <div style={{ marginTop: 12 }}>No custom fields yet.</div>
           ) : (
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th style={{ width: 24 }}></th>
-                  <th>Field Name</th>
-                  <th>Key</th>
-                  <th className={styles.center}>Type</th>
-                  <th className={styles.center}>Required</th>
-                  <th className={styles.center}>Status</th>
-                  <th className={styles.center}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {defs.map((d, idx) => (
-                  <tr
-                    key={d.uid}
-                    data-index={idx}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const targetIdx = Number(e.currentTarget.getAttribute('data-index'));
-                      onRowDrop(targetIdx);
-                    }}
-                    title={d.is_active ? 'Active field' : 'Inactive field'}
-                  >
-                    <td className={styles.handle}>
-                      <span
-                        draggable
-                        onDragStart={() => setDragIndex(idx)}
-                        onDragEnd={() => setDragIndex(null)}
-                        title={d.is_active ? 'Drag to reorder within Active' : 'Drag to reorder within Inactive'}
-                      >
-                        ⋮⋮
-                      </span>
-                    </td>
-                    <td className={styles.fieldName}>{d.label}</td>
-                    <td><code className={styles.keyChip}>{d.key_name}</code></td>
-                    <td className={styles.center}>
-                      <span className={`${styles.typePill} ${styles[`type_${d.type}`]}`}>{String(d.type).toUpperCase()}</span>
-                    </td>
-                    <td className={styles.center}>
-                      <span className={d.is_required ? styles.requiredDot : styles.requiredDotOff} onClick={() => toggleRequired(d)} title={d.is_required ? 'Required' : 'Optional'} />
-                    </td>
-                    <td className={styles.center}>
-                      <span className={styles.statusWrap}>
-                        <span className={`${styles.statusDot} ${d.is_active ? styles.statusActive : styles.statusInactive}`} />
-                        <span className={d.is_active ? styles.statusTextActive : styles.statusTextInactive} title={d.is_active ? 'This field is active and visible in Contact forms' : 'This field is inactive; existing values are preserved'}>{d.is_active ? 'Active' : 'Inactive'}</span>
-                      </span>
-                    </td>
-                    <td className={styles.actions}>
-                      {d.is_active ? (
-                        <>
-                          <button className={styles.secondaryButton} onClick={() => {
-                            setEditing(d);
-                            setForm({
-                              key_name: d.key_name,
-                              label: d.label,
-                              type: d.type,
-                              options: Array.isArray(d.options) ? d.options.join(', ') : '',
-                              is_required: !!d.is_required,
-                            });
-                            // Smooth scroll to the form for better UX
-                            setTimeout(() => {
-                              formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                            }, 0);
-                          }}>Edit</button>
-                          <button className={styles.dangerButton} onClick={() => handleDelete(d)}>Inactive</button>
-                        </>
-                      ) : (
-                        <button
-                          className={styles.primaryButton}
-                          disabled={activeCount >= planLimit}
-                          title={activeCount >= planLimit ? `Plan limit reached (max ${planLimit})` : 'Activate this field'}
-                          onClick={async () => {
-                            if (activeCount >= planLimit) {
-                              toast.error(`Plan limit reached (max ${planLimit}).`);
-                              return;
-                            }
-                            try {
-                              await apiService.updateCustomAttribute(d.uid, { is_active: true });
-                              await loadDefs();
-                              toast.success('Field activated');
-                            } catch (e) {
-                              toast.error(e.message || 'Failed to activate');
-                            }
-                          }}
-                        >
-                          Activate
-                        </button>
-                      )}
-                    </td>
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={{ width: 24 }}></th>
+                    <th>Field Name</th>
+                    <th>Key</th>
+                    <th className={styles.center}>Type</th>
+                    <th className={styles.center}>Required</th>
+                    <th className={styles.center}>Status</th>
+                    <th className={styles.center}>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {defs.map((d, idx) => (
+                    <tr
+                      key={d.uid}
+                      data-index={idx}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const targetIdx = Number(e.currentTarget.getAttribute('data-index'));
+                        onRowDrop(targetIdx);
+                      }}
+                      title={d.is_active ? 'Active field' : 'Inactive field'}
+                    >
+                      <td className={styles.handle} data-label="Move">
+                        <span
+                          draggable
+                          onDragStart={() => setDragIndex(idx)}
+                          onDragEnd={() => setDragIndex(null)}
+                          title={d.is_active ? 'Drag to reorder within Active' : 'Drag to reorder within Inactive'}
+                        >
+                          ⋮⋮
+                        </span>
+                      </td>
+                      <td className={styles.fieldName} data-label="Field Name">{d.label}</td>
+                      <td data-label="Key"><code className={styles.keyChip}>{d.key_name}</code></td>
+                      <td className={styles.center} data-label="Type">
+                        <span className={`${styles.typePill} ${styles[`type_${d.type}`]}`}>{String(d.type).toUpperCase()}</span>
+                      </td>
+                      <td className={styles.center} data-label="Required">
+                        <span className={d.is_required ? styles.requiredDot : styles.requiredDotOff} onClick={() => toggleRequired(d)} title={d.is_required ? 'Required' : 'Optional'} />
+                      </td>
+                      <td className={styles.center} data-label="Status">
+                        <span className={styles.statusWrap}>
+                          <span className={`${styles.statusDot} ${d.is_active ? styles.statusActive : styles.statusInactive}`} />
+                          <span className={d.is_active ? styles.statusTextActive : styles.statusTextInactive} title={d.is_active ? 'This field is active and visible in Contact forms' : 'This field is inactive; existing values are preserved'}>{d.is_active ? 'Active' : 'Inactive'}</span>
+                        </span>
+                      </td>
+                      <td className={styles.actions} data-label="Actions">
+                        {d.is_active ? (
+                          <>
+                            <button className={styles.secondaryButton} onClick={() => {
+                              setEditing(d);
+                              setForm({
+                                key_name: d.key_name,
+                                label: d.label,
+                                type: d.type,
+                                options: Array.isArray(d.options) ? d.options.join(', ') : '',
+                                is_required: !!d.is_required,
+                              });
+                              // Smooth scroll to the form for better UX
+                              setTimeout(() => {
+                                formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              }, 0);
+                            }}>Edit</button>
+                            <button className={styles.dangerButton} onClick={() => handleDelete(d)}>Inactive</button>
+                          </>
+                        ) : (
+                          <button
+                            className={styles.primaryButton}
+                            disabled={activeCount >= planLimit}
+                            title={activeCount >= planLimit ? `Plan limit reached (max ${planLimit})` : 'Activate this field'}
+                            onClick={async () => {
+                              if (activeCount >= planLimit) {
+                                toast.error(`Plan limit reached (max ${planLimit}).`);
+                                return;
+                              }
+                              try {
+                                await apiService.updateCustomAttribute(d.uid, { is_active: true });
+                                await loadDefs();
+                                toast.success('Field activated');
+                              } catch (e) {
+                                toast.error(e.message || 'Failed to activate');
+                              }
+                            }}
+                          >
+                            Activate
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

@@ -32,6 +32,23 @@ export default function Settings() {
     previewPreferences(next);
   };
 
+  const updateChartType = (key: keyof ThemePreferences['dashboardChartTypes'], value: string) => {
+    const next = {
+      ...draft,
+      dashboardChartTypes: { ...draft.dashboardChartTypes, [key]: value },
+    };
+    setDraft(next);
+    previewPreferences(next);
+  };
+
+  const updateDashboardColor = (index: number, value: string) => {
+    const dashboardColors = [...draft.dashboardColors];
+    dashboardColors[index] = value;
+    const next = { ...draft, dashboardColors };
+    setDraft(next);
+    previewPreferences(next);
+  };
+
   const moveSidebarItem = (index: number, direction: -1 | 1) => {
     const targetIndex = index + direction;
     if (targetIndex < 0 || targetIndex >= draft.sidebarOrder.length) return;
@@ -131,6 +148,55 @@ export default function Settings() {
               </li>
             ))}
           </ol>
+        </section>
+
+        <section className={`${styles.settingsSection} ${styles.dashboardSettings}`} aria-labelledby="dashboard-heading">
+          <div className={styles.sectionHeading}>
+            <div>
+              <h2 id="dashboard-heading">Dashboard charts</h2>
+            </div>
+          </div>
+          <div className={styles.chartTypeList}>
+            <label className={styles.chartTypeRow}>
+              <span>Contacts by tags</span>
+              <select value={draft.dashboardChartTypes.tags} onChange={(event) => updateChartType('tags', event.target.value)}>
+                <option value="pie">Pie</option>
+                <option value="donut">Donut</option>
+              </select>
+            </label>
+            <label className={styles.chartTypeRow}>
+              <span>Favorites vs regular</span>
+              <select value={draft.dashboardChartTypes.favorites} onChange={(event) => updateChartType('favorites', event.target.value)}>
+                <option value="bar">Bar</option>
+                <option value="line">Line</option>
+              </select>
+            </label>
+            <label className={styles.chartTypeRow}>
+              <span>Groups vs tags</span>
+              <select value={draft.dashboardChartTypes.groups} onChange={(event) => updateChartType('groups', event.target.value)}>
+                <option value="mixed">Line + bar</option>
+                <option value="line">Line</option>
+                <option value="bar">Bar</option>
+                <option value="area">Area</option>
+              </select>
+            </label>
+          </div>
+          <div className={styles.chartPalette}>
+            <h3>Chart palette</h3>
+            <div className={styles.paletteSwatches}>
+              {draft.dashboardColors.map((color, index) => (
+                <label className={styles.paletteColor} key={`dashboard-color-${index}`}>
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={(event) => updateDashboardColor(index, event.target.value)}
+                    aria-label={`Dashboard chart color ${index + 1}`}
+                  />
+                  <code>{color.toUpperCase()}</code>
+                </label>
+              ))}
+            </div>
+          </div>
         </section>
       </div>
 

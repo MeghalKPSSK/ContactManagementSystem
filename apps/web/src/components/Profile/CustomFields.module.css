@@ -8,6 +8,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 1rem;
+  box-sizing: border-box;
   z-index: 1000;
 }
 
@@ -34,7 +36,7 @@
   margin: 0;
   font-size: 20px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--primary-text);
 }
 
 .closeButton {
@@ -42,7 +44,7 @@
   border: none;
   padding: 4px;
   cursor: pointer;
-  color: #6c757d;
+  color: var(--text-secondary);
   border-radius: 4px;
   font-size: 24px;
   transition: all 0.2s;
@@ -50,12 +52,13 @@
 
 .closeButton:hover {
   background: var(--hover-bg);
-  color: #495057;
+  color: var(--primary-text);
 }
 
 .body {
   padding: 32px;
   overflow-y: auto;
+  overflow-x: hidden;
   max-height: calc(90vh - 80px);
 }
 
@@ -87,12 +90,12 @@
 }
 
 .planInfo {
-  color: #6c757d;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
 .addForm {
-  border: 2px dashed #dee2e6;
+  border: 2px dashed var(--accent-border);
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 32px;
@@ -101,6 +104,13 @@
   grid-template-columns: 1fr 1fr 1fr auto;
   gap: 16px;
   align-items: end;
+}
+
+@media (max-width: 700px) {
+  .addForm {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
 }
 
 .addForm:hover {
@@ -112,10 +122,10 @@
 .addForm select {
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--accent-border);
   border-radius: 8px;
   background: var(--primary-bg);
-  color: #2c3e50;
+  color: var(--primary-text);
   font-size: 14px;
   transition: all 0.2s;
 }
@@ -131,7 +141,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #495057;
+  color: var(--primary-text);
   margin-top: 4px;
 }
 
@@ -175,6 +185,10 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
+.tableWrap {
+  width: 100%;
+}
+
 .table th,
 .table td {
   padding: 16px 20px;
@@ -183,7 +197,7 @@
 
 .table th {
   text-align: left;
-  color: #495057;
+  color: var(--text-secondary);
   font-weight: 600;
   background: var(--accent-bg);
   text-transform: uppercase;
@@ -202,8 +216,8 @@
   justify-content: flex-end;
 }
 
-.handle { width: 24px; color: #6c757d; cursor: grab; }
-.fieldName { font-weight: 600; color: #2c3e50; }
+.handle { width: 24px; color: var(--text-secondary); cursor: grab; }
+.fieldName { font-weight: 600; color: var(--primary-text); }
 .keyChip {
   background: var(--accent-bg);
   color: #6f42c1;
@@ -296,25 +310,139 @@
   background: var(--hover-bg);
 }
 
-/* Key column as code chip */
-.table tbody td:nth-child(2) {
-  font-family: 'Consolas', 'Monaco', monospace;
-  /* background: #f8f9fa; */
-  color: #6f42c1;
-  text-align: center;
-}
-
-/* Type column as pill */
-.table tbody td:nth-child(3) {
-  font-weight: 600;
-  /* text-transform: uppercase; */
-  font-size: 12px;
-  /* background: #e3f2fd; */
-  color: #1976d2;
-  text-align: center;
-}
-
 /* Checkbox accent */
 input[type="checkbox"] {
   accent-color: var(--secondary-bg);
+}
+
+@media (max-width: 900px) {
+  .modalOverlay {
+    align-items: flex-start;
+    padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
+  }
+
+  .modalContent {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100dvh - 16px);
+    border-radius: 12px;
+  }
+
+  .header {
+    padding: 14px 16px;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .header h3 {
+    font-size: 1.35rem;
+    line-height: 1.25;
+    margin-right: 0.5rem;
+  }
+
+  .body {
+    padding: 16px;
+    max-height: calc(100dvh - 92px);
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 16px;
+    padding: 12px;
+  }
+
+  .addForm {
+    grid-template-columns: 1fr;
+    margin-bottom: 16px;
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .addButton {
+    width: 100%;
+  }
+
+  .table {
+    margin-top: 0.25rem;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
+  }
+
+  .table tbody tr {
+    margin: 0 0 12px;
+    padding: 12px;
+    border: 1px solid var(--accent-border);
+    border-radius: 12px;
+    background: var(--accent-bg-2);
+  }
+
+  .table tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--accent-border);
+    text-align: right;
+  }
+
+  .table tbody td:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .table tbody td::before {
+    content: attr(data-label);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: left;
+    flex-shrink: 0;
+  }
+
+  .table tbody td.handle {
+    display: none;
+  }
+
+  .fieldName {
+    text-align: right;
+  }
+
+  .keyChip {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .statusWrap {
+    justify-content: flex-end;
+  }
+
+  .actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .actions button {
+    min-width: 110px;
+  }
 }

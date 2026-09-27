@@ -124,30 +124,36 @@
 
 @media (max-width: 420px) {
   .paginationBar {
-    grid-template-columns: 1fr;
+    grid-template-columns: 40px minmax(0, 1fr);
+    column-gap: 0.5rem;
   }
 
   .refreshArea {
-    justify-content: flex-start;
+    justify-content: center;
   }
 
   .navigationCluster {
     width: 100%;
     justify-self: stretch;
-    justify-content: center;
-    gap: 0.35rem;
+    justify-content: flex-start;
+    gap: 0.25rem;
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
   }
 
   .pageControls {
     gap: 0.2rem;
+    flex-wrap: nowrap;
+    flex: 0 0 auto;
   }
 
   .pageInfo {
-    grid-column: auto;
+    grid-column: 1 / -1;
     justify-self: center;
   }
 
   .pageSizeSelect {
-    margin-left: 0.2rem;
+    margin-left: 0.1rem;
+    flex: 0 0 auto;
   }
 }

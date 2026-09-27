@@ -16,20 +16,73 @@
 
 .chartsContainer {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 24px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .chartCard {
   background: var(--primary-bg);
   border-radius: 6px;
   box-shadow: 0 4px 16px var(--box-shadow);
-  padding: 24px;
+  padding: 0;
   height: 100%;
   border: 1px solid var(--accent-border);
   transition: box-shadow 0.3s ease;
   position: relative;
+}
+
+.chartCard :global(.ant-card-body) {
+  padding: 1rem;
+}
+
+.chartHeader {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.chartTitle {
+  margin: 0 !important;
+  color: var(--primary-text) !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+}
+
+.chartActions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.35rem;
+}
+
+.chartActions button {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background: var(--primary-bg);
+  color: var(--secondary-bg);
+  cursor: pointer;
+}
+
+.chartActions button:hover:not(:disabled) {
+  border-color: var(--secondary-bg);
+  background: var(--hover-bg);
+  color: var(--hover-text);
+}
+
+.chartActions button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.wideChart {
+  margin-bottom: 1rem;
 }
 
 .chartCard:hover {
@@ -43,6 +96,21 @@
   border: 1px solid var(--accent-border);
 }
 
+.contactsList:global(.ant-card) {
+  background: var(--primary-bg) !important;
+  border-color: var(--accent-border) !important;
+}
+
+.contactsList :global(.ant-card-body) {
+  padding: 1rem;
+}
+
+.contactsTitle {
+  margin: 0 0 16px !important;
+  color: var(--primary-text) !important;
+  font-weight: 600 !important;
+}
+
 .filterContainer {
   width: 100%;
   display: flex;
@@ -53,6 +121,61 @@
 
 .tagFilter {
   min-width: 200px;
+}
+
+.tagFilter:global(.ant-select) {
+  min-width: 200px;
+}
+
+.tagFilter :global(.ant-select-selector) {
+  background: var(--primary-bg) !important;
+  border-color: var(--highlight-border) !important;
+  min-height: 40px !important;
+  border-radius: 8px !important;
+}
+
+.tagFilter :global(.ant-select-selection-placeholder) {
+  color: var(--text-secondary) !important;
+}
+
+.tagFilter :global(.ant-select-selection-item) {
+  color: var(--primary-text) !important;
+}
+
+.tagFilter :global(.ant-select-selection-overflow-item .ant-select-selection-item) {
+  background: color-mix(in srgb, var(--secondary-bg) 18%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--secondary-bg) 36%, transparent) !important;
+}
+
+.tagFilter :global(.ant-select-arrow) {
+  color: var(--text-secondary) !important;
+}
+
+.tagFilter:global(.ant-select-focused) :global(.ant-select-selector) {
+  border-color: var(--secondary-bg) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--secondary-bg) 20%, transparent) !important;
+}
+
+.tagFilterDropdown:global(.ant-select-dropdown) {
+  background: var(--primary-bg);
+  border: 1px solid var(--accent-border);
+  box-shadow: 0 10px 26px var(--box-shadow);
+}
+
+.tagFilterDropdown :global(.ant-select-item-option-content) {
+  color: var(--primary-text);
+}
+
+.tagFilterDropdown :global(.ant-select-item-option-active:not(.ant-select-item-option-disabled)) {
+  background: var(--hover-bg);
+}
+
+.tagFilterDropdown :global(.ant-select-item-option-selected:not(.ant-select-item-option-disabled)) {
+  background: color-mix(in srgb, var(--secondary-bg) 22%, transparent);
+}
+
+.tagFilterDropdown :global(.ant-empty-description) {
+  color: var(--text-secondary);
 }
 
 .chartLoader {
@@ -71,9 +194,37 @@
   margin-bottom: 16px;
 }
 
+.contactListItem:global(.ant-list-item) {
+  border-radius: 8px;
+  border: none !important;
+  background: transparent;
+  padding: 0 !important;
+  box-shadow: 0 2px 10px var(--box-shadow-color);
+}
+
+.contactCard:global(.ant-card) {
+  width: 100%;
+  background: var(--primary-bg) !important;
+  border: 1px solid var(--accent-border) !important;
+  box-shadow: none;
+}
+
+.contactCard :global(.ant-card-body) {
+  padding: 1rem !important;
+}
+
+.contactCard :global(.ant-card-meta-title) {
+  color: var(--primary-text) !important;
+}
+
+.contactCard :global(.ant-card-meta-description) {
+  color: var(--text-secondary) !important;
+}
+
 .contactTitle {
   font-size: 16px;
   font-weight: 500;
+  color: var(--primary-text);
 }
 
 .contactCardContent {
@@ -107,6 +258,12 @@
   margin: 0;
 }
 
+.contactTag:global(.ant-tag) {
+  border-color: color-mix(in srgb, var(--secondary-bg) 38%, transparent);
+  background: color-mix(in srgb, var(--secondary-bg) 16%, transparent);
+  color: var(--primary-text);
+}
+
 .favoriteIndicator {
   position: absolute;
   top: 12px;
@@ -130,6 +287,10 @@
 
   .chartsContainer {
     grid-template-columns: 1fr;
+  }
+
+  .chartHeader {
+    align-items: flex-start;
   }
 
   .filterContainer {

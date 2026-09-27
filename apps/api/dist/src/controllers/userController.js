@@ -32,14 +32,10 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updatePreferences = exports.getPreferences = exports.updatePlan = exports.uploadProfileImage = exports.changePassword = exports.deleteUser = exports.getUser = exports.listUsers = exports.updateUser = exports.login = exports.registerUser = void 0;
-const path_1 = __importDefault(require("path"));
-const fs_1 = __importDefault(require("fs"));
 const userService = __importStar(require("../services/userService"));
+const imageStorage_1 = require("../lib/imageStorage");
 const dbEncryption_1 = require("../utils/dbEncryption");
 const errors_1 = require("../utils/errors");
 const http_1 = require("../utils/http");
@@ -72,27 +68,7 @@ const updateUser = async (req, res) => {
         const userId = (0, http_1.paramStr)(req.params.id);
         const userData = req.body;
         if (req.file) {
-            const filePath = req.file.path;
-            const fileName = req.file.filename;
-            const fileExtension = path_1.default.extname(fileName).toLowerCase();
-            if (!['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(fileExtension)) {
-                fs_1.default.unlinkSync(filePath);
-                res.status(400).json({ success: false, message: 'Only image files (png, jpg, jpeg, gif, webp) are allowed!' });
-                return;
-            }
-            userData.profileImage = `/uploads/profiles/${fileName}`;
-            try {
-                const currentUser = await userService.getUserById(userId);
-                if (currentUser && currentUser.profileImage) {
-                    const oldImagePath = path_1.default.join(__dirname, '../..', currentUser.profileImage);
-                    if (fs_1.default.existsSync(oldImagePath)) {
-                        fs_1.default.unlinkSync(oldImagePath);
-                    }
-                }
-            }
-            catch (deleteError) {
-                console.log('Could not delete old profile image:', (0, errors_1.getErrorMessage)(deleteError));
-            }
+            userData.profileImage = await (0, imageStorage_1.persistUploadedImage)(req.file, 'profiles');
         }
         const updatedUser = await userService.updateUser(userId, userData);
         if (!updatedUser) {
@@ -179,14 +155,8 @@ const uploadProfileImage = async (req, res) => {
             res.status(400).json({ success: false, message: 'No file uploaded' });
             return;
         }
-        const filePath = req.file.path;
-        const fileName = req.file.filename;
-        const fileExtension = path_1.default.extname(fileName).toLowerCase();
-        if (fileExtension !== '.png' && fileExtension !== '.jpg' && fileExtension !== '.jpeg') {
-            res.status(400).json({ success: false, message: 'Only .png, .jpg and .jpeg format allowed!' });
-            return;
-        }
-        const updatedUser = await userService.updateUser(userId, { profileImage: filePath });
+        const imageRef = await (0, imageStorage_1.persistUploadedImage)(req.file, 'profiles');
+        const updatedUser = await userService.updateUser(userId, { profileImage: imageRef });
         if (!updatedUser) {
             res.status(404).json({ success: false, message: 'User not found' });
             return;

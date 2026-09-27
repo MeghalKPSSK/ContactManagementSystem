@@ -1,4 +1,4 @@
-import './lib/logger';
+import { httpLogger } from './lib/logger';
 import express, { Application } from 'express';
 import fs from 'fs';
 import path from 'path';
@@ -34,7 +34,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 204,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
+app.use(httpLogger);
 
 // Serve static files from uploads directory
 const uploadsDir = path.join(__dirname, '../uploads');

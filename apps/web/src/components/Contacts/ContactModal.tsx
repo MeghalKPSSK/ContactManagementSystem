@@ -5,8 +5,10 @@ import { faTimes, faStar, faSave } from '@fortawesome/free-solid-svg-icons';
 import styles from './ContactModal.module.css';
 import { toast } from 'react-toastify';
 import apiService from '../../services/apiService';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 
 const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
+  useBodyScrollLock(true);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -260,6 +262,32 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (mode !== 'view') {
+      if (!formData.firstName.trim()) {
+        toast.error('First name is required');
+        return;
+      }
+      if (!formData.phone.trim() || formData.phone.length !== 10) {
+        toast.error('Primary phone must be exactly 10 digits');
+        return;
+      }
+      if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+        toast.error('Enter a valid email address');
+        return;
+      }
+
+      const missingCustomField = customDefs.find((definition) => {
+        if (!definition.is_active || !definition.is_required) return false;
+        const value = customValues[definition.key_name];
+        if (definition.type === 'boolean') return value !== true && value !== 'true';
+        return value === undefined || value === null || String(value).trim() === '';
+      });
+      if (missingCustomField) {
+        toast.error(`${missingCustomField.label} is required`);
+        return;
+      }
+    }
+
     // Check for phone validation errors
     const hasPhoneErrors = Object.values(phoneErrors).some(error => error);
     const hasIncompletePhone = formData.phone.length > 0 && formData.phone.length !== 10;
@@ -326,7 +354,7 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
   const renderCustomField = (def) => {
     const value = customValues[def.key_name] ?? '';
     const setVal = (v) => setCustomValues(prev => ({ ...prev, [def.key_name]: v }));
-  const common = { disabled: mode === 'view', required: def.is_required && mode !== 'view' };
+  const common = { disabled: mode === 'view' };
     switch (def.type) {
       case 'text':
         return <input type="text" className={styles.input} value={value} onChange={e => setVal(e.target.value)} {...common} />;
@@ -373,7 +401,7 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.contactForm}>
+        <form noValidate onSubmit={handleSubmit} className={styles.contactForm}>
           {/* First row - Name fields */}
           <div className={styles.formSection}>
             <div className={styles.formRow}>
@@ -387,7 +415,6 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
                 value={formData.firstName}
                 onChange={handleChange}
                 disabled={mode === 'view'}
-                required
               />
             </div>
             <div className={styles.formGroup}>
@@ -418,7 +445,6 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
                 value={formData.phone}
                 onChange={handleChange}
                 disabled={mode === 'view'}
-                required
               />
               {phoneErrors.phone && <span className={styles.errorText}>{phoneErrors.phone}</span>}
             </div>
@@ -464,7 +490,6 @@ const ContactModal = ({ mode, contact, onClose, onSubmit }) => {
                 value={formData.email}
                 onChange={handleChange}
                 disabled={mode === 'view'}
-                required
               />
             </div>
             </div>

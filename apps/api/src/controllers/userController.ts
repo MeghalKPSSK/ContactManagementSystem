@@ -1,7 +1,6 @@
-import path from 'path';
-import fs from 'fs';
 import type { Request, Response } from 'express';
 import * as userService from '../services/userService';
+import { persistUploadedImage } from '../lib/imageStorage';
 import { encryptId } from '../utils/dbEncryption';
 import { getErrorMessage, getErrorStatus } from '../utils/errors';
 import { paramStr } from '../utils/http';
@@ -34,29 +33,7 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     const userData = req.body;
 
     if (req.file) {
-      const filePath = req.file.path;
-      const fileName = req.file.filename;
-      const fileExtension = path.extname(fileName).toLowerCase();
-
-      if (!['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(fileExtension)) {
-        fs.unlinkSync(filePath);
-        res.status(400).json({ success: false, message: 'Only image files (png, jpg, jpeg, gif, webp) are allowed!' });
-        return;
-      }
-
-      userData.profileImage = `/uploads/profiles/${fileName}`;
-
-      try {
-        const currentUser = await userService.getUserById(userId);
-        if (currentUser && currentUser.profileImage) {
-          const oldImagePath = path.join(__dirname, '../..', currentUser.profileImage);
-          if (fs.existsSync(oldImagePath)) {
-            fs.unlinkSync(oldImagePath);
-          }
-        }
-      } catch (deleteError) {
-        console.log('Could not delete old profile image:', getErrorMessage(deleteError));
-      }
+      userData.profileImage = await persistUploadedImage(req.file, 'profiles');
     }
 
     const updatedUser = await userService.updateUser(userId, userData);
@@ -139,16 +116,9 @@ export const uploadProfileImage = async (req: Request, res: Response): Promise<v
       res.status(400).json({ success: false, message: 'No file uploaded' });
       return;
     }
-    const filePath = req.file.path;
-    const fileName = req.file.filename;
-    const fileExtension = path.extname(fileName).toLowerCase();
 
-    if (fileExtension !== '.png' && fileExtension !== '.jpg' && fileExtension !== '.jpeg') {
-      res.status(400).json({ success: false, message: 'Only .png, .jpg and .jpeg format allowed!' });
-      return;
-    }
-
-    const updatedUser = await userService.updateUser(userId, { profileImage: filePath });
+    const imageRef = await persistUploadedImage(req.file, 'profiles');
+    const updatedUser = await userService.updateUser(userId, { profileImage: imageRef });
 
     if (!updatedUser) {
       res.status(404).json({ success: false, message: 'User not found' });

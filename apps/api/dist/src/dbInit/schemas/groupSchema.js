@@ -23,7 +23,7 @@ const createTablesIfNotExist = async (pool) => {
             name VARCHAR(50) NOT NULL,
             description TEXT,
             is_deleted BOOLEAN DEFAULT FALSE,
-            group_icon VARCHAR(255),
+          group_icon LONGTEXT,
             createdOn DATETIME DEFAULT CURRENT_TIMESTAMP,
             modifiedOn DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES app_user(pk_id) ON DELETE CASCADE,
@@ -55,7 +55,7 @@ const validateAndUpdateSchema = async (pool) => {
     const requiredColumns = {
         description: 'ALTER TABLE groups ADD COLUMN description TEXT AFTER name',
         is_deleted: 'ALTER TABLE groups ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE AFTER description',
-        group_icon: 'ALTER TABLE `groups` ADD COLUMN group_icon VARCHAR(255) AFTER is_deleted',
+        group_icon: 'ALTER TABLE `groups` ADD COLUMN group_icon LONGTEXT AFTER is_deleted',
     };
     const existingColumns = groupsColumns.map((col) => col.COLUMN_NAME);
     for (const [column, query] of Object.entries(requiredColumns)) {
@@ -85,6 +85,7 @@ const validateAndUpdateSchema = async (pool) => {
             }
         }
     }
+    await pool.query('ALTER TABLE `groups` MODIFY COLUMN group_icon LONGTEXT NULL');
     console.log('Schema validation and updates for groups table completed.');
 };
 exports.default = ensureGroupsTable;

@@ -150,7 +150,13 @@ export default function SideBar() {
   );
 
   return (
-    <div className={`${styles.sidebar} ${isExpanded ? styles.expanded : styles.collapsed}`}>
+    <>
+      <div
+        className={`${styles.backdrop} ${isExpanded ? styles.backdropVisible : ''}`}
+        onClick={() => setIsExpanded(false)}
+        aria-hidden="true"
+      />
+      <div className={`${styles.sidebar} ${isExpanded ? styles.expanded : styles.collapsed}`}>
       <button className={styles.toggleButton} onClick={toggleSidebar}>
         <FontAwesomeIcon icon={isExpanded ? faTimes : faBars} />
       </button>
@@ -216,6 +222,7 @@ export default function SideBar() {
               <Link 
                 to={item.path} 
                 className={`${styles.menuItem} ${location.pathname === item.path ? styles.active : ''}`}
+                onClick={() => { if (window.innerWidth <= 768) setIsExpanded(false); }}
               >
                 <FontAwesomeIcon icon={item.icon} className={styles.icon} />
                 {isExpanded && <span>{item.label}</span>}
@@ -232,6 +239,7 @@ export default function SideBar() {
           </li>
         </ul>
       </nav>
-    </div>
+      </div>
+    </>
   );
 }

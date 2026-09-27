@@ -7,6 +7,7 @@ import GroupModal from './GroupModal';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import PaginationBar from '../Pagination/PaginationBar';
+import apiService from '../../services/apiService';
 
 export default function Groups() {
   const [groups, setGroups] = useState([]);
@@ -41,8 +42,6 @@ export default function Groups() {
         throw new Error(resData.message || 'Failed to fetch groups');
       }
 
-      // Store the config for later use in image URLs
-      window.apiConfig = config;
       setGroups(resData.groups || []);
       setPagination({
         current: page,
@@ -184,7 +183,7 @@ export default function Groups() {
                 <div className={styles.groupIconContainer}>
                   {group.group_icon ? (
                     <img 
-                      src={`${window.apiConfig?.apiUrl.replace('/api', '')}/uploads/group_icons/${group.group_icon}`}
+                      src={apiService.getImageUrl(group.group_icon) || ''}
                       alt={group.name}
                       className={styles.groupIconImage}
                       onError={(e) => {

@@ -1,25 +1,49 @@
 export type NoteType = 'personal' | 'contact' | 'group';
 export type NoteColor = 'pink' | 'blue' | 'green' | 'yellow' | 'purple';
+export type NoteFontFamily =
+  | 'handwritten' | 'sans' | 'serif' | 'mono' | 'rounded' | 'humanist'
+  | 'book' | 'editorial' | 'geometric' | 'cursive' | 'slab' | 'system';
+
+export interface NoteDrawingPoint {
+  x: number;
+  y: number;
+}
+
+export interface NoteDrawingStroke {
+  color: string;
+  width: number;
+  points: NoteDrawingPoint[];
+}
+
+export interface NoteDrawing {
+  strokes: NoteDrawingStroke[];
+}
 
 export interface NoteCreatePayload {
   user_id: string;
   title: string;
+  title_formatting?: unknown | null;
   content: string;
   note_type?: NoteType;
   contact_id?: string | null;
   group_id?: string | null;
   color?: NoteColor;
+  font_family?: NoteFontFamily;
+  drawing_data?: NoteDrawing | null;
   is_important?: boolean;
   keywords?: Array<string | { keyword: string }>;
 }
 
 export interface NoteUpdatePayload {
   title: string;
+  title_formatting?: unknown | null;
   content: string;
   note_type?: NoteType;
   contact_id?: string | null;
   group_id?: string | null;
   color?: NoteColor;
+  font_family?: NoteFontFamily;
+  drawing_data?: NoteDrawing | null;
   is_important?: boolean;
   keywords?: Array<string | { keyword: string }>;
 }
@@ -37,11 +61,14 @@ export interface NoteDetail {
   uid: string | null;
   user_id: string | null;
   title: string;
+  title_formatting: unknown | null;
   content: string;
   note_type: string;
   contact_id: string | null;
   group_id: string | null;
   color: string;
+  font_family: string;
+  drawing_data: NoteDrawing | null;
   is_important: boolean;
   createdOn: Date;
   modifiedOn: Date;
@@ -54,11 +81,14 @@ export interface NoteDetail {
 export interface NoteSummary {
   uid: string | null;
   title: string;
+  title_formatting: unknown | null;
   content_preview: string;
   note_type: string;
   contact_id: string | null;
   group_id: string | null;
   color: string;
+  font_family: string;
+  drawing_data: NoteDrawing | null;
   is_important: boolean;
   createdOn: Date;
   modifiedOn: Date;

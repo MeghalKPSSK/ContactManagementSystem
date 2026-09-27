@@ -215,6 +215,52 @@ export default function Contacts() {
     }
   };
 
+  const openContactNote = (contact) => {
+    navigate(`/notesDetails/?note_type=contact&contact_id=${encodeURIComponent(contact.uid)}`, {
+      state: {
+        noteEntityLabel: `${contact.firstName} ${contact.lastName || ''}`.trim(),
+        returnTo: '/contacts'
+      }
+    });
+  };
+
+  const renderContactActions = (contact) => (
+    <>
+      <button
+        className={`${styles.actionButton} ${styles.viewButton}`}
+        onClick={() => handleView(contact)}
+        title={`View ${contact.firstName} ${contact.lastName || ''}`}
+        aria-label={`View ${contact.firstName} ${contact.lastName || ''}`}
+      >
+        <FontAwesomeIcon icon={faEye} />
+      </button>
+      <button
+        className={`${styles.actionButton} ${styles.editButton}`}
+        onClick={() => handleEdit(contact)}
+        title={`Edit ${contact.firstName} ${contact.lastName || ''}`}
+        aria-label={`Edit ${contact.firstName} ${contact.lastName || ''}`}
+      >
+        <FontAwesomeIcon icon={faEdit} />
+      </button>
+      <button
+        className={styles.actionButton}
+        onClick={() => openContactNote(contact)}
+        title={`Add note for ${contact.firstName} ${contact.lastName || ''}`}
+        aria-label={`Add note for ${contact.firstName} ${contact.lastName || ''}`}
+      >
+        <FontAwesomeIcon icon={faStickyNote} />
+      </button>
+      <button
+        className={`${styles.actionButton} ${styles.deleteButton}`}
+        onClick={() => handleDelete(contact.uid)}
+        title={`Delete ${contact.firstName} ${contact.lastName || ''}`}
+        aria-label={`Delete ${contact.firstName} ${contact.lastName || ''}`}
+      >
+        <FontAwesomeIcon icon={faTrash} />
+      </button>
+    </>
+  );
+
   return (
     <div className={styles.contactsContainer}>
       {isLoading ? (
@@ -295,45 +341,42 @@ export default function Contacts() {
                 <td>{contact.email}</td>
                 <td>{contact.phone}</td>
                 <td>{contact.status}</td>
-                <td className={styles.actions}>
-                  <button 
-                    className={`${styles.actionButton} ${styles.viewButton}`}
-                    onClick={() => handleView(contact)}
-                  >
-                    <FontAwesomeIcon icon={faEye} />
-                  </button>
-                  <button 
-                    className={`${styles.actionButton} ${styles.editButton}`}
-                    onClick={() => handleEdit(contact)}
-                  >
-                    <FontAwesomeIcon icon={faEdit} />
-                  </button>
-                  <button
-                    className={styles.actionButton}
-                    onClick={() => navigate(`/notesDetails/?note_type=contact&contact_id=${encodeURIComponent(contact.uid)}`, {
-                      state: {
-                        noteEntityLabel: `${contact.firstName} ${contact.lastName || ''}`.trim(),
-                        returnTo: '/contacts'
-                      }
-                    })}
-                    title={`Add note for ${contact.firstName} ${contact.lastName || ''}`}
-                    aria-label={`Add note for ${contact.firstName} ${contact.lastName || ''}`}
-                  >
-                    <FontAwesomeIcon icon={faStickyNote} />
-                  </button>
-                  <button 
-                    className={`${styles.actionButton} ${styles.deleteButton}`}
-                    onClick={() => handleDelete(contact.uid)} // Use uid instead of id
-                  >
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
-                </td>
+                <td className={styles.actions}>{renderContactActions(contact)}</td>
               </tr>
             )): (
               <tr><td colSpan="5" style={{ textAlign: "center" }}>No Records Found</td></tr>
             )}
           </tbody>
         </table>
+
+        <div className={styles.mobileContactsList}>
+          {contacts.length > 0 ? contacts.map((contact) => (
+            <article key={`mobile-${contact.uid}`} className={styles.mobileContactCard}>
+              <div className={styles.mobileContactHeader}>
+                <div className={styles.mobileContactName}>
+                  <button
+                    className={styles.favoriteButton}
+                    onClick={() => handleFavoriteToggle(contact)}
+                    title={contact.is_favorite ? 'Unfavorite contact' : 'Mark as favorite'}
+                    aria-label={contact.is_favorite ? 'Unfavorite contact' : 'Mark as favorite'}
+                  >
+                    <FontAwesomeIcon
+                      icon={faStar}
+                      className={`${styles.favoriteIcon} ${contact.is_favorite ? styles.favorite : ''}`}
+                    />
+                  </button>
+                  <span>{contact.firstName} {contact.lastName || ''}</span>
+                </div>
+                <span className={styles.mobileStatus}>{contact.status || 'Unknown'}</span>
+              </div>
+              <div className={styles.mobileMetaRow}><span>Email</span><span>{contact.email || '—'}</span></div>
+              <div className={styles.mobileMetaRow}><span>Phone</span><span>{contact.phone || '—'}</span></div>
+              <div className={`${styles.actions} ${styles.mobileActions}`}>{renderContactActions(contact)}</div>
+            </article>
+          )) : (
+            <p className={styles.mobileEmpty}>No Records Found</p>
+          )}
+        </div>
         
         <PaginationBar
           current={pagination.current}

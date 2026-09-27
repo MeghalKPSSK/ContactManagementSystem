@@ -2,13 +2,13 @@ export interface GroupSavePayload {
   user_id: string;
   name: string;
   description?: string;
-  group_icon?: string;
+  group_icon?: string | null;
 }
 
 export interface GroupUpdatePayload {
   name?: string;
   description?: string;
-  group_icon?: string;
+  group_icon?: string | null;
 }
 
 export interface GroupMemberSummary {

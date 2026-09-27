@@ -47,7 +47,7 @@ const Login = () => {
                 <h2 className={styles.title}>Contact Management System</h2>
             </div>
             <div className={styles.loginBox}>
-                <form onSubmit={handleSubmit} className={styles.form}>
+                <form noValidate onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.title}>Login Form</div>
                     <div className={styles.inputGroup}>
                         <label htmlFor="username" className={styles.label}>Username</label>

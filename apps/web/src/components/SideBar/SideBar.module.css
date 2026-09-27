@@ -29,6 +29,10 @@
     width: 60px;
 }
 
+.backdrop {
+    display: none;
+}
+
 .toggleButton {
     position: absolute;
     top: 0.5rem;
@@ -111,13 +115,13 @@
 }
 
 .menuItem:hover, .logoutButton:hover {
-    background-color: var(--hover-bg);
-    color: var(--hover-text);
+    background-color: var(--secondary-bg);
+    color: var(--text-light);
 }
 
 .menuItem.active {
-    background-color: var(--hover-bg);
-    color: var(--secondary-bg);
+    background-color: var(--secondary-bg);
+    color: var(--text-light);
     border-left: 4px solid var(--secondary-bg);
 }
 
@@ -253,4 +257,88 @@
     border: 2px solid var(--secondary-bg);
     color: var(--text-secondary);
     font-size: 1rem;
+}
+
+/* Below 768px the sidebar collapses into a bottom icon bar, like a mobile tab bar. */
+/* Placed last so it wins over the equal-specificity rules defined above. */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100% !important;
+        height: 60px;
+        flex-direction: row;
+        border-right: none;
+        border-top: 1px solid var(--accent-border);
+        box-shadow: 0 -2px 12px var(--box-shadow);
+        z-index: 1000;
+        overflow: visible;
+    }
+
+    .toggleButton,
+    .userProfile,
+    .collapsedProfile {
+        display: none !important;
+    }
+
+    .backdrop {
+        display: none !important;
+    }
+
+    .navigation {
+        display: flex !important;
+        flex-direction: row;
+        align-items: stretch;
+        justify-content: space-around;
+        width: 100%;
+        height: 100%;
+        gap: 0;
+        padding: 0;
+        margin: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .menuList {
+        display: contents;
+    }
+
+    .navigation li {
+        list-style: none;
+        display: flex;
+        flex: 1;
+        min-width: 40px;
+    }
+
+    .menuItem,
+    .logoutButton {
+        flex-direction: column !important;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        min-height: 100%;
+        padding: 0.25rem 0.15rem !important;
+        gap: 0.15rem;
+        font-size: 0.6rem;
+        white-space: nowrap;
+        border-left: none !important;
+    }
+
+    .menuItem span {
+        display: none;
+    }
+
+    .menuItem.active {
+        border-top: 3px solid var(--secondary-bg);
+        background-color: var(--secondary-bg);
+        color: var(--text-light);
+    }
+
+    .icon {
+        width: auto;
+        font-size: 1.05rem;
+    }
 }

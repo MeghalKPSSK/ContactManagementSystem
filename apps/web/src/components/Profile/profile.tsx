@@ -7,6 +7,7 @@ import styles from './profile.module.css';
 import CustomFields from './CustomFields';
 import apiService from '../../services/apiService';
 import { dispatchProfileUpdate } from '../../utils/eventUtils';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 
 const Profile = () => {
     const [user, setUser] = useState(null);
@@ -14,6 +15,7 @@ const Profile = () => {
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [showCustomFields, setShowCustomFields] = useState(false);
     const [showPlanModal, setShowPlanModal] = useState(false);
+    useBodyScrollLock(showPasswordModal || showCustomFields || showPlanModal);
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -153,13 +155,20 @@ const Profile = () => {
     // Update handleSubmit to check for phone validation and handle file upload
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        // Test toast to verify it's working
-        console.log('Form submitted, testing toast'); // Debug log
-        
-        // Check for valid phone number
-        if (formData.phone.length !== 10) {
-            toast.error('Please enter a valid 10-digit phone number');
+        if (!formData.firstName.trim()) {
+            toast.error('First name is required');
+            return;
+        }
+        if (!formData.username.trim()) {
+            toast.error('Username is required');
+            return;
+        }
+        if (!/^\d{10}$/.test(formData.phone)) {
+            toast.error('Phone number must be exactly 10 digits');
+            return;
+        }
+        if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+            toast.error('Enter a valid email address');
             return;
         }
 
@@ -220,6 +229,22 @@ const Profile = () => {
 
     const handlePasswordSubmit = async (e) => {
         e.preventDefault();
+        if (!passwordData.currentPassword.trim()) {
+            toast.error('Current password is required');
+            return;
+        }
+        if (!passwordData.newPassword.trim()) {
+            toast.error('New password is required');
+            return;
+        }
+        if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{6,12}$/.test(passwordData.newPassword)) {
+            toast.error('New password must be 6-12 characters and include uppercase, lowercase, number, and symbol');
+            return;
+        }
+        if (!passwordData.confirmPassword.trim()) {
+            toast.error('Confirm the new password');
+            return;
+        }
         if (passwordData.newPassword !== passwordData.confirmPassword) {
             toast.error('New passwords do not match');
             return;
@@ -263,13 +288,13 @@ const Profile = () => {
                 </div>
             </div>
             <div className={styles.profileCard}>
-                <form onSubmit={handleSubmit} className={styles.profileForm}>
+                <form noValidate onSubmit={handleSubmit} className={styles.profileForm}>
                     {/* Plan Section */}
                     {user && (
                         <div className={styles.formGroup}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <span style={{ padding: '0.4rem 0.75rem', border: '1px solid var(--accent-border)', borderRadius: 6, textTransform: 'capitalize' }}>
-                                   Plan: {user.plan.toUpperCase() || 'FREE'}
+                            <div className={styles.planRow}>
+                                <span className={styles.planBadge}>
+                                   Plan: {(user.plan || 'free').toUpperCase()}
                                 </span>
                                 <button
                                     type="button"
@@ -280,7 +305,7 @@ const Profile = () => {
                                 >
                                     <FontAwesomeIcon icon={faArrowUp} />
                                 </button>
-                                <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Upgrade your plan</span>
+                                <span className={styles.planHint}>Upgrade your plan</span>
                             </div>
                         </div>
                     )}
@@ -336,7 +361,6 @@ const Profile = () => {
                                     name="firstName"
                                     value={formData.firstName}
                                     onChange={handleChange}
-                                    required
                                 />
                             </div>
                         </div>
@@ -362,7 +386,6 @@ const Profile = () => {
                                     name="username"
                                     value={formData.username}
                                     onChange={handleChange}
-                                    required
                                 />
                             </div>
                         </div>
@@ -375,7 +398,6 @@ const Profile = () => {
                                     value={formData.phone}
                                     onChange={handleChange}
                                     placeholder="Enter 10-digit number"
-                                    required
                                 />
                             </div>
                             {phoneError && <span className={styles.errorText}>{phoneError}</span>}
@@ -390,7 +412,6 @@ const Profile = () => {
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                required
                             />
                         </div>
                     </div>
@@ -402,11 +423,12 @@ const Profile = () => {
                         </button>
                         <button
                             type="button"
-                            className={styles.iconButton}
+                            className={styles.updateButton}
                             onClick={() => setShowPasswordModal(true)}
                             title="Change Password"
                         >
-                            <FontAwesomeIcon icon={faKey} />
+                            <FontAwesomeIcon icon={faKey} className={styles.buttonIcon} />
+                            Change Password
                         </button>
                         <button
                             type="button"
@@ -432,7 +454,7 @@ const Profile = () => {
                                 <FontAwesomeIcon icon={faTimes} />
                             </button>
                         </div>
-                        <form onSubmit={handlePasswordSubmit}>
+                        <form noValidate onSubmit={handlePasswordSubmit}>
                             <div className={styles.formGroup}>
                                 <label>Current Password</label>
                                 <div className={styles.passwordInput}>
@@ -441,7 +463,6 @@ const Profile = () => {
                                         name="currentPassword"
                                         value={passwordData.currentPassword}
                                         onChange={handlePasswordChange}
-                                        required
                                     />
                                     <button
                                         type="button"
@@ -460,7 +481,6 @@ const Profile = () => {
                                         name="newPassword"
                                         value={passwordData.newPassword}
                                         onChange={handlePasswordChange}
-                                        required
                                     />
                                     <button
                                         type="button"
@@ -479,7 +499,6 @@ const Profile = () => {
                                         name="confirmPassword"
                                         value={passwordData.confirmPassword}
                                         onChange={handlePasswordChange}
-                                        required
                                     />
                                     <button
                                         type="button"
@@ -513,7 +532,7 @@ const Profile = () => {
                                 <FontAwesomeIcon icon={faTimes} />
                             </button>
                         </div>
-                        <form onSubmit={async (e) => {
+                        <form noValidate onSubmit={async (e) => {
                             e.preventDefault();
                             const form = new FormData(e.currentTarget);
                             const plan = form.get('plan');
@@ -539,7 +558,7 @@ const Profile = () => {
                                 <div className={styles.formGroup}>
                                     <label>Select Plan</label>
                                     <div className={styles.textInput}>
-                                        <select name="plan" defaultValue={(user.plan || 'free').toLowerCase()} required>
+                                        <select name="plan" defaultValue={(user.plan || 'free').toLowerCase()}>
                                             <option value="free">Free (3 custom fields)</option>
                                             <option value="pro">Pro (5 custom fields)</option>
                                             <option value="enterprise">Enterprise (10 custom fields)</option>

@@ -43,6 +43,35 @@
     max-height: 90vh; /* Prevent the form from exceeding the viewport height */
 }
 
+@media (max-width: 768px) {
+    .registerContainer {
+        flex-direction: column;
+        justify-content: center;
+        height: auto;
+        min-height: 100dvh;
+        gap: 1.5rem;
+        padding: 1.5rem 1rem;
+        overflow: visible;
+    }
+
+    .logoSection {
+        width: 100%;
+        padding-left: 0;
+    }
+
+    .logo {
+        width: 45%;
+        max-width: 160px;
+    }
+
+    .registerBox {
+        width: 100%;
+        max-width: 400px;
+        padding: 1.5rem;
+        max-height: none;
+    }
+}
+
 .form {
     display: flex;
     flex-direction: column;

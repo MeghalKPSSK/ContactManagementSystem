@@ -18,6 +18,40 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import apiService from '../../services/apiService';
 import PaginationBar from '../Pagination/PaginationBar';
+import { NOTE_FONT_STACKS } from '../../utils/noteAppearance';
+
+const renderFormattedTitleNode = (node, key) => {
+  if (!node || typeof node !== 'object') return null;
+  if (node.type === 'text') {
+    let renderedText = node.text || '';
+    (Array.isArray(node.marks) ? node.marks : []).forEach((mark, index) => {
+      if (mark.type === 'bold') renderedText = <strong key={`${key}-bold-${index}`}>{renderedText}</strong>;
+      if (mark.type === 'italic') renderedText = <em key={`${key}-italic-${index}`}>{renderedText}</em>;
+      if (mark.type === 'underline') renderedText = <u key={`${key}-underline-${index}`}>{renderedText}</u>;
+      if (mark.type === 'strike') renderedText = <s key={`${key}-strike-${index}`}>{renderedText}</s>;
+      if (mark.type === 'textStyle') {
+        const style = {};
+        const color = mark.attrs?.color;
+        const fontFamily = mark.attrs?.fontFamily;
+        if (typeof color === 'string' && /^#[\da-f]{3,8}$/i.test(color)) style.color = color;
+        if (typeof fontFamily === 'string' && Object.values(NOTE_FONT_STACKS).includes(fontFamily)) style.fontFamily = fontFamily;
+        if (Object.keys(style).length) renderedText = <span key={`${key}-style-${index}`} style={style}>{renderedText}</span>;
+      }
+    });
+    return <React.Fragment key={key}>{renderedText}</React.Fragment>;
+  }
+  return (Array.isArray(node.content) ? node.content : []).map((child, index) => renderFormattedTitleNode(child, `${key}-${index}`));
+};
+
+const renderFormattedTitle = (document, fallback) => {
+  if (!Array.isArray(document?.content)) return fallback;
+  return document.content.map((node, index) => (
+    <React.Fragment key={`title-${index}`}>
+      {renderFormattedTitleNode(node, `title-${index}`)}
+      {index < document.content.length - 1 ? ' ' : ''}
+    </React.Fragment>
+  ));
+};
 
 export default function Notes() {
   const navigate = useNavigate();
@@ -450,15 +484,35 @@ export default function Notes() {
                     </div>
                     
                     {/* Handwritten style title */}
-                    <h3 className={styles.noteTitle}>{note.title}</h3>
+                    <h3 className={styles.noteTitle} style={{ fontFamily: NOTE_FONT_STACKS[note.font_family || 'handwritten'] }}>
+                      {renderFormattedTitle(note.title_formatting, note.title)}
+                    </h3>
                   </div>
                   
                   {/* Lined paper content area */}
                   <div className={styles.notepadContent}>
+                    {note.drawing_data?.strokes?.length > 0 && (
+                      <div className={styles.drawingPreview} aria-label="Note drawing preview">
+                        <svg viewBox="0 0 1000 350" role="img" aria-hidden="true">
+                          {note.drawing_data.strokes.map((stroke, strokeIndex) => {
+                            const points = stroke.points.map((point) => `${point.x * 1000},${point.y * 350}`).join(' ');
+                            return (
+                              <g key={`stroke-${strokeIndex}`}>
+                                {stroke.points.length === 1 ? (
+                                  <circle cx={stroke.points[0].x * 1000} cy={stroke.points[0].y * 350} r={Math.max(stroke.width, 2)} fill={stroke.color} />
+                                ) : (
+                                  <polyline points={points} fill="none" stroke={stroke.color} strokeWidth={stroke.width * 2} strokeLinecap="round" strokeLinejoin="round" />
+                                )}
+                              </g>
+                            );
+                          })}
+                        </svg>
+                      </div>
+                    )}
                     <div className={styles.contentLines}>
                       {splitContentIntoLines(note.content_preview, 4).map((line, index) => (
                         <div key={index} className={styles.contentLine}>
-                          <span className={styles.noteContent}>{line}</span>
+                          <span className={styles.noteContent} style={{ fontFamily: NOTE_FONT_STACKS[note.font_family || 'handwritten'] }}>{line}</span>
                         </div>
                       ))}
                       

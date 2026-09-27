@@ -34,6 +34,10 @@
   --highlight-border: #dce9e5;
 }
 
+:root[data-theme-mode='dark'] {
+  color-scheme: dark;
+}
+
 *,
 *::before,
 *::after {
@@ -84,6 +88,11 @@ a:hover {
   background: var(--hover-bg);
 }
 
+:root[data-theme-mode='dark'] ::selection {
+  color: var(--text-light);
+  background: color-mix(in srgb, var(--secondary-bg) 36%, #0f1b1f);
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -93,6 +102,11 @@ a:hover {
   border: 3px solid transparent;
   border-radius: 8px;
   background: var(--accent-border);
+  background-clip: padding-box;
+}
+
+:root[data-theme-mode='dark'] ::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent-border) 78%, #1c282a);
   background-clip: padding-box;
 }
 

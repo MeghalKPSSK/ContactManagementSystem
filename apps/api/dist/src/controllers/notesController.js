@@ -40,10 +40,14 @@ const errors_1 = require("../utils/errors");
 const http_1 = require("../utils/http");
 const VALID_NOTE_TYPES = ['personal', 'contact', 'group'];
 const VALID_COLORS = ['pink', 'blue', 'green', 'yellow', 'purple'];
+const VALID_NOTE_FONTS = [
+    'handwritten', 'sans', 'serif', 'mono', 'rounded', 'humanist',
+    'book', 'editorial', 'geometric', 'cursive', 'slab', 'system',
+];
 const createNote = async (req, res) => {
     try {
         const noteData = req.body;
-        const { title, content, note_type, user_id, color } = noteData;
+        const { title, content, note_type, user_id, color, font_family } = noteData;
         if (!title || !content || !user_id) {
             res.status(400).json({ success: false, message: 'Title, content, and user_id are required' });
             return;
@@ -54,6 +58,10 @@ const createNote = async (req, res) => {
         }
         if (color && !VALID_COLORS.includes(color)) {
             res.status(400).json({ success: false, message: 'Invalid color. Must be pink, blue, green, yellow, or purple' });
+            return;
+        }
+        if (font_family && !VALID_NOTE_FONTS.includes(font_family)) {
+            res.status(400).json({ success: false, message: 'Invalid note font' });
             return;
         }
         const noteId = await notesService.createNote(noteData);
@@ -114,13 +122,17 @@ const updateNote = async (req, res) => {
     try {
         const noteId = (0, http_1.paramStr)(req.params.id);
         const noteData = req.body;
-        const { title, content, color } = noteData;
+        const { title, content, color, font_family } = noteData;
         if (!title || !content) {
             res.status(400).json({ success: false, message: 'Title and content are required' });
             return;
         }
         if (color && !VALID_COLORS.includes(color)) {
             res.status(400).json({ success: false, message: 'Invalid color. Must be pink, blue, green, yellow, or purple' });
+            return;
+        }
+        if (font_family && !VALID_NOTE_FONTS.includes(font_family)) {
+            res.status(400).json({ success: false, message: 'Invalid note font' });
             return;
         }
         const result = await notesService.updateNote(noteId, noteData);

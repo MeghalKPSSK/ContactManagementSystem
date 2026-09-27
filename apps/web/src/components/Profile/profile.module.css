@@ -22,6 +22,20 @@
     margin-bottom: 1rem;
 }
 
+@media (max-width: 600px) {
+    .profileContainer {
+        padding: 1rem;
+    }
+
+    .profileCard {
+        padding: 1.25rem;
+    }
+
+    .formRow {
+        grid-template-columns: 1fr;
+    }
+}
+
 .formGroup {
     margin-bottom: 1rem;
 }
@@ -73,6 +87,25 @@
     margin-top: 1.5rem;
     align-items: center;
     justify-content: flex-end;
+}
+
+.planRow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.planBadge {
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--accent-border);
+    border-radius: 6px;
+    color: var(--primary-text);
+    text-transform: capitalize;
+}
+
+.planHint {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
 }
 
 .updateButton,
@@ -410,4 +443,42 @@
 .removeButton:hover {
     background-color: var(--danger-hover);
     transform: translateY(-1px);
+}
+
+@media (max-width: 700px) {
+    .planRow {
+        flex-wrap: wrap;
+        row-gap: 0.4rem;
+    }
+
+    .planHint {
+        width: 100%;
+        margin-left: 2px;
+    }
+
+    .buttonGroup {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .updateButton,
+    .submitButton,
+    .cancelButton {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .modalOverlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .modalContent {
+        width: 100%;
+        max-width: none;
+        max-height: 100dvh;
+        border-radius: 10px 10px 0 0;
+        overflow-y: auto;
+    }
 }

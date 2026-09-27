@@ -205,9 +205,10 @@
 .groupIconContainer {
   width: 44px;
   height: 44px;
+  overflow: hidden;
   background-color: var(--primary-bg);
   border: 1px solid var(--accent-border);
-  border-radius: 4px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;

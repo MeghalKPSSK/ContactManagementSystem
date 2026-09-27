@@ -10,6 +10,7 @@
 
 .app-layout {
   display: flex;
+  height: 100vh;
   min-height: 100vh;
   background: var(--accent-bg);
 }
@@ -19,6 +20,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
 }
 
 .main-content {
@@ -27,11 +29,27 @@
   /* padding: 1rem; */
   background: var(--accent-bg);
   position: relative;
+  min-height: 0;
+}
+
+@media (max-width: 768px) {
+  .content-wrapper {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .main-content {
+    padding-bottom: 60px;
+  }
 }
 
 .Toastify__toast-container {
   z-index: 9999 !important;
   position: fixed !important;
+  width: min(360px, calc(100vw - 1rem));
+  top: 0.5rem;
+  right: 0.5rem;
+  left: auto;
 }
 
 .Toastify__toast {
@@ -58,4 +76,17 @@
 
 .Toastify__progress-bar {
   background: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 700px) {
+  .Toastify__toast-container {
+    width: calc(100vw - 1rem);
+    right: 0.5rem;
+    left: 0.5rem;
+  }
+
+  .Toastify__toast {
+    margin-bottom: 0.45rem;
+    font-size: 0.88rem;
+  }
 }

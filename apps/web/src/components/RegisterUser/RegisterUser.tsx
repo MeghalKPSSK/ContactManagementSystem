@@ -36,9 +36,15 @@ const RegisterUser = () => {
         if (!formData.firstName.trim()) errors.firstName = 'First name is required';
         if (!formData.username.trim()) errors.username = 'Username is required';
         if (!formData.phone.trim()) errors.phone = 'Phone number is required';
+        else if (!/^\d{10}$/.test(formData.phone)) errors.phone = 'Phone number must be exactly 10 digits';
         if (!formData.email.trim()) errors.email = 'Email is required';
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) errors.email = 'Enter a valid email address';
         if (!formData.password.trim()) errors.password = 'Password is required';
-        if (formData.password !== formData.confirmPassword) errors.confirmPassword = 'Passwords do not match';
+        else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{6,12}$/.test(formData.password)) {
+            errors.password = 'Use 6-12 characters with uppercase, lowercase, number, and symbol';
+        }
+        if (!formData.confirmPassword.trim()) errors.confirmPassword = 'Confirm your password';
+        else if (formData.password !== formData.confirmPassword) errors.confirmPassword = 'Passwords do not match';
         setFieldErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -68,7 +74,7 @@ const RegisterUser = () => {
                 <h2 className={styles.title}>Contact Management System</h2>
             </div>
             <div className={styles.registerBox}>
-                <form onSubmit={handleSubmit} className={styles.form}>
+                <form noValidate onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.title}>Registration Form</div>
                     <div className={styles.inputGroup}>
                         <label htmlFor="firstName" className={styles.label}>First Name</label>
@@ -118,7 +124,6 @@ const RegisterUser = () => {
                             placeholder="Enter your phone number"
                             value={formData.phone}
                             onChange={handleChange}
-                            maxLength={10}
                         />
                         {fieldErrors.phone && <p className={styles.fieldError}>{fieldErrors.phone}</p>}
                     </div>

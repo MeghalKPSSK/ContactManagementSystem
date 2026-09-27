@@ -3,15 +3,19 @@ import * as notesService from '../services/notesService';
 import { encryptId } from '../utils/dbEncryption';
 import { getErrorMessage, getErrorStatus } from '../utils/errors';
 import { paramStr } from '../utils/http';
-import type { NoteType, NoteColor } from '../types/note';
+import type { NoteType, NoteColor, NoteFontFamily } from '../types/note';
 
 const VALID_NOTE_TYPES: NoteType[] = ['personal', 'contact', 'group'];
 const VALID_COLORS: NoteColor[] = ['pink', 'blue', 'green', 'yellow', 'purple'];
+const VALID_NOTE_FONTS: NoteFontFamily[] = [
+  'handwritten', 'sans', 'serif', 'mono', 'rounded', 'humanist',
+  'book', 'editorial', 'geometric', 'cursive', 'slab', 'system',
+];
 
 export const createNote = async (req: Request, res: Response): Promise<void> => {
   try {
     const noteData = req.body;
-    const { title, content, note_type, user_id, color } = noteData;
+    const { title, content, note_type, user_id, color, font_family } = noteData;
 
     if (!title || !content || !user_id) {
       res.status(400).json({ success: false, message: 'Title, content, and user_id are required' });
@@ -25,6 +29,11 @@ export const createNote = async (req: Request, res: Response): Promise<void> => 
 
     if (color && !VALID_COLORS.includes(color)) {
       res.status(400).json({ success: false, message: 'Invalid color. Must be pink, blue, green, yellow, or purple' });
+      return;
+    }
+
+    if (font_family && !VALID_NOTE_FONTS.includes(font_family)) {
+      res.status(400).json({ success: false, message: 'Invalid note font' });
       return;
     }
 
@@ -100,7 +109,7 @@ export const updateNote = async (req: Request, res: Response): Promise<void> => 
   try {
     const noteId = paramStr(req.params.id);
     const noteData = req.body;
-    const { title, content, color } = noteData;
+    const { title, content, color, font_family } = noteData;
 
     if (!title || !content) {
       res.status(400).json({ success: false, message: 'Title and content are required' });
@@ -109,6 +118,11 @@ export const updateNote = async (req: Request, res: Response): Promise<void> => 
 
     if (color && !VALID_COLORS.includes(color)) {
       res.status(400).json({ success: false, message: 'Invalid color. Must be pink, blue, green, yellow, or purple' });
+      return;
+    }
+
+    if (font_family && !VALID_NOTE_FONTS.includes(font_family)) {
+      res.status(400).json({ success: false, message: 'Invalid note font' });
       return;
     }
 

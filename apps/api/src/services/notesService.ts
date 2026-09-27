@@ -10,6 +10,9 @@ import type {
   NoteSummary,
   NoteSearchResult,
   NotesStats,
+  NoteDrawing,
+  NoteDrawingStroke,
+  NoteFontFamily,
 } from '../types/note';
 import type { PaginatedResult } from '../types/pagination';
 
@@ -25,15 +28,75 @@ const normalizeKeywords = (keywords: Array<string | { keyword: string }> | undef
   ];
 };
 
+const normalizeDrawing = (value: unknown): NoteDrawing | null => {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== 'object' || !Array.isArray((value as NoteDrawing).strokes)) {
+    throw new AppError('Invalid note drawing data', 400);
+  }
+
+  const rawStrokes = (value as NoteDrawing).strokes;
+  if (rawStrokes.length > 500) throw new AppError('Drawing has too many strokes', 400);
+
+  const strokes: NoteDrawingStroke[] = rawStrokes.map((stroke) => {
+    if (!stroke || !/^#[0-9a-fA-F]{6}$/.test(stroke.color) || !Number.isFinite(stroke.width) || stroke.width < 1 || stroke.width > 32) {
+      throw new AppError('Invalid note drawing stroke', 400);
+    }
+    if (!Array.isArray(stroke.points) || stroke.points.length > 10000) {
+      throw new AppError('Invalid note drawing points', 400);
+    }
+
+    return {
+      color: stroke.color.toLowerCase(),
+      width: stroke.width,
+      points: stroke.points.map((point) => {
+        if (!Number.isFinite(point.x) || !Number.isFinite(point.y) || point.x < 0 || point.x > 1 || point.y < 0 || point.y > 1) {
+          throw new AppError('Invalid note drawing coordinates', 400);
+        }
+        return { x: point.x, y: point.y };
+      }),
+    };
+  });
+
+  const drawing = { strokes };
+  if (JSON.stringify(drawing).length > 1_000_000) throw new AppError('Drawing is too large', 400);
+  return drawing;
+};
+
+const normalizeTitleFormatting = (value: unknown): Prisma.InputJsonValue | null => {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'object' || Array.isArray(value) || (value as { type?: unknown }).type !== 'doc' || !Array.isArray((value as { content?: unknown }).content)) {
+    throw new AppError('Invalid formatted note title', 400);
+  }
+  const serialized = JSON.stringify(value);
+  if (serialized.length > 32768) throw new AppError('Formatted note title is too large', 400);
+  return JSON.parse(serialized) as Prisma.InputJsonValue;
+};
+
+const toPlainText = (content: string): string => content
+  .replace(/<\/(p|div|li|h[1-6]|blockquote)>/gi, ' ')
+  .replace(/<br\s*\/?\s*>/gi, ' ')
+  .replace(/<[^>]*>/g, ' ')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&lt;/gi, '<')
+  .replace(/&gt;/gi, '>')
+  .replace(/&quot;/gi, '"')
+  .replace(/&#39;/gi, "'")
+  .replace(/\s+/g, ' ')
+  .trim();
+
 export const createNote = async (noteData: NoteCreatePayload): Promise<number> => {
   const {
     user_id,
     title,
+    title_formatting,
     content,
     note_type = 'personal',
     contact_id = null,
     group_id = null,
     color = 'blue',
+    font_family = 'handwritten',
+    drawing_data = null,
     is_important = false,
     keywords = [],
   } = noteData;
@@ -55,16 +118,21 @@ export const createNote = async (noteData: NoteCreatePayload): Promise<number> =
   }
 
   const uniqueKeywords = normalizeKeywords(keywords);
+  const normalizedDrawing = normalizeDrawing(drawing_data);
+  const normalizedTitleFormatting = normalizeTitleFormatting(title_formatting);
 
   const newNote = await NoteModel.create({
     data: {
       user_id: userIdDecrypted,
       title,
+      title_formatting: normalizedTitleFormatting ?? Prisma.DbNull,
       content,
       note_type,
       contact_id: contactIdDecrypted,
       group_id: groupIdDecrypted,
       color: color || 'blue',
+      font_family,
+      ...(normalizedDrawing ? { drawing_data: normalizedDrawing as unknown as Prisma.InputJsonValue } : {}),
       is_important: Boolean(is_important),
       keywords: { create: uniqueKeywords.map((kw) => ({ keyword: kw })) },
     },
@@ -92,11 +160,14 @@ export const getNoteById = async (noteId: string): Promise<NoteDetail | null> =>
     uid: encryptId(note.pk_id),
     user_id: encryptId(note.user_id),
     title: note.title,
+    title_formatting: note.title_formatting as unknown | null,
     content: note.content,
     note_type: note.note_type,
     contact_id: note.contact_id ? encryptId(note.contact_id) : null,
     group_id: note.group_id ? encryptId(note.group_id) : null,
     color: note.color,
+    font_family: note.font_family as NoteFontFamily,
+    drawing_data: note.drawing_data as unknown as NoteDrawing | null,
     is_important: note.is_important,
     createdOn: note.createdOn,
     modifiedOn: note.modifiedOn,
@@ -167,11 +238,14 @@ export const getNotesList = async (
   const items: NoteSummary[] = notes.map((n) => ({
     uid: encryptId(n.pk_id),
     title: n.title,
-    content_preview: n.content ? n.content.substring(0, 200) : '',
+    title_formatting: n.title_formatting as unknown | null,
+    content_preview: n.content ? toPlainText(n.content).substring(0, 200) : '',
     note_type: n.note_type,
     contact_id: n.contact_id ? encryptId(n.contact_id) : null,
     group_id: n.group_id ? encryptId(n.group_id) : null,
     color: n.color,
+    font_family: n.font_family as NoteFontFamily,
+    drawing_data: n.drawing_data as unknown as NoteDrawing | null,
     is_important: n.is_important,
     createdOn: n.createdOn,
     modifiedOn: n.modifiedOn,
@@ -184,7 +258,7 @@ export const getNotesList = async (
 };
 
 export const updateNote = async (noteId: string, noteData: NoteUpdatePayload): Promise<true> => {
-  const { title, content, note_type, contact_id, group_id, color, is_important, keywords = [] } = noteData;
+  const { title, title_formatting, content, note_type, contact_id, group_id, color, font_family, drawing_data, is_important, keywords = [] } = noteData;
 
   const decryptedNoteId = decryptIdToNumber(noteId);
   if (!decryptedNoteId) throw new AppError('Invalid note ID', 400);
@@ -202,15 +276,24 @@ export const updateNote = async (noteId: string, noteData: NoteUpdatePayload): P
     throw new AppError('Personal notes cannot have contact or group references', 400);
   }
 
+  const normalizedDrawing = drawing_data === undefined ? undefined : normalizeDrawing(drawing_data);
+  const normalizedTitleFormatting = title_formatting === undefined ? undefined : normalizeTitleFormatting(title_formatting);
   await NoteModel.update({
     where: { pk_id: decryptedNoteId },
     data: {
       title,
+      ...(normalizedTitleFormatting === undefined
+        ? {}
+        : { title_formatting: normalizedTitleFormatting ?? Prisma.DbNull }),
       content,
       note_type,
       contact_id: contactIdDecrypted,
       group_id: groupIdDecrypted,
       color: color || 'blue',
+      ...(font_family ? { font_family } : {}),
+      ...(normalizedDrawing === undefined
+        ? {}
+        : { drawing_data: normalizedDrawing ? normalizedDrawing as unknown as Prisma.InputJsonValue : Prisma.DbNull }),
       is_important: Boolean(is_important),
       modifiedOn: new Date(),
     },

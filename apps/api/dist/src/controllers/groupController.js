@@ -34,6 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.removeGroupMember = exports.addGroupMembers = exports.updateGroup = exports.maybeParseGroupIcon = exports.deleteGroup = exports.getGroup = exports.listGroups = exports.saveGroup = void 0;
+const imageStorage_1 = require("../lib/imageStorage");
 const groupService = __importStar(require("../services/groupService"));
 const dbEncryption_1 = require("../utils/dbEncryption");
 const errors_1 = require("../utils/errors");
@@ -42,7 +43,7 @@ const saveGroup = async (req, res) => {
     try {
         const groupData = req.body;
         if (req.file) {
-            groupData.group_icon = req.file.filename;
+            groupData.group_icon = await (0, imageStorage_1.persistUploadedImage)(req.file, 'groups');
         }
         const groupId = (0, dbEncryption_1.encryptId)(await groupService.groupSave(groupData));
         console.log(`Group created with ID: ${groupId}`);
@@ -73,12 +74,20 @@ const listGroups = async (req, res) => {
 exports.listGroups = listGroups;
 const getGroup = async (req, res) => {
     try {
-        const group = await groupService.getGroupById((0, http_1.paramStr)(req.params.id));
+        const requestedPage = Number.parseInt(String(req.query.page || '1'), 10);
+        const requestedPageSize = Number.parseInt(String(req.query.pageSize || '10'), 10);
+        const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+        const pageSize = [10, 20, 50, 100].includes(requestedPageSize) ? requestedPageSize : 10;
+        const group = await groupService.getGroupById((0, http_1.paramStr)(req.params.id), page, pageSize);
         if (!group) {
             res.status(404).json({ success: false, message: 'Group not found' });
             return;
         }
-        res.status(200).json({ success: true, group });
+        res.status(200).json({
+            success: true,
+            group,
+            pagination: { current: page, pageSize, total: group.membersTotal },
+        });
     }
     catch (error) {
         console.error('Error retrieving group:', error);
@@ -120,7 +129,10 @@ const updateGroup = async (req, res) => {
     try {
         const groupData = req.body;
         if (req.file) {
-            groupData.group_icon = req.file.filename;
+            groupData.group_icon = await (0, imageStorage_1.persistUploadedImage)(req.file, 'groups');
+        }
+        else if (Object.prototype.hasOwnProperty.call(groupData, 'group_icon') && groupData.group_icon === '') {
+            groupData.group_icon = null;
         }
         if (typeof groupData.members === 'string') {
             groupData.members = JSON.parse(groupData.members);

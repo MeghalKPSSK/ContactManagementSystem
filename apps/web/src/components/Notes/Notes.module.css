@@ -305,6 +305,22 @@
   min-height: 0;
 }
 
+.drawingPreview {
+  width: 100%;
+  height: 72px;
+  margin-bottom: 0.4rem;
+  overflow: hidden;
+  border: 1px solid rgba(32, 58, 57, 0.12);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.drawingPreview svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .contentLines {
   display: flex;
   flex-direction: column;
@@ -830,4 +846,82 @@
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+:global(:root[data-theme-mode='dark']) .noteCard {
+  border-color: color-mix(in srgb, var(--secondary-bg) 24%, #233038);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+:global(:root[data-theme-mode='dark']) .noteCardPink {
+  background: linear-gradient(to bottom, #2b1f2b, #211722);
+}
+
+:global(:root[data-theme-mode='dark']) .noteCardBlue {
+  background: linear-gradient(to bottom, #1a2737, #142030);
+}
+
+:global(:root[data-theme-mode='dark']) .noteCardYellow {
+  background: linear-gradient(to bottom, #302a1c, #241f15);
+}
+
+:global(:root[data-theme-mode='dark']) .noteCardGreen {
+  background: linear-gradient(to bottom, #1c3029, #162720);
+}
+
+:global(:root[data-theme-mode='dark']) .noteCardPurple {
+  background: linear-gradient(to bottom, #2a2033, #201827);
+}
+
+:global(:root[data-theme-mode='dark']) .hole {
+  background: color-mix(in srgb, var(--accent-bg) 70%, #11171b);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.48);
+}
+
+:global(:root[data-theme-mode='dark']) .noteTitle,
+:global(:root[data-theme-mode='dark']) .noteContent {
+  color: var(--primary-text);
+  text-shadow: none;
+}
+
+:global(:root[data-theme-mode='dark']) .noteTitle {
+  font-weight: 450;
+}
+
+:global(:root[data-theme-mode='dark']) .noteCardPink .contentLine {
+  border-color: #5a2d4d;
+}
+
+:global(:root[data-theme-mode='dark']) .noteCardBlue .contentLine {
+  border-color: #2d4865;
+}
+
+:global(:root[data-theme-mode='dark']) .noteCardYellow .contentLine {
+  border-color: #6c5b29;
+}
+
+:global(:root[data-theme-mode='dark']) .noteCardGreen .contentLine {
+  border-color: #2d6448;
+}
+
+:global(:root[data-theme-mode='dark']) .noteCardPurple .contentLine {
+  border-color: #5a3d74;
+}
+
+:global(:root[data-theme-mode='dark']) .drawingPreview {
+  border-color: color-mix(in srgb, var(--secondary-bg) 30%, transparent);
+  background: color-mix(in srgb, var(--primary-bg) 85%, #0b1216);
+}
+
+:global(:root[data-theme-mode='dark']) .noteFooter,
+:global(:root[data-theme-mode='dark']) .noteCardPink .noteFooter,
+:global(:root[data-theme-mode='dark']) .noteCardBlue .noteFooter,
+:global(:root[data-theme-mode='dark']) .noteCardYellow .noteFooter,
+:global(:root[data-theme-mode='dark']) .noteCardGreen .noteFooter,
+:global(:root[data-theme-mode='dark']) .noteCardPurple .noteFooter {
+  background: color-mix(in srgb, var(--primary-text) 9%, transparent);
+}
+
+:global(:root[data-theme-mode='dark']) .noteDate {
+  color: color-mix(in srgb, var(--text-secondary) 82%, #f0f6f5);
 }

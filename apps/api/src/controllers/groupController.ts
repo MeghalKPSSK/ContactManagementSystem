@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import { persistUploadedImage } from '../lib/imageStorage';
 import * as groupService from '../services/groupService';
 import { encryptId } from '../utils/dbEncryption';
 import { getErrorStatus } from '../utils/errors';
@@ -8,7 +9,7 @@ export const saveGroup = async (req: Request, res: Response): Promise<void> => {
   try {
     const groupData = req.body;
     if (req.file) {
-      groupData.group_icon = req.file.filename;
+      groupData.group_icon = await persistUploadedImage(req.file, 'groups');
     }
     const groupId = encryptId(await groupService.groupSave(groupData));
     console.log(`Group created with ID: ${groupId}`);
@@ -95,7 +96,9 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
   try {
     const groupData = req.body;
     if (req.file) {
-      groupData.group_icon = req.file.filename;
+      groupData.group_icon = await persistUploadedImage(req.file, 'groups');
+    } else if (Object.prototype.hasOwnProperty.call(groupData, 'group_icon') && groupData.group_icon === '') {
+      groupData.group_icon = null;
     }
     if (typeof groupData.members === 'string') {
       groupData.members = JSON.parse(groupData.members);

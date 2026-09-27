@@ -242,7 +242,7 @@ const MemberModal = ({ show, onClose, onSubmit, mode, group }) => {
           </div>
         </div>
 
-        <form className={styles.form} onSubmit={handleSubmit}>
+        <form noValidate className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
             {loading ? (
               <div className={styles.loadingContainer}>

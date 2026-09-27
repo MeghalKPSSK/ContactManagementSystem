@@ -15,7 +15,7 @@ model AppUser {
   phone        String    @db.VarChar(255)
   email        String    @db.VarChar(255)
   password     String    @db.VarChar(255)
-  profileImage String?   @db.VarChar(500)
+  profileImage String?   @db.LongText
   lastLogin    DateTime? @db.DateTime(0)
   status       String    @default("Active") @db.VarChar(50)
   is_deleted   Boolean   @default(false)
@@ -106,7 +106,7 @@ model Group {
   name        String   @db.VarChar(50)
   description String?  @db.Text
   is_deleted  Boolean  @default(false)
-  group_icon  String?  @db.VarChar(255)
+  group_icon  String?  @db.LongText
   createdOn   DateTime @default(now()) @db.DateTime(0)
   modifiedOn  DateTime @default(now()) @updatedAt @db.DateTime(0)
 
@@ -138,11 +138,14 @@ model Note {
   pk_id        Int      @id @default(autoincrement())
   user_id      Int
   title        String   @db.VarChar(255)
+  title_formatting Json?
   content      String   @db.Text
   note_type    String   @default("personal") @db.VarChar(20)
   contact_id   Int?
   group_id     Int?
   color        String   @default("blue") @db.VarChar(20)
+  font_family  String   @default("handwritten") @db.VarChar(24)
+  drawing_data Json?
   is_important Boolean  @default(false)
   is_deleted   Boolean  @default(false)
   createdOn    DateTime @default(now()) @db.DateTime(0)

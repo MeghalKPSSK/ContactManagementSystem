@@ -23,14 +23,27 @@ export interface StoredUser {
 }
 
 export type SidebarItemKey = 'dragon' | 'dashboard' | 'contacts' | 'notes' | 'profile' | 'groups' | 'settings';
+export type ThemeMode = 'light' | 'dark';
+export type TagsChartType = 'pie' | 'donut';
+export type FavoritesChartType = 'bar' | 'line';
+export type GroupsChartType = 'mixed' | 'line' | 'bar' | 'area';
+
+export interface DashboardChartTypes {
+  tags: TagsChartType;
+  favorites: FavoritesChartType;
+  groups: GroupsChartType;
+}
 
 export interface ThemePreferences {
+  themeMode: ThemeMode;
   primaryColor: string;
   secondaryColor: string;
   backgroundColor: string;
   surfaceColor: string;
   textColor: string;
   sidebarOrder: SidebarItemKey[];
+  dashboardChartTypes: DashboardChartTypes;
+  dashboardColors: string[];
 }
 
 export interface Tag {
@@ -82,6 +95,24 @@ export interface Group {
 
 export type NoteType = 'personal' | 'contact' | 'group';
 export type NoteColor = 'pink' | 'blue' | 'green' | 'yellow' | 'purple';
+export type NoteFontFamily =
+  | 'handwritten' | 'sans' | 'serif' | 'mono' | 'rounded' | 'humanist'
+  | 'book' | 'editorial' | 'geometric' | 'cursive' | 'slab' | 'system';
+
+export interface NoteDrawingPoint {
+  x: number;
+  y: number;
+}
+
+export interface NoteDrawingStroke {
+  color: string;
+  width: number;
+  points: NoteDrawingPoint[];
+}
+
+export interface NoteDrawing {
+  strokes: NoteDrawingStroke[];
+}
 
 export interface Note {
   uid: string;
@@ -90,6 +121,9 @@ export interface Note {
   content_preview?: string;
   note_type: string;
   color: string;
+  font_family?: NoteFontFamily;
+  title_formatting?: Record<string, unknown> | null;
+  drawing_data?: NoteDrawing | null;
   contact_id?: string | null;
   group_id?: string | null;
   is_important: boolean;

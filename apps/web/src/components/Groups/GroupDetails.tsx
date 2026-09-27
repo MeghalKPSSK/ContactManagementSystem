@@ -7,6 +7,7 @@ import { faUsers, faArrowLeft, faPlus, faTrash, faStickyNote } from '@fortawesom
 import MemberModal from './MemberModal';
 import { toast } from 'react-toastify';
 import PaginationBar from '../Pagination/PaginationBar';
+import apiService from '../../services/apiService';
 
 export default function GroupDetails() {
   const { groupId } = useParams();
@@ -29,8 +30,6 @@ export default function GroupDetails() {
       if (data.success) {
         setGroup(data.group);
         setPagination(data.pagination || { current: page, pageSize, total: data.group.membersTotal || 0 });
-        // Store config for image URLs
-        window.groupDetailsConfig = config;
       }
     } catch (err) {
       setGroup(null);
@@ -155,7 +154,7 @@ export default function GroupDetails() {
         <div className={styles.groupIconContainer}>
           {group.group_icon ? (
             <img 
-              src={`${window.groupDetailsConfig?.apiUrl?.replace('/api', '')}/uploads/group_icons/${group.group_icon}`}
+              src={apiService.getImageUrl(group.group_icon) || ''}
               alt={group.name}
               className={styles.groupIconImage}
               onError={(e) => {

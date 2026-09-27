@@ -26,11 +26,14 @@ const createTablesIfNotExist = async (pool) => {
             pk_id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
             title VARCHAR(255) NOT NULL,
+            title_formatting JSON NULL,
             content TEXT NOT NULL,
             note_type ENUM('personal', 'contact', 'group') DEFAULT 'personal',
             contact_id INT NULL,
             group_id INT NULL,
             color ENUM('pink', 'blue', 'green', 'yellow', 'purple') DEFAULT 'blue',
+            font_family VARCHAR(24) NOT NULL DEFAULT 'handwritten',
+            drawing_data JSON NULL,
             is_important BOOLEAN DEFAULT FALSE,
             is_deleted BOOLEAN DEFAULT FALSE,
             createdOn DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -77,11 +80,14 @@ const validateAndUpdateSchema = async (pool) => {
     `));
     console.log(`🔍 Notes Schema: Found ${notesColumns.length} existing columns`);
     const requiredColumns = {
+        title_formatting: 'ALTER TABLE notes ADD COLUMN title_formatting JSON NULL AFTER title',
         is_important: 'ALTER TABLE notes ADD COLUMN is_important BOOLEAN DEFAULT FALSE AFTER content',
         note_type: "ALTER TABLE notes ADD COLUMN note_type ENUM('personal', 'contact', 'group') DEFAULT 'personal' AFTER content",
         contact_id: 'ALTER TABLE notes ADD COLUMN contact_id INT NULL AFTER note_type',
         group_id: 'ALTER TABLE notes ADD COLUMN group_id INT NULL AFTER contact_id',
         color: "ALTER TABLE notes ADD COLUMN color ENUM('pink', 'blue', 'green', 'yellow', 'purple') DEFAULT 'blue' AFTER group_id",
+        font_family: "ALTER TABLE notes ADD COLUMN font_family VARCHAR(24) NOT NULL DEFAULT 'handwritten' AFTER color",
+        drawing_data: 'ALTER TABLE notes ADD COLUMN drawing_data JSON NULL AFTER font_family',
     };
     const existingColumns = notesColumns.map((col) => col.COLUMN_NAME);
     for (const [column, query] of Object.entries(requiredColumns)) {
