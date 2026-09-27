@@ -12,16 +12,19 @@ import {
   faUser,
   faUsers,
   faDragon,
-  faStickyNote
+  faStickyNote,
+  faSliders
 } from '@fortawesome/free-solid-svg-icons';
 import apiService from '../../services/apiService';
 import { addProfileUpdateListener } from '../../utils/eventUtils';
+import { useThemePreferences } from '../../contexts/ThemePreferencesContext';
 
 export default function SideBar() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [userData, setUserData] = useState(null);
   const [profileImageUrl, setProfileImageUrl] = useState(null);
   const location = useLocation();
+  const { preferences } = useThemePreferences();
 
   // Function to refresh user data
   const refreshUserData = async () => {
@@ -134,13 +137,17 @@ export default function SideBar() {
     homepath = '/dashboard'
   };
   const menuItems = [
-    { path: '/dragon', icon: faDragon, label: 'Dragon' },
-    { path: homepath, icon: faHome, label: 'Dashboard' },
-    { path: '/contacts', icon: faAddressBook, label: 'Contacts' },
-    { path: '/notes', icon: faStickyNote, label: 'Notes' },
-    { path: '/profile', icon: faUser, label: 'Profile' },
-    { path: '/groups', icon: faUsers, label: 'Groups' }
+    { key: 'dragon', path: '/dragon', icon: faDragon, label: 'Dragon' },
+    { key: 'dashboard', path: homepath, icon: faHome, label: 'Dashboard' },
+    { key: 'contacts', path: '/contacts', icon: faAddressBook, label: 'Contacts' },
+    { key: 'notes', path: '/notes', icon: faStickyNote, label: 'Notes' },
+    { key: 'profile', path: '/profile', icon: faUser, label: 'Profile' },
+    { key: 'groups', path: '/groups', icon: faUsers, label: 'Groups' },
+    { key: 'settings', path: '/settings', icon: faSliders, label: 'Settings' }
   ];
+  const orderedMenuItems = [...menuItems].sort((first, second) =>
+    preferences.sidebarOrder.indexOf(first.key) - preferences.sidebarOrder.indexOf(second.key)
+  );
 
   return (
     <div className={`${styles.sidebar} ${isExpanded ? styles.expanded : styles.collapsed}`}>
@@ -204,7 +211,7 @@ export default function SideBar() {
       
       <nav className={styles.navigation}>
         <ul className={styles.menuList}>
-          {menuItems.map((item) => (
+          {orderedMenuItems.map((item) => (
             <li key={item.path}>
               <Link 
                 to={item.path} 

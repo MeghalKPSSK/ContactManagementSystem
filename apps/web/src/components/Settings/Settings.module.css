@@ -1,0 +1,223 @@
+.settingsPage {
+  width: 100%;
+  min-height: 100%;
+  padding: 1rem;
+  color: var(--primary-text);
+  background: var(--accent-bg);
+}
+
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.eyebrow {
+  color: var(--secondary-bg);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.pageHeader h1 {
+  margin: 0.2rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 650;
+}
+
+.pageHeader p,
+.sectionHeading p {
+  margin: 0.25rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.headerIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.6rem;
+  border-radius: 4px;
+  background: var(--hover-bg);
+  color: var(--secondary-bg);
+}
+
+.settingsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.settingsSection {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background: var(--primary-bg);
+}
+
+.sectionHeading {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--accent-border);
+}
+
+.sectionHeading h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.colorList {
+  display: flex;
+  flex-direction: column;
+}
+
+.colorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.5rem;
+  border-bottom: 1px solid var(--accent-border);
+  color: var(--primary-text);
+  font-size: 0.875rem;
+}
+
+.colorRow:last-child {
+  border-bottom: 0;
+}
+
+.colorControl {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.colorControl input {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.colorControl code {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.navigationList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.navigationItem {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 3rem;
+  border-bottom: 1px solid var(--accent-border);
+  font-size: 0.875rem;
+}
+
+.navigationItem:last-child {
+  border-bottom: 0;
+}
+
+.orderNumber {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.orderControls {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.orderControls button {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background: var(--primary-bg);
+  color: var(--secondary-bg);
+  cursor: pointer;
+}
+
+.orderControls button:hover:not(:disabled) {
+  border-color: var(--secondary-bg);
+  background: var(--hover-bg);
+}
+
+.orderControls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.resetButton,
+.saveButton {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.resetButton {
+  background: var(--primary-bg);
+  color: var(--text-secondary);
+}
+
+.saveButton {
+  border-color: var(--secondary-bg);
+  background: var(--secondary-bg);
+  color: white;
+}
+
+.resetButton:hover {
+  background: var(--hover-bg);
+  color: var(--hover-text);
+}
+
+.saveButton:hover:not(:disabled) {
+  background: var(--secondary-dark);
+}
+
+.saveButton:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+@media (max-width: 760px) {
+  .settingsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .resetButton,
+  .saveButton {
+    width: 100%;
+  }
+}

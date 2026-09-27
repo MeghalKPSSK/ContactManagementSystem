@@ -23,7 +23,7 @@ export const groupSave = async (groupData: GroupSavePayload): Promise<number> =>
   return newGroup.pk_id;
 };
 
-export const getGroupById = async (groupId: string): Promise<GroupDetail | null> => {
+export const getGroupById = async (groupId: string, page = 1, pageSize = 10): Promise<GroupDetail | null> => {
   const decryptedGroupId = decryptIdToNumber(groupId);
   if (!decryptedGroupId) return null;
 
@@ -31,10 +31,14 @@ export const getGroupById = async (groupId: string): Promise<GroupDetail | null>
     where: { pk_id: decryptedGroupId, is_deleted: false },
     include: {
       members: {
+        orderBy: { pk_id: 'asc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
         include: {
           contact: { select: { pk_id: true, firstName: true, lastName: true, email: true } },
         },
       },
+      _count: { select: { members: true } },
     },
   });
 
@@ -54,18 +58,19 @@ export const getGroupById = async (groupId: string): Promise<GroupDetail | null>
     group_icon: group.group_icon,
     user_id: encryptId(group.user_id),
     members,
+    membersTotal: group._count.members,
   };
 };
 
 export const getGroupsList = async (
   userId: string,
   filter = '',
-  page = 1
+  page = 1,
+  pageSize = 10
 ): Promise<PaginatedResult<GroupSummary>> => {
   const decryptedUserId = decryptIdToNumber(userId);
   if (!decryptedUserId) throw new AppError('Invalid user ID', 400);
 
-  const pageSize = 10;
   const offset = (page - 1) * pageSize;
   const filterCheck = filter ? String(filter).trim() : '';
 

@@ -25,6 +25,7 @@ export interface GroupDetail {
   group_icon: string | null;
   user_id: string | null;
   members: GroupMemberSummary[];
+  membersTotal: number;
 }
 
 export interface GroupSummary {

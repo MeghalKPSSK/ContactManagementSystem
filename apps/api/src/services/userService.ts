@@ -1,11 +1,85 @@
+import { Prisma } from '@prisma/client';
 import { AppUserModel } from '../models/userModel';
 import { CustomAttributeModel } from '../models/customAttributesModel';
 import * as passCrypto from '../utils/passCrypto';
 import { encryptId, decryptId, decryptIdToNumber } from '../utils/dbEncryption';
 import { AppError } from '../utils/errors';
-import type { RegisterUserPayload, LoginPayload, UpdateUserPayload, UserDto } from '../types/user';
+import type { RegisterUserPayload, LoginPayload, UpdateUserPayload, UserDto, UserPreferences, SidebarItemKey } from '../types/user';
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{6,12}$/;
+const SIDEBAR_ITEM_KEYS: SidebarItemKey[] = ['dragon', 'dashboard', 'contacts', 'notes', 'profile', 'groups', 'settings'];
+export const DEFAULT_USER_PREFERENCES: UserPreferences = {
+  primaryColor: '#138b7c',
+  secondaryColor: '#087568',
+  backgroundColor: '#f2f7f5',
+  surfaceColor: '#ffffff',
+  textColor: '#203a39',
+  sidebarOrder: [...SIDEBAR_ITEM_KEYS],
+};
+
+const normalizePreferences = (value: unknown): UserPreferences => {
+  const candidate = value && typeof value === 'object' ? value as Partial<UserPreferences> : {};
+  const validColor = (color: unknown, fallback: string) =>
+    typeof color === 'string' && /^#[0-9a-fA-F]{6}$/.test(color) ? color.toLowerCase() : fallback;
+  const requestedOrder = Array.isArray(candidate.sidebarOrder)
+    ? candidate.sidebarOrder.filter((key): key is SidebarItemKey => SIDEBAR_ITEM_KEYS.includes(key as SidebarItemKey))
+    : [];
+  const sidebarOrder = [...new Set(requestedOrder)];
+
+  SIDEBAR_ITEM_KEYS.forEach((key) => {
+    if (!sidebarOrder.includes(key)) sidebarOrder.push(key);
+  });
+
+  return {
+    primaryColor: validColor(candidate.primaryColor, DEFAULT_USER_PREFERENCES.primaryColor),
+    secondaryColor: validColor(candidate.secondaryColor, DEFAULT_USER_PREFERENCES.secondaryColor),
+    backgroundColor: validColor(candidate.backgroundColor, DEFAULT_USER_PREFERENCES.backgroundColor),
+    surfaceColor: validColor(candidate.surfaceColor, DEFAULT_USER_PREFERENCES.surfaceColor),
+    textColor: validColor(candidate.textColor, DEFAULT_USER_PREFERENCES.textColor),
+    sidebarOrder,
+  };
+};
+
+export const getUserPreferences = async (userId: string): Promise<UserPreferences> => {
+  const decryptedId = decryptIdToNumber(userId);
+  if (!decryptedId) throw new AppError('Invalid user ID', 400);
+
+  const user = await AppUserModel.findFirst({
+    where: { pk_id: decryptedId, is_deleted: false },
+    select: { preferences: true },
+  });
+  if (!user) throw new AppError('User not found', 404);
+
+  let storedPreferences = user.preferences;
+  if (typeof storedPreferences === 'string') {
+    try {
+      storedPreferences = JSON.parse(storedPreferences);
+    } catch {
+      storedPreferences = null;
+    }
+  }
+
+  return normalizePreferences(storedPreferences);
+};
+
+export const updateUserPreferences = async (userId: string, preferences: unknown): Promise<UserPreferences> => {
+  const decryptedId = decryptIdToNumber(userId);
+  if (!decryptedId) throw new AppError('Invalid user ID', 400);
+
+  const userExists = await AppUserModel.findFirst({
+    where: { pk_id: decryptedId, is_deleted: false },
+    select: { pk_id: true },
+  });
+  if (!userExists) throw new AppError('User not found', 404);
+
+  const normalized = normalizePreferences(preferences);
+  await AppUserModel.update({
+    where: { pk_id: decryptedId },
+    data: { preferences: normalized as unknown as Prisma.InputJsonValue },
+  });
+
+  return normalized;
+};
 
 export const registerUser = async (userData: RegisterUserPayload): Promise<number> => {
   const { firstName, lastName, phone, email, username, password, confirmPassword } = userData;

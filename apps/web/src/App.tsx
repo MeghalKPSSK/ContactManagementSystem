@@ -17,7 +17,9 @@ import Groups from './components/Groups/Groups';
 import GroupDetails from './components/Groups/GroupDetails';
 import Notes from './components/Notes/Notes';
 import NotesDetail from './components/NotesDetail/NotesDetail';
+import Settings from './components/Settings/Settings';
 import configService from './services/configService';
+import { ThemePreferencesProvider } from './contexts/ThemePreferencesContext';
 
 // Authenticated Layout
 const Layout = () => (
@@ -33,7 +35,7 @@ const Layout = () => (
 );
 
 function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<{ uid: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [configLoading, setConfigLoading] = useState(true);
 
@@ -81,8 +83,9 @@ function App() {
 
   return (
     <div className="app-container">
-      <BrowserRouter>
-        <Routes key={user ? 'auth' : 'guest'}>
+      <ThemePreferencesProvider userId={user?.uid || null}>
+        <BrowserRouter>
+          <Routes key={user ? 'auth' : 'guest'}>
           {/* Public routes */}
           <Route path="/login" element={user ? <Navigate to="/home" replace /> : <Login />} />
           <Route path="/registerUser" element={user ? <Navigate to="/home" replace /> : <RegisterUser />} />
@@ -100,6 +103,7 @@ function App() {
             <Route path="/notesDetails/:id" element={<NotesDetail />} />
             <Route path="/notesDetails/" element={<NotesDetail />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/groups" element={<Groups />}>
               <Route path=":id" element={<Groups />} />
             </Route>
@@ -108,20 +112,21 @@ function App() {
 
           {/* Fallback */}
           <Route path="*" element={<PageNotFound />} />
-        </Routes>
-      </BrowserRouter>
+          </Routes>
+        </BrowserRouter>
 
-      <ToastContainer 
-        position="top-right" 
-        autoClose={3000} 
-        hideProgressBar={false} 
-        closeOnClick 
-        pauseOnHover 
-        draggable 
-        newestOnTop
-        theme="light"
-        style={{ zIndex: 9999 }}
-      />
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          closeOnClick
+          pauseOnHover
+          draggable
+          newestOnTop
+          theme="light"
+          style={{ zIndex: 9999 }}
+        />
+      </ThemePreferencesProvider>
     </div>
   );
 }

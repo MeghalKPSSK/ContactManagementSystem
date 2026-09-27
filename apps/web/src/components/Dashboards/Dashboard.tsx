@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTachometerAlt } from '@fortawesome/free-solid-svg-icons';
 import styles from './Dashboard.module.css';
 import apiService from '../../services/apiService';
+import PaginationBar from '../Pagination/PaginationBar';
 
 const { Title } = Typography;
 
@@ -37,7 +38,7 @@ function Dashboard() {
 
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 9,
+    pageSize: 10,
     total: 0
   });
 
@@ -455,7 +456,7 @@ function Dashboard() {
     }
   });
 
-  const fetchContactsData = useCallback(async (page = 1) => {
+  const fetchContactsData = useCallback(async (page = 1, pageSize = pagination.pageSize) => {
     setLoading(prev => ({ ...prev, contacts: true }));
     try {
       const userId = JSON.parse(localStorage.getItem('user')).uid;
@@ -477,7 +478,7 @@ function Dashboard() {
           userId,
           tags: selectedTags.length > 0 ? selectedTags.join(',') : '',
           page,
-          pageSize: pagination.pageSize
+          pageSize
         }).toString(),
         {
           method: 'GET'
@@ -489,6 +490,7 @@ function Dashboard() {
         setPagination(prev => ({
           ...prev,
           current: page,
+          pageSize,
           total: contactsData.total
         }));
       }
@@ -670,6 +672,17 @@ function Dashboard() {
     fetchContactsData(page);
   };
 
+  const handlePageSizeChange = (pageSize) => {
+    setPagination((prev) => ({ ...prev, current: 1, pageSize }));
+    fetchContactsData(1, pageSize);
+  };
+
+  const handleDashboardRefresh = () => {
+    fetchContactsData(pagination.current, pagination.pageSize);
+    fetchChartData();
+    fetchGroupsData();
+  };
+
   // Initial data fetch
   useEffect(() => {
     fetchContactsData();
@@ -795,10 +808,7 @@ function Dashboard() {
             xxl: 3,
           }}
           dataSource={contacts}
-          pagination={{
-            ...pagination,
-            onChange: handlePageChange
-          }}
+          pagination={false}
           renderItem={contact => (
             <List.Item key={contact.uid} style={{ borderRadius: '7px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
               <Card 
@@ -848,6 +858,15 @@ function Dashboard() {
               </Card>
             </List.Item>
           )}
+        />
+        <PaginationBar
+          current={pagination.current}
+          pageSize={pagination.pageSize}
+          total={pagination.total}
+          disabled={loading.contacts}
+          onRefresh={handleDashboardRefresh}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
         />
       </Card>
         </>

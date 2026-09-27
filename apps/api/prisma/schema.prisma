@@ -23,6 +23,7 @@ model AppUser {
   modifiedOn   DateTime  @default(now()) @updatedAt @db.DateTime(0)
   role         String?   @default("User") @db.VarChar(50)
   plan         String?   @default("free") @db.VarChar(20)
+  preferences  Json?
 
   contacts         Contact[]
   contactTags      ContactTag[]

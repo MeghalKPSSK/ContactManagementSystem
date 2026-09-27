@@ -18,8 +18,14 @@ export const saveContact = async (req: Request, res: Response): Promise<void> =>
 
 export const listContacts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { userId, filter, page = '1', pageSize = '10' } = req.query as Record<string, string>;
-    const result = await contactService.getContactsList(userId, filter, parseInt(page, 10), parseInt(pageSize, 10));
+    const { userId, filter, page = '1', pageSize = '10', tagId } = req.query as Record<string, string>;
+    const result = await contactService.getContactsList(
+      userId,
+      filter,
+      parseInt(page, 10),
+      parseInt(pageSize, 10),
+      tagId
+    );
     res.status(200).json({
       success: true,
       contacts: result.items,

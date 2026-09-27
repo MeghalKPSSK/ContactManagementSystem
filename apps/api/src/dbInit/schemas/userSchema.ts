@@ -37,7 +37,8 @@ const ensureAppUserTable = async (): Promise<number> => {
                     registeredOn DATETIME DEFAULT CURRENT_TIMESTAMP,
                     modifiedOn DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     role VARCHAR(50) DEFAULT 'User',
-                    plan VARCHAR(20) DEFAULT 'free'
+                    plan VARCHAR(20) DEFAULT 'free',
+                    preferences JSON NULL
                 )
             `);
       console.log('app_user table created successfully.');
@@ -75,6 +76,18 @@ const ensureAppUserTable = async (): Promise<number> => {
                 ADD COLUMN plan VARCHAR(20) DEFAULT 'free' AFTER role
             `);
       console.log("plan column added to app_user table with default 'free'.");
+    }
+
+    const [preferencesCol] = (await pool.query(`
+            SELECT COLUMN_NAME
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'app_user'
+            AND COLUMN_NAME = 'preferences'
+        `)) as [ColumnNameRow[], unknown];
+    if (preferencesCol.length === 0) {
+      await pool.query('ALTER TABLE app_user ADD COLUMN preferences JSON NULL AFTER plan');
+      console.log('preferences column added to app_user table.');
     }
 
     return 0;

@@ -116,7 +116,8 @@ export const getContactsList = async (
   userId: string,
   filter = '',
   page = 1,
-  pageSize = 10
+  pageSize = 10,
+  tagId?: string
 ): Promise<PaginatedResult<ContactSummary>> => {
   const decryptedUserId = decryptIdToNumber(userId);
   if (!decryptedUserId) throw new AppError('Invalid user ID', 400);
@@ -136,6 +137,17 @@ export const getContactsList = async (
       { phone: { contains: filterCheck } },
       { email: { contains: filterCheck } },
     ];
+  }
+
+  if (tagId) {
+    const decryptedTagId = decryptIdToNumber(tagId);
+    if (!decryptedTagId) throw new AppError('Invalid tag ID', 400);
+    whereClause.tagMappings = {
+      some: {
+        tag_id: decryptedTagId,
+        tag: { is: { user_id: decryptedUserId } },
+      },
+    };
   }
 
   const [total, contacts] = await Promise.all([

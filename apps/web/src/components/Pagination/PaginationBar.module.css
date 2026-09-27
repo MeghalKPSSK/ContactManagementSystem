@@ -1,0 +1,153 @@
+.paginationBar {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 56px;
+  padding: 0.65rem 1rem;
+  border-top: 1px solid var(--accent-border);
+  background: var(--primary-bg);
+}
+
+.pageSizeSelect {
+  height: 34px;
+  min-width: 58px;
+  padding: 0.25rem 0.45rem;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background: var(--primary-bg);
+  color: var(--primary-text);
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.pageSizeSelect:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.refreshArea {
+  display: flex;
+  align-items: center;
+}
+
+.refreshButton {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background: var(--primary-bg);
+  color: var(--secondary-bg);
+  cursor: pointer;
+}
+
+.refreshButton:hover:not(:disabled) {
+  border-color: var(--secondary-bg);
+  background: var(--hover-bg);
+}
+
+.refreshButton:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.pageControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.navigationCluster {
+  display: flex;
+  align-items: center;
+  justify-self: center;
+  gap: 0.5rem;
+}
+
+.pageControls button {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background: var(--primary-bg);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.pageControls button:hover:not(:disabled):not(.activePage) {
+  border-color: var(--secondary-bg);
+  background: var(--hover-bg);
+  color: var(--hover-text);
+}
+
+.pageControls button.activePage {
+  border-color: var(--secondary-bg);
+  background: var(--secondary-bg);
+  color: var(--text-light);
+}
+
+.pageControls button:disabled {
+  background: var(--accent-bg);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.pageInfo {
+  justify-self: end;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 680px) {
+  .paginationBar {
+    grid-template-columns: 40px 1fr;
+  }
+
+  .navigationCluster {
+    justify-self: end;
+  }
+
+  .pageInfo {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 420px) {
+  .paginationBar {
+    grid-template-columns: 1fr;
+  }
+
+  .refreshArea {
+    justify-content: flex-start;
+  }
+
+  .navigationCluster {
+    width: 100%;
+    justify-self: stretch;
+    justify-content: center;
+    gap: 0.35rem;
+  }
+
+  .pageControls {
+    gap: 0.2rem;
+  }
+
+  .pageInfo {
+    grid-column: auto;
+    justify-self: center;
+  }
+
+  .pageSizeSelect {
+    margin-left: 0.2rem;
+  }
+}

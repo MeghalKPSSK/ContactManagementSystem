@@ -15,33 +15,9 @@ import {
   faAddressBook,
   faUsers,
   faTimes,
-  faSync,
-  faAngleLeft,
-  faAngleRight,
-  faAnglesLeft,
-  faAnglesRight
 } from '@fortawesome/free-solid-svg-icons';
 import apiService from '../../services/apiService';
-
-// Constants for pagination
-const MAX_PAGES_SHOWN = 5;
-
-// Helper function for pagination numbers
-const getPageNumbers = (current, total, pageSize) => {
-  const totalPages = Math.ceil(total / pageSize);
-  const pages = [];
-  let startPage = Math.max(1, current - Math.floor(MAX_PAGES_SHOWN / 2));
-  let endPage = Math.min(totalPages, startPage + MAX_PAGES_SHOWN - 1);
-
-  if (endPage - startPage + 1 < MAX_PAGES_SHOWN) {
-    startPage = Math.max(1, endPage - MAX_PAGES_SHOWN + 1);
-  }
-
-  for (let i = startPage; i <= endPage; i++) {
-    pages.push(i);
-  }
-  return pages;
-};
+import PaginationBar from '../Pagination/PaginationBar';
 
 export default function Notes() {
   const navigate = useNavigate();
@@ -52,7 +28,7 @@ export default function Notes() {
   const [filterType, setFilterType] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const pageSize = 12;
+  const [pageSize, setPageSize] = useState(10);
   const [stats, setStats] = useState({
     total: 0,
     important: 0,
@@ -72,7 +48,7 @@ export default function Notes() {
     }
   };
 
-  const fetchNotes = useCallback(async () => {
+  const fetchNotes = useCallback(async (page = 1) => {
     try {
       setLoading(true);
       
@@ -80,6 +56,7 @@ export default function Notes() {
       if (!userId) {
         console.error('No user ID found in session');
         setNotes([]);
+        setTotalCount(0);
         return;
       }
       
@@ -94,16 +71,14 @@ export default function Notes() {
       const response = await apiService.getNotesList(
         userId,
         filters,
-        currentPage,
+        page,
         pageSize
       );
 
       if (response.success) {
         setNotes(response.notes || []);
+        setCurrentPage(page);
         setTotalCount(response.pagination.total);
-        
-        // Calculate stats from current notes data
-        calculateStats(response.notes || []);
       }
     } catch (error) {
       console.error('Error fetching notes:', error);
@@ -111,10 +86,10 @@ export default function Notes() {
     } finally {
       setLoading(false);
     }
-  }, [filterType, searchQuery, currentPage, pageSize]);
+  }, [filterType, searchQuery, pageSize]);
 
   useEffect(() => {
-    fetchNotes();
+    fetchNotes(1);
   }, [fetchNotes]);
 
   // Reset to first page when search query or filter changes
@@ -138,6 +113,10 @@ export default function Notes() {
     });
   };
 
+  useEffect(() => {
+    calculateStats(notes);
+  }, [notes]);
+
   const handleSearch = () => {
     setSearchQuery(searchTerm);
   };
@@ -153,8 +132,13 @@ export default function Notes() {
     setSearchQuery('');
   };
 
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
+  const handlePageSizeChange = (newPageSize) => {
+    setCurrentPage(1);
+    setPageSize(newPageSize);
+  };
+
+  const handlePageChange = (page) => {
+    fetchNotes(page);
   };
 
   const handleRefresh = () => {
@@ -162,7 +146,7 @@ export default function Notes() {
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     
     // Refresh the notes
-    fetchNotes();
+    fetchNotes(currentPage);
     
     // Restore scroll position after a brief delay to allow for re-render
     setTimeout(() => {
@@ -207,18 +191,18 @@ export default function Notes() {
           console.log('Note deleted successfully');
           // Refresh the list after a short delay to ensure consistency
           setTimeout(() => {
-            fetchNotes();
+            fetchNotes(currentPage);
           }, 300);
         } else {
           // If delete failed, restore the note (need to refetch)
           alert('Failed to delete note. Please try again.');
-          fetchNotes();
+          fetchNotes(currentPage);
         }
       } catch (error) {
         console.error('Error deleting note:', error);
         alert('Failed to delete note. Please try again.');
         // Restore the list if there was an error
-        fetchNotes();
+        fetchNotes(currentPage);
       }
     }
   };
@@ -452,6 +436,14 @@ export default function Notes() {
                       <div className={styles.noteType} style={{ backgroundColor: getNoteTypeColor(note.note_type) }}>
                         {note.note_type}
                       </div>
+                      {note.note_type === 'contact' && note.contact_first_name && (
+                        <span className={styles.noteAssociation}>
+                          {[note.contact_first_name, note.contact_last_name].filter(Boolean).join(' ')}
+                        </span>
+                      )}
+                      {note.note_type === 'group' && note.group_name && (
+                        <span className={styles.noteAssociation}>{note.group_name}</span>
+                      )}
                       {isImportant && (
                         <FontAwesomeIcon icon={faStar} className={styles.importantIcon} />
                       )}
@@ -516,71 +508,20 @@ export default function Notes() {
         )}
       </div>
 
-      {/* Enhanced Pagination Controls */}
       {notes.length > 0 && (
-        <div className={styles.paginationContainer}>
-          <div className={styles.paginationControls}>
-            <button
-              className={`${styles.paginationButton} ${styles.iconButton}`}
-              onClick={() => handlePageChange(1)}
-              disabled={currentPage === 1 || loading}
-              title="First Page"
-            >
-              <FontAwesomeIcon icon={faAnglesLeft} />
-            </button>
-            <button
-              className={`${styles.paginationButton} ${styles.iconButton}`}
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1 || loading}
-              title="Previous Page"
-            >
-              <FontAwesomeIcon icon={faAngleLeft} />
-            </button>
-            {getPageNumbers(currentPage, totalCount, pageSize).map(pageNum => (
-              <button
-                key={pageNum}
-                className={`${styles.paginationButton} ${pageNum === currentPage ? styles.active : ''}`}
-                onClick={() => handlePageChange(pageNum)}
-                disabled={loading}
-              >
-                {pageNum}
-              </button>
-            ))}
-            <button
-              className={`${styles.paginationButton} ${styles.iconButton}`}
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages || loading}
-              title="Next Page"
-            >
-              <FontAwesomeIcon icon={faAngleRight} />
-            </button>
-            <button
-              className={`${styles.paginationButton} ${styles.iconButton}`}
-              onClick={() => handlePageChange(totalPages)}
-              disabled={currentPage >= totalPages || loading}
-              title="Last Page"
-            >
-              <FontAwesomeIcon icon={faAnglesRight} />
-            </button>
-          </div>
-          <div className={styles.paginationInfo}>
-            Showing {notes.length ? (currentPage - 1) * pageSize + 1 : 0} - {Math.min(currentPage * pageSize, totalCount)} of {totalCount} entries
-          </div>
+        <div className={styles.cardPagination}>
+        <PaginationBar
+          current={currentPage}
+          total={totalCount}
+          pageSize={pageSize}
+          disabled={loading}
+          onPageChange={handlePageChange}
+          onRefresh={handleRefresh}
+          onPageSizeChange={handlePageSizeChange}
+        />
         </div>
       )}
       
-      <div className={styles.reloadContainer}>
-        <button 
-          className={styles.reloadButton} 
-          onClick={handleRefresh}
-          disabled={loading}
-        >
-          <FontAwesomeIcon 
-            icon={faSync} 
-            className={`${styles.reloadIcon} ${loading ? styles.spinning : ''}`} 
-          />
-        </button>
-      </div>
     </div>
   );
 }

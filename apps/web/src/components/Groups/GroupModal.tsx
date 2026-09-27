@@ -1,11 +1,11 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faSave, faCamera } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faSave, faCamera, faUsers } from '@fortawesome/free-solid-svg-icons';
 import styles from './GroupModal.module.css';
 import { toast } from 'react-toastify';
 
-const GroupModal = ({ mode, group, onClose, onSubmit }) => {
+const GroupModal = ({ mode, group, onClose, onSubmit, initialMemberIds = [], sourceTag = '' }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -114,6 +114,26 @@ const GroupModal = ({ mode, group, onClose, onSubmit }) => {
       const data = await response.json();
       if (data.success) {
         toast.success(data.message);
+
+        if (mode === 'add' && initialMemberIds.length > 0 && data.uid) {
+          try {
+            const membersResponse = await fetch(`${config.apiUrl}/groups/addMembers/${data.uid}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ memberIds: initialMemberIds }),
+            });
+            const membersData = await membersResponse.json();
+            if (!membersResponse.ok || !membersData.success) {
+              toast.error('Group created, but tagged contacts could not be added');
+            } else {
+              toast.success(`${initialMemberIds.length} contacts from ${sourceTag} added`);
+            }
+          } catch (memberError) {
+            toast.error('Group created, but tagged contacts could not be added');
+            console.error('Error adding tagged contacts to group:', memberError);
+          }
+        }
+
         onSubmit();
       } else {
         toast.error(data.message || 'Error processing request');
@@ -144,6 +164,12 @@ const GroupModal = ({ mode, group, onClose, onSubmit }) => {
           </button>
         </div>
         <form className={styles.groupForm} onSubmit={handleSubmit}>
+          {mode === 'add' && initialMemberIds.length > 0 && (
+            <div className={styles.memberImportNotice}>
+              <FontAwesomeIcon icon={faUsers} />
+              <span>{initialMemberIds.length} contacts tagged "{sourceTag}" will be added to this group.</span>
+            </div>
+          )}
           <div className={styles.profileImageSection}>
               <div className={styles.imageUploadContainer}>
                   <div className={styles.imagePreview} onClick={() => document.getElementById('groupImageInput').click()}>

@@ -21,8 +21,13 @@ export const saveGroup = async (req: Request, res: Response): Promise<void> => {
 
 export const listGroups = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { userId, filter, page = '1' } = req.query as Record<string, string>;
-    const result = await groupService.getGroupsList(userId, filter, parseInt(page, 10));
+    const { userId, filter, page = '1', pageSize = '10' } = req.query as Record<string, string>;
+    const result = await groupService.getGroupsList(
+      userId,
+      filter,
+      parseInt(page, 10),
+      parseInt(pageSize, 10)
+    );
     res.status(200).json({
       success: true,
       groups: result.items,
@@ -37,14 +42,22 @@ export const listGroups = async (req: Request, res: Response): Promise<void> => 
 
 export const getGroup = async (req: Request, res: Response): Promise<void> => {
   try {
-    const group = await groupService.getGroupById(paramStr(req.params.id));
+    const requestedPage = Number.parseInt(String(req.query.page || '1'), 10);
+    const requestedPageSize = Number.parseInt(String(req.query.pageSize || '10'), 10);
+    const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+    const pageSize = [10, 20, 50, 100].includes(requestedPageSize) ? requestedPageSize : 10;
+    const group = await groupService.getGroupById(paramStr(req.params.id), page, pageSize);
 
     if (!group) {
       res.status(404).json({ success: false, message: 'Group not found' });
       return;
     }
 
-    res.status(200).json({ success: true, group });
+    res.status(200).json({
+      success: true,
+      group,
+      pagination: { current: page, pageSize, total: group.membersTotal },
+    });
   } catch (error) {
     console.error('Error retrieving group:', error);
     res.status(getErrorStatus(error)).json({ success: false, message: 'Error retrieving group' });

@@ -184,3 +184,21 @@ export const updatePlan = async (req: Request, res: Response): Promise<void> => 
     res.status(getErrorStatus(error)).json({ success: false, message: getErrorMessage(error) });
   }
 };
+
+export const getPreferences = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const preferences = await userService.getUserPreferences(paramStr(req.params.id));
+    res.status(200).json({ success: true, preferences });
+  } catch (error) {
+    res.status(getErrorStatus(error)).json({ success: false, message: getErrorMessage(error) });
+  }
+};
+
+export const updatePreferences = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const preferences = await userService.updateUserPreferences(paramStr(req.params.id), req.body);
+    res.status(200).json({ success: true, preferences, message: 'Preferences saved' });
+  } catch (error) {
+    res.status(getErrorStatus(error)).json({ success: false, message: getErrorMessage(error) });
+  }
+};

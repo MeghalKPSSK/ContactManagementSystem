@@ -111,7 +111,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: var(--overlay-bg);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -120,7 +120,7 @@
 
 .modalContent {
     background: var(--primary-bg);
-    border-radius: 8px;
+    border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     width: 90%;
     max-width: 500px;
@@ -218,10 +218,10 @@
 
 .iconButton {
     padding: 0.75rem;
-    border: 2px solid var(--primary-color);
+    border: 1px solid var(--accent-border);
     border-radius: 50%;
-    background-color: white;
-    color: var(--primary-color);
+    background-color: var(--primary-bg);
+    color: var(--secondary-bg);
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
@@ -233,8 +233,8 @@
 
 .iconButton:hover {
     background-color: var(--hover-bg);
-    color: var(--text-primary-dark);
-    border-color: var(--text-primary-dark);
+    color: var(--secondary-dark);
+    border-color: var(--secondary-bg);
     transform: scale(1.05);
 }
 
@@ -306,7 +306,7 @@
     overflow: hidden;
     border: 3px solid var(--accent-border);
     position: relative;
-    background-color: var(--card-bg);
+    background-color: var(--primary-bg);
     display: flex;
     align-items: center;
     justify-content: center;

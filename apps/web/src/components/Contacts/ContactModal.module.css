@@ -4,20 +4,19 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(45, 55, 72, 0.7);
+  background-color: var(--overlay-bg);
   display: flex;
   justify-content: center;
   align-items: flex-start;
   z-index: 1000;
   padding: 2rem;
   overflow-y: auto;
-  backdrop-filter: blur(4px);
 }
 
 .modalContent {
   background-color: var(--primary-bg);
   border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(29, 66, 171, 0.15);
+  box-shadow: 0 8px 32px rgba(25, 71, 64, 0.12);
   width: 100%;
   max-width: 800px;
   margin: auto;
@@ -115,7 +114,7 @@
 
 .input:focus {
   border-color: var(--secondary-bg);
-  box-shadow: 0 0 0 3px rgba(29, 66, 171, 0.1);
+  box-shadow: 0 0 0 3px rgba(19, 139, 124, 0.12);
   outline: none;
 }
 
@@ -207,7 +206,7 @@ textarea.input {
 .submitButton:hover {
   background-color: var(--secondary-light);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(29, 66, 171, 0.15);
+  box-shadow: 0 4px 12px rgba(25, 71, 64, 0.12);
 }
 
 .cancelButton {

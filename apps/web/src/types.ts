@@ -22,6 +22,17 @@ export interface StoredUser {
   lastLogin?: string;
 }
 
+export type SidebarItemKey = 'dragon' | 'dashboard' | 'contacts' | 'notes' | 'profile' | 'groups' | 'settings';
+
+export interface ThemePreferences {
+  primaryColor: string;
+  secondaryColor: string;
+  backgroundColor: string;
+  surfaceColor: string;
+  textColor: string;
+  sidebarOrder: SidebarItemKey[];
+}
+
 export interface Tag {
   uid: string;
   name: string;

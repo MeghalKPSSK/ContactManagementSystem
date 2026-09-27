@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--overlay-bg);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -12,8 +12,8 @@
 }
 
 .modalContent {
-  background: #fff;
-  border-radius: 12px;
+  background: var(--primary-bg);
+  border-radius: 6px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   width: 90%;
   max-width: 900px;
@@ -26,8 +26,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 24px 32px;
-  border-bottom: 1px solid #e9ecef;
-  background: #fff;
+  border-bottom: 1px solid var(--accent-border);
+  background: var(--primary-bg);
 }
 
 .header h3 {
@@ -49,7 +49,7 @@
 }
 
 .closeButton:hover {
-  background: #f1f3f4;
+  background: var(--hover-bg);
   color: #495057;
 }
 
@@ -60,7 +60,7 @@
 }
 
 .listHeader {
-  background: linear-gradient(135deg, #2851a3 0%, #1e3d7b 100%);
+  background: linear-gradient(135deg, var(--secondary-dark) 0%, var(--secondary-bg) 100%);
   color: #fff;
   padding: 20px 24px;
   border-top-left-radius: 12px;
@@ -81,9 +81,9 @@
   gap: 1rem;
   margin-bottom: 32px;
   padding: 16px 20px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, var(--accent-bg) 0%, var(--accent-bg-2) 100%);
   border-radius: 8px;
-  border-left: 4px solid #2851a3;
+  border-left: 4px solid var(--secondary-bg);
 }
 
 .planInfo {
@@ -104,8 +104,8 @@
 }
 
 .addForm:hover {
-  border-color: #2851a3;
-  background: #f8f9ff;
+  border-color: var(--secondary-bg);
+  background: var(--hover-bg);
 }
 
 .addForm input,
@@ -114,7 +114,7 @@
   padding: 12px 16px;
   border: 1px solid #dee2e6;
   border-radius: 8px;
-  background: #fff;
+  background: var(--primary-bg);
   color: #2c3e50;
   font-size: 14px;
   transition: all 0.2s;
@@ -123,8 +123,8 @@
 .addForm input:focus,
 .addForm select:focus {
   outline: none;
-  border-color: #2851a3;
-  box-shadow: 0 0 0 3px rgba(40, 81, 163, 0.1);
+  border-color: var(--secondary-bg);
+  box-shadow: 0 0 0 3px rgba(19, 139, 124, 0.12);
 }
 
 .addForm label {
@@ -138,12 +138,12 @@
 .addForm input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: #2851a3;
+  accent-color: var(--secondary-bg);
 }
 
 .addButton {
   padding: 12px 24px;
-  background: #2851a3;
+  background: var(--secondary-bg);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -160,16 +160,16 @@
 }
 
 .addButton:not(:disabled):hover {
-  background: #1e3d7b;
+  background: var(--secondary-dark);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(40, 81, 163, 0.3);
+  box-shadow: 0 4px 12px rgba(19, 139, 124, 0.2);
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 0.75rem;
-  background: #fff;
+  background: var(--primary-bg);
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -178,18 +178,18 @@
 .table th,
 .table td {
   padding: 16px 20px;
-  border-bottom: 1px solid #f1f3f4;
+  border-bottom: 1px solid var(--accent-border);
 }
 
 .table th {
   text-align: left;
   color: #495057;
   font-weight: 600;
-  background: #f8f9fa;
+  background: var(--accent-bg);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-size: 13px;
-  border-bottom: 2px solid #dee2e6;
+  border-bottom: 1px solid var(--accent-border);
 }
 
 .center {
@@ -205,7 +205,7 @@
 .handle { width: 24px; color: #6c757d; cursor: grab; }
 .fieldName { font-weight: 600; color: #2c3e50; }
 .keyChip {
-  background: #f8f9fa;
+  background: var(--accent-bg);
   color: #6f42c1;
   padding: 4px 8px;
   border-radius: 6px;
@@ -245,9 +245,9 @@
 
 .secondaryButton {
   padding: 8px 16px;
-  border: 1px solid #dee2e6;
-  background: #f8f9fa;
-  color: #495057;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--text-secondary);
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
@@ -256,8 +256,8 @@
 }
 
 .secondaryButton:hover {
-  background: #e9ecef;
-  border-color: #adb5bd;
+  background: var(--hover-bg);
+  border-color: var(--secondary-bg);
 }
 
 .dangerButton {
@@ -279,8 +279,8 @@
 
 .primaryButton {
   padding: 8px 16px;
-  border: 1px solid #2851a3;
-  background: #2851a3;
+  border: 1px solid var(--secondary-bg);
+  background: var(--secondary-bg);
   color: #fff;
   border-radius: 6px;
   font-size: 13px;
@@ -289,11 +289,11 @@
   transition: all 0.2s;
 }
 .primaryButton:disabled { opacity: 0.6; cursor: not-allowed; }
-.primaryButton:hover:not(:disabled) { background: #1e3d7b; border-color: #1e3d7b; }
+.primaryButton:hover:not(:disabled) { background: var(--secondary-dark); border-color: var(--secondary-dark); }
 
 /* Row hover */
 .table tbody tr:hover {
-  background: #f8f9ff;
+  background: var(--hover-bg);
 }
 
 /* Key column as code chip */
@@ -316,5 +316,5 @@
 
 /* Checkbox accent */
 input[type="checkbox"] {
-  accent-color: #2851a3;
+  accent-color: var(--secondary-bg);
 }

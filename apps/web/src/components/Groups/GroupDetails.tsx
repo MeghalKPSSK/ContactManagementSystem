@@ -3,26 +3,32 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styles from './GroupDetails.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faArrowLeft, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faArrowLeft, faPlus, faTrash, faStickyNote } from '@fortawesome/free-solid-svg-icons';
 import MemberModal from './MemberModal';
 import { toast } from 'react-toastify';
+import PaginationBar from '../Pagination/PaginationBar';
 
 export default function GroupDetails() {
   const { groupId } = useParams();
   const navigate = useNavigate();
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
 
   // Fetch group details
-  const fetchGroup = async () => {
-    setLoading(true);
+  const fetchGroup = async (page = 1, pageSize = pagination.pageSize) => {
+    if (group) setIsLoadingMembers(true);
+    else setLoading(true);
     try {
       const config = await fetch('/config.json').then(res => res.json());
-      const response = await fetch(`${config.apiUrl}/groups/group/${groupId}`);
+      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+      const response = await fetch(`${config.apiUrl}/groups/group/${groupId}?${params}`);
       const data = await response.json();
       if (data.success) {
         setGroup(data.group);
+        setPagination(data.pagination || { current: page, pageSize, total: data.group.membersTotal || 0 });
         // Store config for image URLs
         window.groupDetailsConfig = config;
       }
@@ -32,11 +38,12 @@ export default function GroupDetails() {
       toast.error('Failed to fetch group details');
     } finally {
       setLoading(false);
+      setIsLoadingMembers(false);
     }
   };
 
   useEffect(() => {
-    fetchGroup();
+    fetchGroup(1, pagination.pageSize);
     // eslint-disable-next-line
   }, [groupId]);
 
@@ -65,7 +72,10 @@ export default function GroupDetails() {
         
         const data = await response.json();
         if (data.success) {
-          fetchGroup();
+          const nextPage = group.members.length === 1 && pagination.current > 1
+            ? pagination.current - 1
+            : pagination.current;
+          fetchGroup(nextPage, pagination.pageSize);
           toast.success('Member deleted successfully!');
         } else {
           toast.error(data.message || 'Failed to delete member');
@@ -116,7 +126,7 @@ export default function GroupDetails() {
       
       const data = await response.json();
       if (data.success) {
-        fetchGroup();
+        fetchGroup(pagination.current, pagination.pageSize);
         setShowMemberModal(false);
         toast.success(data.message || `${memberIds.length} member${memberIds.length !== 1 ? 's' : ''} added successfully!`);
       } else {
@@ -126,6 +136,11 @@ export default function GroupDetails() {
       toast.error('Failed to add members');
       console.error('Add members error:', err);
     }
+  };
+
+  const handlePageSizeChange = (pageSize) => {
+    setPagination((previous) => ({ ...previous, current: 1, pageSize }));
+    fetchGroup(1, pageSize);
   };
 
   if (loading) return <div className={styles.loading}>Loading...</div>;
@@ -162,10 +177,17 @@ export default function GroupDetails() {
       </div>
       <div className={styles.membersSection}>
         <div className={styles.membersHeader}>
-          <h3>Members ({group.members?.length || 0})</h3>
-          <button className={styles.addButton} onClick={handleAddMember}>
-            <FontAwesomeIcon icon={faPlus} /> Add Member
-          </button>
+          <h3>Members ({pagination.total})</h3>
+          <div className={styles.headerActions}>
+            <button className={styles.addButton} onClick={() => navigate(`/notesDetails/?note_type=group&group_id=${encodeURIComponent(group.uid)}`, {
+              state: { noteEntityLabel: group.name, returnTo: `/groupDetails/${group.uid}` }
+            })}>
+              <FontAwesomeIcon icon={faStickyNote} /> Add Note
+            </button>
+            <button className={styles.addButton} onClick={handleAddMember}>
+              <FontAwesomeIcon icon={faPlus} /> Add Member
+            </button>
+          </div>
         </div>
         <div className={styles.tableContainer}>
           <table className={styles.membersTable}>
@@ -181,7 +203,7 @@ export default function GroupDetails() {
               {group.members && group.members.length > 0 ? (
                 group.members.map((member, idx) => (
                   <tr key={member.uid}>
-                    <td>{idx + 1}</td>
+                    <td>{(pagination.current - 1) * pagination.pageSize + idx + 1}</td>
                     <td>{member.firstName} {member.lastName}</td>
                     <td>{member.email}</td>
                     <td style={{textAlign: 'right'}}>
@@ -203,6 +225,17 @@ export default function GroupDetails() {
             </tbody>
           </table>
         </div>
+        {pagination.total > 0 && (
+          <PaginationBar
+            current={pagination.current}
+            pageSize={pagination.pageSize}
+            total={pagination.total}
+            disabled={isLoadingMembers}
+            onPageChange={(page) => fetchGroup(page, pagination.pageSize)}
+            onPageSizeChange={handlePageSizeChange}
+            onRefresh={() => fetchGroup(pagination.current, pagination.pageSize)}
+          />
+        )}
       </div>
       <MemberModal
         show={showMemberModal}

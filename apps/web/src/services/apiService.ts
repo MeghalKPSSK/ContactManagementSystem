@@ -13,6 +13,7 @@ import type {
   NotesListResponse,
   UserResponse,
   StoredUser,
+  ThemePreferences,
 } from '../types';
 
 export interface ApiError extends Error {
@@ -88,6 +89,17 @@ class ApiService {
     return this.fetch<UserResponse>(`/users/updatePlan/${userId}`, {
       method: 'PUT',
       body: JSON.stringify({ plan }),
+    });
+  }
+
+  async getUserPreferences(userId: string): Promise<{ success: boolean; preferences: ThemePreferences }> {
+    return this.fetch(`/users/preferences/${userId}`);
+  }
+
+  async updateUserPreferences(userId: string, preferences: ThemePreferences): Promise<{ success: boolean; preferences: ThemePreferences }> {
+    return this.fetch(`/users/preferences/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(preferences),
     });
   }
 

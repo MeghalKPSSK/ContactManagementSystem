@@ -13,5 +13,7 @@ router.delete('/deleteUser/:id', userController.deleteUser);
 router.put('/changePassword/:id', userController.changePassword);
 router.post('/uploadProfileImage/:id', upload.single('profileImage'), userController.uploadProfileImage);
 router.put('/updatePlan/:id', userController.updatePlan);
+router.get('/preferences/:id', userController.getPreferences);
+router.put('/preferences/:id', userController.updatePreferences);
 
 export default router;

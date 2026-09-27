@@ -6,34 +6,11 @@ import {
   faUser,
   faUsers,
   faCheckCircle,
-  faAngleLeft,
-  faAngleRight,
-  faAngleDoubleLeft,
-  faAngleDoubleRight,
   faSearch
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import styles from './GroupModal.module.css';
-
-// Add this constant for pagination
-const MAX_PAGES_SHOWN = 5;
-
-// Add this helper function
-const getPageNumbers = (current, total, pageSize) => {
-  const totalPages = Math.ceil(total / pageSize);
-  const pages = [];
-  let startPage = Math.max(1, current - Math.floor(MAX_PAGES_SHOWN / 2));
-  let endPage = Math.min(totalPages, startPage + MAX_PAGES_SHOWN - 1);
-
-  if (endPage - startPage + 1 < MAX_PAGES_SHOWN) {
-    startPage = Math.max(1, endPage - MAX_PAGES_SHOWN + 1);
-  }
-
-  for (let i = startPage; i <= endPage; i++) {
-    pages.push(i);
-  }
-  return pages;
-};
+import PaginationBar from '../Pagination/PaginationBar';
 
 const MemberModal = ({ show, onClose, onSubmit, mode, group }) => {
   const [selectedContacts, setSelectedContacts] = useState([]);
@@ -43,12 +20,12 @@ const MemberModal = ({ show, onClose, onSubmit, mode, group }) => {
   const [isSearching, setIsSearching] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 5, // Changed from 10 to 5
+    pageSize: 10,
     total: 0,
     totalPages: 0
   });
 
-  const fetchContacts = async (page = 1, filter = searchFilter) => {
+  const fetchContacts = async (page = 1, filter = searchFilter, pageSize = pagination.pageSize) => {
     if (!group?.uid) return;
     
     setLoading(true);
@@ -65,7 +42,7 @@ const MemberModal = ({ show, onClose, onSubmit, mode, group }) => {
       url.searchParams.append('userId', userId);
       url.searchParams.append('groupId', group.uid);
       url.searchParams.append('page', page.toString());
-      url.searchParams.append('pageSize', '5'); // Set to 5 records per page
+      url.searchParams.append('pageSize', pageSize.toString());
       
       // Add search filter if provided
       if (filter && filter.trim()) {
@@ -85,7 +62,7 @@ const MemberModal = ({ show, onClose, onSubmit, mode, group }) => {
 
       if (data.success) {
         setContactsList(data.contacts || []);
-        setPagination(data.pagination || { current: page, pageSize: 5, total: 0, totalPages: 0 });
+        setPagination(data.pagination || { current: page, pageSize, total: 0, totalPages: 0 });
       } else {
         throw new Error(data.message || 'Failed to fetch contacts');
       }
@@ -113,6 +90,15 @@ const MemberModal = ({ show, onClose, onSubmit, mode, group }) => {
     if (newPage >= 1 && newPage <= pagination.totalPages && newPage !== pagination.current) {
       fetchContacts(newPage);
     }
+  };
+
+  const handlePageSizeChange = (pageSize) => {
+    setPagination((prev) => ({ ...prev, current: 1, pageSize }));
+    fetchContacts(1, searchFilter, pageSize);
+  };
+
+  const handleRefresh = () => {
+    fetchContacts(pagination.current, searchFilter, pagination.pageSize);
   };
 
   // Handle search functionality
@@ -279,8 +265,7 @@ const MemberModal = ({ show, onClose, onSubmit, mode, group }) => {
                           }}
                         />
                       </th>
-                      <th>Photo</th>
-                      <th>Name</th>
+                      <th>Contact</th>
                       <th>Email</th>
                     </tr>
                   </thead>
@@ -306,14 +291,16 @@ const MemberModal = ({ show, onClose, onSubmit, mode, group }) => {
                           />
                         </td>
                         <td>
+                          <div className={styles.contactTableIdentity}>
                           <div className={styles.contactTableAvatar}>
                             <div className={styles.contactTableIcon}>
                               <FontAwesomeIcon icon={faUser} />
                             </div>
                           </div>
-                        </td>
-                        <td className={styles.contactTableName}>
-                          {contact.firstName} {contact.lastName}
+                            <span className={styles.contactTableName}>
+                              {contact.firstName} {contact.lastName}
+                            </span>
+                          </div>
                         </td>
                         <td className={styles.contactTableEmail}>{contact.email}</td>
                       </tr>
@@ -331,96 +318,33 @@ const MemberModal = ({ show, onClose, onSubmit, mode, group }) => {
               </div>
             )}
 
-            {/* Enhanced Pagination with adjusted layout */}
             {contactsList.length > 0 && (
-              <div className={styles.paginationContainer}>
-                <div className={styles.paginationControls}>
-                  <button
-                    type="button"
-                    className={`${styles.paginationButton} ${styles.iconButton}`}
-                    onClick={() => handlePageChange(1)}
-                    disabled={pagination.current === 1}
-                    title="First Page"
-                  >
-                    <FontAwesomeIcon icon={faAngleDoubleLeft} />
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.paginationButton} ${styles.iconButton}`}
-                    onClick={() => handlePageChange(pagination.current - 1)}
-                    disabled={pagination.current === 1}
-                    title="Previous Page"
-                  >
-                    <FontAwesomeIcon icon={faAngleLeft} />
-                  </button>
-                  
-                  {/* Show page numbers */}
-                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (pagination.totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (pagination.current <= 3) {
-                      pageNum = i + 1;
-                    } else if (pagination.current >= pagination.totalPages - 2) {
-                      pageNum = pagination.totalPages - 4 + i;
-                    } else {
-                      pageNum = pagination.current - 2 + i;
-                    }
-                    
-                    return (
-                      <button
-                        key={pageNum}
-                        type="button"
-                        className={`${styles.paginationButton} ${
-                          pagination.current === pageNum ? styles.active : ''
-                        }`}
-                        onClick={() => handlePageChange(pageNum)}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-
-                  <button
-                    type="button"
-                    className={`${styles.paginationButton} ${styles.iconButton}`}
-                    onClick={() => handlePageChange(pagination.current + 1)}
-                    disabled={pagination.current === pagination.totalPages}
-                    title="Next Page"
-                  >
-                    <FontAwesomeIcon icon={faAngleRight} />
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.paginationButton} ${styles.iconButton}`}
-                    onClick={() => handlePageChange(pagination.totalPages)}
-                    disabled={pagination.current === pagination.totalPages}
-                    title="Last Page"
-                  >
-                    <FontAwesomeIcon icon={faAngleDoubleRight} />
-                  </button>
-                </div>
-                <div className={styles.paginationInfo}>
-                  Showing {Math.min((pagination.current - 1) * pagination.pageSize + 1, pagination.total)}-{Math.min(pagination.current * pagination.pageSize, pagination.total)} of {pagination.total} entries
-                </div>
-              </div>
+              <PaginationBar
+                current={pagination.current}
+                pageSize={pagination.pageSize}
+                total={pagination.total}
+                disabled={loading}
+                onRefresh={handleRefresh}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+              />
             )}
           </div>
 
           <div className={styles.buttonGroup}>
-            <button
-              type="submit"
-              className={styles.submitButton}
-              disabled={selectedContacts.length === 0}
-            >
-              Add {selectedContacts.length} Member{selectedContacts.length !== 1 ? 's' : ''}
-            </button>
             <button
               type="button"
               className={styles.cancelButton}
               onClick={onClose}
             >
               Cancel
+            </button>
+            <button
+              type="submit"
+              className={styles.submitButton}
+              disabled={selectedContacts.length === 0}
+            >
+              Add {selectedContacts.length} Member{selectedContacts.length !== 1 ? 's' : ''}
             </button>
           </div>
         </form>

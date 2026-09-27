@@ -9,44 +9,31 @@ import {
   faTrash, 
   faEye, 
   faStar,
-  faSync,
-  faAngleLeft,
-  faAngleRight,
-  faAnglesLeft,
-  faAnglesRight,
-  faAddressBook
+  faAddressBook,
+  faStickyNote,
+  faUsers
 } from '@fortawesome/free-solid-svg-icons';
 import ContactModal from './ContactModal';
+import GroupModal from '../Groups/GroupModal';
 import { toast } from 'react-toastify';
 import apiService from '../../services/apiService';
-
-// Add this constant at the top of the file
-const MAX_PAGES_SHOWN = 5;
-
-// Add this helper function
-const getPageNumbers = (current, total, pageSize) => {
-  const totalPages = Math.ceil(total / pageSize);
-  const pages = [];
-  let startPage = Math.max(1, current - Math.floor(MAX_PAGES_SHOWN / 2));
-  let endPage = Math.min(totalPages, startPage + MAX_PAGES_SHOWN - 1);
-
-  if (endPage - startPage + 1 < MAX_PAGES_SHOWN) {
-    startPage = Math.max(1, endPage - MAX_PAGES_SHOWN + 1);
-  }
-
-  for (let i = startPage; i <= endPage; i++) {
-    pages.push(i);
-  }
-  return pages;
-};
+import { useNavigate } from 'react-router-dom';
+import PaginationBar from '../Pagination/PaginationBar';
 
 export default function Contacts() {
+  const navigate = useNavigate();
   const [contacts, setContacts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('add'); // 'add', 'edit', 'view'
   const [contactUid, setSelectedContact] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPreparingGroup, setIsPreparingGroup] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [tagFilter, setTagFilter] = useState('');
+  const [tags, setTags] = useState([]);
+  const [showGroupModal, setShowGroupModal] = useState(false);
+  const [groupMemberIds, setGroupMemberIds] = useState([]);
+  const [sourceTagName, setSourceTagName] = useState('');
 
   // Add pagination state
   const [pagination, setPagination] = useState({
@@ -56,7 +43,7 @@ export default function Contacts() {
   });
 
   // Update the fetchContacts function
-  const fetchContacts = async (searchTerm, page = 1) => {
+  const fetchContacts = async (searchTerm, page = 1, selectedTagId = tagFilter, pageSize = pagination.pageSize) => {
     setIsLoading(true);
     try {
       const userId = JSON.parse(localStorage.getItem('user')).uid;
@@ -64,7 +51,8 @@ export default function Contacts() {
         ...(searchTerm && { filter: searchTerm }),
         userId,
         page,
-        pageSize: pagination.pageSize
+        pageSize,
+        ...(selectedTagId && { tagId: selectedTagId })
       });
       
       const data = await apiService.fetch(`/contacts/contactsList?${params}`);
@@ -74,6 +62,7 @@ export default function Contacts() {
         setPagination(prev => ({
           ...prev,
           current: page,
+          pageSize,
           total: data.pagination?.total || 0
         }));
       } else {
@@ -86,20 +75,31 @@ export default function Contacts() {
     }
   };
 
-  // Update useEffect
+  const fetchTags = async () => {
+    try {
+      const userId = JSON.parse(localStorage.getItem('user')).uid;
+      const data = await apiService.fetch(`/contacts/tags?${new URLSearchParams({ userId })}`);
+      setTags(data.tags || []);
+    } catch (error) {
+      console.error('Error fetching contact tags:', error);
+      toast.error('Unable to load contact tags');
+    }
+  };
+
   useEffect(() => {
-    fetchContacts(searchTerm, 1);
+    fetchContacts('', 1, '');
+    fetchTags();
   }, []);
   
   // Update search handler
   const handleSearch = () => {
     setPagination(prev => ({ ...prev, current: 1 })); // Reset to first page
-    fetchContacts(searchTerm, 1);
+    fetchContacts(searchTerm, 1, tagFilter);
   };
 
   // Update reload handler
   const handleReload = () => {
-    fetchContacts(searchTerm, pagination.current);
+    fetchContacts(searchTerm, pagination.current, tagFilter);
   };
 
   const handleAdd = () => {
@@ -159,7 +159,60 @@ export default function Contacts() {
 
   // Add pagination handler
   const handlePageChange = (newPage) => {
-    fetchContacts(searchTerm, newPage);
+    fetchContacts(searchTerm, newPage, tagFilter);
+  };
+
+  const handlePageSizeChange = (pageSize) => {
+    setPagination((prev) => ({ ...prev, current: 1, pageSize }));
+    fetchContacts(searchTerm, 1, tagFilter, pageSize);
+  };
+
+  const handleTagFilterChange = (tagId) => {
+    setTagFilter(tagId);
+    setPagination((prev) => ({ ...prev, current: 1 }));
+    fetchContacts(searchTerm, 1, tagId);
+  };
+
+  const handleCreateGroupFromTag = async () => {
+    if (!tagFilter) return;
+
+    setIsPreparingGroup(true);
+    try {
+      const userId = JSON.parse(localStorage.getItem('user')).uid;
+      const matchedContacts = [];
+      const pageSize = 250;
+      let page = 1;
+      let totalPages = 1;
+
+      do {
+        const params = new URLSearchParams({
+          ...(searchTerm && { filter: searchTerm }),
+          userId,
+          page: String(page),
+          pageSize: String(pageSize),
+          tagId: tagFilter,
+        });
+        const response = await apiService.fetch(`/contacts/contactsList?${params}`);
+        matchedContacts.push(...(response.contacts || []));
+        totalPages = Math.ceil((response.pagination?.total || 0) / pageSize);
+        page += 1;
+      } while (page <= totalPages);
+
+      const memberIds = matchedContacts.map((contact) => contact.uid).filter(Boolean);
+      if (!memberIds.length) {
+        toast.info('No contacts match this tag and search');
+        return;
+      }
+
+      setGroupMemberIds(memberIds);
+      setSourceTagName(tags.find((tag) => tag.uid === tagFilter)?.name || 'selected tag');
+      setShowGroupModal(true);
+    } catch (error) {
+      console.error('Error preparing tagged group:', error);
+      toast.error('Could not load contacts for this tag');
+    } finally {
+      setIsPreparingGroup(false);
+    }
   };
 
   return (
@@ -174,29 +227,41 @@ export default function Contacts() {
           <div className={styles.header}>
         <h2>Contacts</h2>
         <div className={styles.headerActions}>
-          <div className={styles.searchBar}>
-            <input
-              type="text"
-              placeholder="Search contacts..."
-              className={styles.searchInput}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-              }}
-              onKeyUp={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearch();
-                }
-              }}
-            />
-          </div>
-          <button 
-              className={styles.searchButton} 
-              onClick={handleSearch}
-            >
+          <div className={styles.searchControl}>
+            <div className={styles.searchBar}>
+              <input
+                type="text"
+                placeholder="Search contacts..."
+                className={styles.searchInput}
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') handleSearch();
+                }}
+              />
+            </div>
+            <button className={styles.searchButton} onClick={handleSearch} title="Search contacts" aria-label="Search contacts">
               <FontAwesomeIcon icon={faSearch} />
             </button>
+          </div>
+          <select
+            className={styles.tagFilter}
+            value={tagFilter}
+            onChange={(event) => handleTagFilterChange(event.target.value)}
+            aria-label="Filter contacts by tag"
+          >
+            <option value="">All tags</option>
+            {tags.map((tag) => <option key={tag.uid} value={tag.uid}>{tag.name}</option>)}
+          </select>
+          {tagFilter && (
+            <button className={styles.createGroupButton} onClick={handleCreateGroupFromTag} disabled={isPreparingGroup}>
+              <FontAwesomeIcon icon={faUsers} />
+              {isPreparingGroup ? 'Preparing...' : 'Create group'}
+            </button>
+          )}
           <button className={styles.addButton} onClick={handleAdd}>
-            <FontAwesomeIcon icon={faPlus} /> &nbsp; Add Contact
+            <FontAwesomeIcon icon={faPlus} />
+            <span>Add Contact</span>
           </button>
         </div>
       </div>
@@ -243,6 +308,19 @@ export default function Contacts() {
                   >
                     <FontAwesomeIcon icon={faEdit} />
                   </button>
+                  <button
+                    className={styles.actionButton}
+                    onClick={() => navigate(`/notesDetails/?note_type=contact&contact_id=${encodeURIComponent(contact.uid)}`, {
+                      state: {
+                        noteEntityLabel: `${contact.firstName} ${contact.lastName || ''}`.trim(),
+                        returnTo: '/contacts'
+                      }
+                    })}
+                    title={`Add note for ${contact.firstName} ${contact.lastName || ''}`}
+                    aria-label={`Add note for ${contact.firstName} ${contact.lastName || ''}`}
+                  >
+                    <FontAwesomeIcon icon={faStickyNote} />
+                  </button>
                   <button 
                     className={`${styles.actionButton} ${styles.deleteButton}`}
                     onClick={() => handleDelete(contact.uid)} // Use uid instead of id
@@ -257,75 +335,19 @@ export default function Contacts() {
           </tbody>
         </table>
         
-        {/* Replace the existing pagination controls */}
-        <div className={styles.paginationContainer}>
-          <div className={styles.paginationControls}>
-            <button
-              className={`${styles.paginationButton} ${styles.iconButton}`}
-              onClick={() => handlePageChange(1)}
-              disabled={pagination.current === 1 || isLoading}
-              title="First Page"
-            >
-              <FontAwesomeIcon icon={faAnglesLeft} />
-            </button>
-            <button
-              className={`${styles.paginationButton} ${styles.iconButton}`}
-              onClick={() => handlePageChange(pagination.current - 1)}
-              disabled={pagination.current === 1 || isLoading}
-              title="Previous Page"
-            >
-              <FontAwesomeIcon icon={faAngleLeft} />
-            </button>
-            {getPageNumbers(pagination.current, pagination.total, pagination.pageSize).map(pageNum => (
-              <button
-                key={pageNum}
-                className={`${styles.paginationButton} ${pageNum === pagination.current ? styles.active : ''}`}
-                onClick={() => handlePageChange(pageNum)}
-                disabled={isLoading}
-              >
-                {pageNum}
-              </button>
-            ))}
-            <button
-              className={`${styles.paginationButton} ${styles.iconButton}`}
-              onClick={() => handlePageChange(pagination.current + 1)}
-              disabled={pagination.current * pagination.pageSize >= pagination.total || isLoading}
-              title="Next Page"
-            >
-              <FontAwesomeIcon icon={faAngleRight} />
-            </button>
-            <button
-              className={`${styles.paginationButton} ${styles.iconButton}`}
-              onClick={() => handlePageChange(Math.ceil(pagination.total / pagination.pageSize))}
-              disabled={pagination.current * pagination.pageSize >= pagination.total || isLoading}
-              title="Last Page"
-            >
-              <FontAwesomeIcon icon={faAnglesRight} />
-            </button>
-          </div>
-          <div className={styles.paginationInfo}>
-            Showing {contacts.length ? (pagination.current - 1) * pagination.pageSize + 1 : 0} 
-            - {Math.min(pagination.current * pagination.pageSize, pagination.total)} 
-            &nbsp; of {pagination.total} entries
-          </div>
-        </div>
+        <PaginationBar
+          current={pagination.current}
+          pageSize={pagination.pageSize}
+          total={pagination.total}
+          disabled={isLoading}
+          onRefresh={handleReload}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
       </div>
         </>
       )}
       
-      <div className={styles.reloadContainer}>
-        <button 
-          className={styles.reloadButton} 
-          onClick={handleReload}
-          disabled={isLoading}
-        >
-          <FontAwesomeIcon 
-            icon={faSync} 
-            className={`${styles.reloadIcon} ${isLoading ? styles.spinning : ''}`} 
-          />
-        </button>
-      </div>
-
       {showModal && (
         <ContactModal
           mode={modalMode}
@@ -335,6 +357,19 @@ export default function Contacts() {
             fetchContacts(searchTerm, pagination.current);
             setShowModal(false);
           }}
+        />
+      )}
+
+      {showGroupModal && (
+        <GroupModal
+          mode="add"
+          onClose={() => setShowGroupModal(false)}
+          onSubmit={() => {
+            setShowGroupModal(false);
+            fetchContacts(searchTerm, pagination.current, tagFilter);
+          }}
+          initialMemberIds={groupMemberIds}
+          sourceTag={sourceTagName}
         />
       )}
     </div>

@@ -69,7 +69,7 @@
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -78,12 +78,13 @@
 }
 
 .modal {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
+  background: var(--primary-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 6px;
+  padding: 1.25rem;
   max-width: 400px;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 32px var(--box-shadow);
 }
 
 .modalHeader {
@@ -113,25 +114,25 @@
 }
 
 .modalCancel {
-  padding: 8px 16px;
-  color: #6b7280;
-  border: 1px solid #d1d5db;
-  background: white;
-  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--accent-border);
+  background: var(--primary-bg);
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .modalCancel:hover {
-  background: #f9fafb;
+  background: var(--hover-bg);
 }
 
 .modalConfirm {
-  padding: 8px 16px;
+  padding: 0.5rem 1rem;
   background: #ef4444;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -419,6 +420,183 @@
   flex-shrink: 0;
 }
 
+.associationFields {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.45fr) minmax(220px, 1fr);
+  gap: 0.75rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.associationField {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.associationField select {
+  width: 100%;
+  min-height: 38px;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--primary-text);
+  font: inherit;
+  font-weight: 400;
+}
+
+.associationField select:focus {
+  outline: none;
+  border-color: var(--secondary-bg);
+  box-shadow: 0 0 0 3px rgba(19, 139, 124, 0.12);
+}
+
+.associationField select:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.associationField small {
+  color: var(--error-color);
+  font-weight: 400;
+}
+
+.associationSearch {
+  display: flex;
+  min-height: 38px;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.82);
+  overflow: hidden;
+}
+
+.associationSearch:focus-within {
+  border-color: var(--secondary-bg);
+  box-shadow: 0 0 0 3px rgba(19, 139, 124, 0.12);
+}
+
+.associationSearch input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.45rem 0.65rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--primary-text);
+  font: inherit;
+  font-weight: 400;
+}
+
+.associationSearch input::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.associationSearch button,
+.associationSelected button {
+  width: 38px;
+  flex: 0 0 38px;
+  border: 0;
+  border-left: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--secondary-bg);
+}
+
+.associationSearch button:hover,
+.associationSelected button:hover {
+  background: var(--hover-bg);
+  color: var(--hover-text);
+}
+
+.associationSearch button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.associationResults {
+  position: relative;
+  z-index: 5;
+  margin-top: 0.35rem;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background: var(--primary-bg);
+  box-shadow: 0 8px 20px var(--box-shadow);
+}
+
+.associationResults button {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 0.6rem 0.75rem;
+  border: 0;
+  border-bottom: 1px solid var(--accent-border);
+  background: var(--primary-bg);
+  color: var(--primary-text);
+  text-align: left;
+}
+
+.associationResults button:last-child {
+  border-bottom: 0;
+}
+
+.associationResults button:hover,
+.associationResults button:focus-visible {
+  background: var(--hover-bg);
+}
+
+.associationResults small {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.associationSelected,
+.associationContext {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 0.55rem;
+  padding-left: 0.65rem;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--primary-text);
+  font-size: 0.875rem;
+}
+
+.associationSelected > span,
+.associationContext > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.associationSelected button {
+  align-self: stretch;
+  margin-left: auto;
+  border-radius: 0 3px 3px 0;
+}
+
+.associationContext {
+  padding: 0 0.65rem;
+}
+
+.associationContext > svg {
+  color: var(--secondary-bg);
+}
+
+.associationContext strong {
+  font-size: 0.75rem;
+}
+
 .noteHeader {
   display: flex;
   justify-content: space-between;
@@ -501,7 +679,7 @@
 }
 
 .footerSaveButton {
-  background: #3b82f6;
+  background: var(--secondary-bg);
   color: white;
   border: none;
   padding: 12px 20px;
@@ -512,14 +690,14 @@
   align-items: center;
   gap: 8px;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 8px rgba(19, 139, 124, 0.2);
   font-weight: 500;
 }
 
 .footerSaveButton:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--secondary-dark);
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 16px rgba(19, 139, 124, 0.28);
 }
 
 .footerSaveButton:disabled {
@@ -555,9 +733,9 @@
 }
 
 .headerButton.active {
-  background: #3b82f6;
+  background: var(--secondary-bg);
   color: white;
-  border-color: #3b82f6;
+  border-color: var(--secondary-bg);
 }
 
 .backButton {
@@ -571,13 +749,13 @@
 }
 
 .saveButton {
-  color: #3b82f6;
+  color: var(--secondary-bg);
 }
 
 .saveButton:hover:not(:disabled) {
   background: rgba(255, 255, 255, 1);
-  border-color: #3b82f6;
-  color: #2563eb;
+  border-color: var(--secondary-bg);
+  color: var(--secondary-dark);
 }
 
 .saveButton:disabled {
@@ -933,6 +1111,11 @@
   
   .notepadHeader {
     padding: 24px 24px 16px 60px;
+  }
+
+  .associationFields {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
   }
   
   .notepadContent {

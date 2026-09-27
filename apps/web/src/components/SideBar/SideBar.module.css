@@ -4,13 +4,16 @@
     align-items: center;
     justify-content: center;
     height: 100vh;
-    background-color: #f0f0f0;
+    background-color: var(--accent-bg);
 }
 
 .sidebar {
-    position: relative;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
     height: 100vh;
-    background-color: var(--primary-bg);
+    flex: 0 0 auto;
+    background-color: var(--accent-bg-2);
     border-right: 1px solid var(--accent-border);
     transition: width 0.3s ease;
     overflow: hidden;
@@ -52,11 +55,28 @@
 .navigation {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 0.5rem;
     flex: 1;
     min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding-top: 0.5rem;
     padding-bottom: 1rem;
+}
+
+.menuList:last-child {
+    margin-top: auto;
+}
+
+.navigation::-webkit-scrollbar {
+    width: 5px;
+}
+
+.navigation::-webkit-scrollbar-thumb {
+    border: 0;
+    border-radius: 4px;
+    background: var(--accent-border);
 }
 
 /* Adjust navigation for collapsed state */
@@ -145,7 +165,7 @@
     padding: 1rem 0.75rem;
     border-bottom: 1px solid var(--accent-border);
     margin-top: 2.5rem;
-    background-color: var(--primary-bg);
+    background-color: var(--accent-bg-2);
     min-height: 100px;
 }
 

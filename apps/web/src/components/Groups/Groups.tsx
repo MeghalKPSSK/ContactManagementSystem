@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import styles from './Groups.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faSearch, faSync, faEdit, faTrash, faUsers } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faSearch, faEdit, faTrash, faUsers, faStickyNote } from '@fortawesome/free-solid-svg-icons';
 import GroupModal from './GroupModal';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import PaginationBar from '../Pagination/PaginationBar';
 
 export default function Groups() {
   const [groups, setGroups] = useState([]);
@@ -15,9 +16,10 @@ export default function Groups() {
   const [groupUid, setSelectedGroup] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const navigate = useNavigate();
 
-  const fetchGroups = async (searchTerm) => {
+  const fetchGroups = async (searchTerm, page = 1, pageSize = pagination.pageSize) => {
     setIsLoading(true);
     try {
       const config = await fetch('/config.json').then((res) => res.json());
@@ -25,6 +27,8 @@ export default function Groups() {
       const params = new URLSearchParams({
         ...(searchTerm && { filter: searchTerm }),
         userId,
+        page: String(page),
+        pageSize: String(pageSize),
       });
 
       const response = await fetch(`${config.apiUrl}/groups/groupsList?${params}`, {
@@ -39,7 +43,12 @@ export default function Groups() {
 
       // Store the config for later use in image URLs
       window.apiConfig = config;
-      setGroups(resData.groups);
+      setGroups(resData.groups || []);
+      setPagination({
+        current: page,
+        pageSize: resData.pagination?.pageSize || pageSize,
+        total: resData.pagination?.total || 0,
+      });
     } catch (error) {
       console.error('Error fetching groups:', error);
     } finally {
@@ -74,11 +83,21 @@ export default function Groups() {
   }, []);
 
   const handleSearch = () => {
-    fetchGroups(searchTerm);
+    setPagination((prev) => ({ ...prev, current: 1 }));
+    fetchGroups(searchTerm, 1);
   };
 
   const handleReload = () => {
-    fetchGroups(searchTerm);
+    fetchGroups(searchTerm, pagination.current, pagination.pageSize);
+  };
+
+  const handlePageSizeChange = (pageSize) => {
+    setPagination((prev) => ({ ...prev, current: 1, pageSize }));
+    fetchGroups(searchTerm, 1, pageSize);
+  };
+
+  const handlePageChange = (page) => {
+    fetchGroups(searchTerm, page, pagination.pageSize);
   };
 
   const handleAdd = () => {
@@ -109,7 +128,7 @@ export default function Groups() {
         const data = await response.json();
         if (data.success) {
           toast.success(data.message);
-          fetchGroups(searchTerm);
+          fetchGroups(searchTerm, pagination.current, pagination.pageSize);
         }
       } catch (error) {
         toast.error('Error deleting group');
@@ -182,7 +201,12 @@ export default function Groups() {
                 </div>
                 </div>
                 <div className={styles.cardBody}>
-                <h3 className={styles.groupName}>{group.name} : {group.group_members || 0}</h3>
+                <div className={styles.groupTitle}>
+                  <h3 className={styles.groupName}>{group.name}</h3>
+                  <span className={styles.memberCount}>
+                    <FontAwesomeIcon icon={faUsers} /> {group.group_members || 0}
+                  </span>
+                </div>
 
                 <p className={styles.groupDescription}>
                   {group.description || 'No description available'}
@@ -196,6 +220,19 @@ export default function Groups() {
                     }}
                   >
                     <FontAwesomeIcon icon={faEdit} />
+                  </button>
+                  <button
+                    className={`${styles.actionButton} ${styles.noteButton}`}
+                    title={`Add note for ${group.name}`}
+                    aria-label={`Add note for ${group.name}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      navigate(`/notesDetails/?note_type=group&group_id=${encodeURIComponent(group.uid)}`, {
+                        state: { noteEntityLabel: group.name, returnTo: '/groups' }
+                      });
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faStickyNote} />
                   </button>
                   <button
                     className={`${styles.actionButton} ${styles.deleteButton}`}
@@ -215,11 +252,20 @@ export default function Groups() {
         )}
       </div>
 
-      <div className={styles.reloadContainer}>
-        <button className={styles.reloadButton} onClick={handleReload} disabled={isLoading}>
-          <FontAwesomeIcon icon={faSync} className={`${styles.reloadIcon} ${isLoading ? styles.spinning : ''}`} />
-        </button>
-      </div>
+      {groups.length > 0 && (
+        <div className={styles.cardPagination}>
+        <PaginationBar
+          current={pagination.current}
+          total={pagination.total}
+          pageSize={pagination.pageSize}
+          disabled={isLoading}
+          onRefresh={handleReload}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
+        </div>
+      )}
+
         </>
       )}
 
@@ -229,7 +275,7 @@ export default function Groups() {
           group={groupUid}
           onClose={() => setShowModal(false)}
           onSubmit={() => {
-            fetchGroups(searchTerm);
+            fetchGroups(searchTerm, 1, pagination.pageSize);
             setShowModal(false);
           }}
           contacts={contacts}

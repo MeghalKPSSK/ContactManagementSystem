@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import styles from './NotesDetail.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -17,14 +17,26 @@ import {
   faCheck,
   faAlignLeft,
   faAlignCenter,
-  faAlignRight
+  faAlignRight,
+  faSearch
 } from '@fortawesome/free-solid-svg-icons';
 import apiService from '../../services/apiService';
 
 export default function NotesDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const isEditMode = id && id !== '';
+  const requestedType = searchParams.get('note_type');
+  const requestedContactId = searchParams.get('contact_id') || '';
+  const requestedGroupId = searchParams.get('group_id') || '';
+  const contextLocked = !isEditMode && (
+    (requestedType === 'contact' && requestedContactId) ||
+    (requestedType === 'group' && requestedGroupId)
+  );
+  const contextEntityLabel = location.state?.noteEntityLabel || '';
+  const returnTo = location.state?.returnTo;
   
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -33,18 +45,28 @@ export default function NotesDetail() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState({});
+  const [associationQuery, setAssociationQuery] = useState('');
+  const [associationResults, setAssociationResults] = useState([]);
+  const [associationLoading, setAssociationLoading] = useState(false);
+  const [associationMessage, setAssociationMessage] = useState('');
+  const [selectedAssociation, setSelectedAssociation] = useState(null);
   
   const titleRef = useRef(null);
   const contentRef = useRef(null);
   const initialNoteRef = useRef(null);
   
-  const [note, setNote] = useState({
-    title: '',
-    content: '',
-    note_type: 'personal',
-    color: 'blue',
-    is_important: false,
-    keywords: [] // Will contain hashtag keywords only
+  const [note, setNote] = useState(() => {
+    const requestedType = searchParams.get('note_type');
+    return {
+      title: '',
+      content: '',
+      note_type: ['personal', 'contact', 'group'].includes(requestedType) ? requestedType : 'personal',
+      contact_id: searchParams.get('contact_id') || '',
+      group_id: searchParams.get('group_id') || '',
+      color: 'blue',
+      is_important: false,
+      keywords: []
+    };
   });
 
   // Text alignment state
@@ -105,6 +127,20 @@ export default function NotesDetail() {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    if (isEditMode) return;
+
+    const requestedType = searchParams.get('note_type');
+    if (!['personal', 'contact', 'group'].includes(requestedType)) return;
+
+    setNote((prev) => ({
+      ...prev,
+      note_type: requestedType,
+      contact_id: requestedType === 'contact' ? searchParams.get('contact_id') || '' : '',
+      group_id: requestedType === 'group' ? searchParams.get('group_id') || '' : '',
+    }));
+  }, [isEditMode, searchParams]);
+
   // Fetch note data if in edit mode
   useEffect(() => {
     const fetchNoteDetails = async () => {
@@ -121,12 +157,20 @@ export default function NotesDetail() {
             title: response.note.title || '',
             content: response.note.content || '',
             note_type: response.note.note_type || 'personal',
+            contact_id: response.note.contact_id || '',
+            group_id: response.note.group_id || '',
             color: response.note.color || 'blue',
             is_important: response.note.is_important === 1 || response.note.is_important === true,
             keywords: response.note.keywords || []
           };
           
           setNote(noteData);
+          if (noteData.note_type === 'contact' && noteData.contact_id) {
+            const label = [response.note.contact_first_name, response.note.contact_last_name].filter(Boolean).join(' ');
+            setSelectedAssociation({ id: noteData.contact_id, label: label || 'Selected contact' });
+          } else if (noteData.note_type === 'group' && noteData.group_id) {
+            setSelectedAssociation({ id: noteData.group_id, label: response.note.group_name || 'Selected group' });
+          }
           initialNoteRef.current = { ...noteData };
         } else {
           throw new Error('Failed to load note');
@@ -163,6 +207,14 @@ export default function NotesDetail() {
     if (!note.content.trim()) {
       errors.content = 'Content is required';
     }
+
+    if (note.note_type === 'contact' && !note.contact_id) {
+      errors.contact_id = 'Select a contact for this note';
+    }
+
+    if (note.note_type === 'group' && !note.group_id) {
+      errors.group_id = 'Select a group for this note';
+    }
     
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -198,6 +250,8 @@ export default function NotesDetail() {
         title: note.title.trim(),
         content: note.content.trim(),
         note_type: note.note_type,
+        contact_id: note.note_type === 'contact' ? note.contact_id : null,
+        group_id: note.note_type === 'group' ? note.group_id : null,
         color: note.color,
         is_important: note.is_important ? 1 : 0,
         user_id: userId,
@@ -234,13 +288,21 @@ export default function NotesDetail() {
     if (hasUnsavedChanges) {
       setShowUnsavedWarning(true);
     } else {
-      navigate('/notes');
+      navigateToOrigin();
+    }
+  };
+
+  const navigateToOrigin = () => {
+    if (location.key !== 'default') {
+      navigate(-1);
+    } else {
+      navigate(returnTo || '/notes');
     }
   };
 
   const confirmLeave = () => {
     setShowUnsavedWarning(false);
-    navigate('/notes');
+    navigateToOrigin();
   };
 
   const cancelLeave = () => {
@@ -278,6 +340,71 @@ export default function NotesDetail() {
         [field]: ''
       }));
     }
+  };
+
+  const handleNoteTypeChange = (noteType) => {
+    setNote((prev) => ({
+      ...prev,
+      note_type: noteType,
+      contact_id: '',
+      group_id: '',
+    }));
+    setSelectedAssociation(null);
+    setAssociationQuery('');
+    setAssociationResults([]);
+    setAssociationMessage('');
+    setValidationErrors((prev) => ({ ...prev, contact_id: '', group_id: '' }));
+  };
+
+  const searchAssociations = async () => {
+    const query = associationQuery.trim();
+    if (query.length < 4) {
+      setAssociationResults([]);
+      setAssociationMessage('Enter at least 4 characters, then press Enter.');
+      return;
+    }
+
+    const userId = getUserId();
+    if (!userId) return;
+
+    setAssociationLoading(true);
+    setAssociationMessage('');
+    try {
+      const params = new URLSearchParams({ userId, filter: query, page: '1', pageSize: '10' });
+      const endpoint = note.note_type === 'contact' ? '/contacts/contactsList' : '/groups/groupsList';
+      const response = await apiService.fetch(`${endpoint}?${params}`);
+      const results = note.note_type === 'contact' ? response.contacts || [] : response.groups || [];
+      setAssociationResults(results);
+      if (results.length === 0) setAssociationMessage('No matches found.');
+    } catch (searchError) {
+      console.error('Error searching note associations:', searchError);
+      setAssociationMessage('Search failed. Try again.');
+    } finally {
+      setAssociationLoading(false);
+    }
+  };
+
+  const selectAssociation = (entity) => {
+    const label = note.note_type === 'contact'
+      ? [entity.firstName, entity.lastName].filter(Boolean).join(' ')
+      : entity.name;
+    const selected = { id: entity.uid, label: label || (note.note_type === 'contact' ? 'Contact' : 'Group') };
+
+    setSelectedAssociation(selected);
+    setNote((prev) => ({
+      ...prev,
+      contact_id: note.note_type === 'contact' ? entity.uid : '',
+      group_id: note.note_type === 'group' ? entity.uid : '',
+    }));
+    setAssociationQuery('');
+    setAssociationResults([]);
+    setAssociationMessage('');
+    setValidationErrors((prev) => ({ ...prev, contact_id: '', group_id: '' }));
+  };
+
+  const clearAssociation = () => {
+    setSelectedAssociation(null);
+    setNote((prev) => ({ ...prev, contact_id: '', group_id: '' }));
   };
 
   if (loading) {
@@ -431,6 +558,99 @@ export default function NotesDetail() {
                     <FontAwesomeIcon icon={saving ? faSpinner : faSave} spin={saving} />
                   </button>
                 </div>
+              </div>
+
+              <div className={styles.associationFields}>
+                {contextLocked ? (
+                  <div className={styles.associationField}>
+                    <span>Note destination</span>
+                    <div className={styles.associationContext}>
+                      <FontAwesomeIcon icon={note.note_type === 'contact' ? faAddressBook : faUsers} />
+                      <strong>{note.note_type === 'contact' ? 'Contact' : 'Group'}</strong>
+                      <span>{contextEntityLabel || 'Linked from this record'}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <label className={styles.associationField}>
+                      <span>Category</span>
+                      <select
+                        value={note.note_type}
+                        onChange={(event) => handleNoteTypeChange(event.target.value)}
+                        aria-label="Note category"
+                      >
+                        <option value="personal">Personal</option>
+                        <option value="contact">Contact</option>
+                        <option value="group">Group</option>
+                      </select>
+                    </label>
+
+                    {note.note_type !== 'personal' && (
+                      <div className={styles.associationField}>
+                        <span>{note.note_type === 'contact' ? 'Find contact' : 'Find group'}</span>
+                        {selectedAssociation ? (
+                          <div className={styles.associationSelected}>
+                            <span>{selectedAssociation.label}</span>
+                            <button type="button" onClick={clearAssociation} aria-label="Change linked record">
+                              <FontAwesomeIcon icon={faTimes} />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className={styles.associationSearch}>
+                              <input
+                                type="search"
+                                value={associationQuery}
+                                onChange={(event) => {
+                                  setAssociationQuery(event.target.value);
+                                  setAssociationResults([]);
+                                  setAssociationMessage('');
+                                }}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    searchAssociations();
+                                  }
+                                }}
+                                placeholder={`Type 4+ characters to find a ${note.note_type}`}
+                                aria-label={`Search ${note.note_type}s`}
+                                aria-controls="association-results"
+                              />
+                              <button type="button" onClick={searchAssociations} disabled={associationLoading} aria-label="Search linked records">
+                                <FontAwesomeIcon icon={faSearch} spin={associationLoading} />
+                              </button>
+                            </div>
+                            {associationMessage && <small>{associationMessage}</small>}
+                            {associationResults.length > 0 && (
+                              <div className={styles.associationResults} id="association-results" role="listbox">
+                                {associationResults.map((entity) => {
+                                  const label = note.note_type === 'contact'
+                                    ? [entity.firstName, entity.lastName].filter(Boolean).join(' ')
+                                    : entity.name;
+                                  const detail = note.note_type === 'contact' ? entity.email : entity.description;
+                                  return (
+                                    <button
+                                      type="button"
+                                      key={entity.uid}
+                                      role="option"
+                                      aria-selected="false"
+                                      onClick={() => selectAssociation(entity)}
+                                    >
+                                      <span>{label}</span>
+                                      {detail && <small>{detail}</small>}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {note.note_type === 'contact' && validationErrors.contact_id && <small>{validationErrors.contact_id}</small>}
+                        {note.note_type === 'group' && validationErrors.group_id && <small>{validationErrors.group_id}</small>}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
               
               {/* Editable title */}

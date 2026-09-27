@@ -37,3 +37,14 @@ export interface UserDto {
   role: string;
   lastLogin?: Date | null;
 }
+
+export type SidebarItemKey = 'dragon' | 'dashboard' | 'contacts' | 'notes' | 'profile' | 'groups' | 'settings';
+
+export interface UserPreferences {
+  primaryColor: string;
+  secondaryColor: string;
+  backgroundColor: string;
+  surfaceColor: string;
+  textColor: string;
+  sidebarOrder: SidebarItemKey[];
+}
