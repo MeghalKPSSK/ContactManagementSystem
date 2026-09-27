@@ -26,6 +26,19 @@ export default function SideBar() {
   const location = useLocation();
   const { preferences } = useThemePreferences();
 
+  const toSidebarImageUrl = (imageRef) => {
+    const imageUrl = apiService.getImageUrl(imageRef);
+    if (!imageUrl) return null;
+
+    // data/blob URLs must be used as-is; adding query params makes them invalid.
+    if (imageUrl.startsWith('data:') || imageUrl.startsWith('blob:')) {
+      return imageUrl;
+    }
+
+    const separator = imageUrl.includes('?') ? '&' : '?';
+    return `${imageUrl}${separator}t=${Date.now()}`;
+  };
+
   // Function to refresh user data
   const refreshUserData = async () => {
     try {
@@ -36,8 +49,7 @@ export default function SideBar() {
         
         // Check if localStorage has profile image
         if (user.profileImage) {
-          const imageUrl = apiService.getImageUrl(user.profileImage);
-          setProfileImageUrl(`${imageUrl}?t=${Date.now()}`);
+          setProfileImageUrl(toSidebarImageUrl(user.profileImage));
         }
         
         // Then fetch fresh data from API
@@ -48,10 +60,7 @@ export default function SideBar() {
         if (data.success) {
           setUserData(data.user);
           if (data.user.profileImage) {
-            const imageUrl = apiService.getImageUrl(data.user.profileImage);
-            // Add timestamp to force refresh if image changed
-            const refreshedImageUrl = `${imageUrl}?t=${Date.now()}`;
-            setProfileImageUrl(refreshedImageUrl);
+            setProfileImageUrl(toSidebarImageUrl(data.user.profileImage));
           } else {
             setProfileImageUrl(null);
           }
@@ -76,8 +85,7 @@ export default function SideBar() {
           // Check if localStorage has profile image
           if (user.profileImage) {
             console.log('Profile image from localStorage:', user.profileImage); // Debug log
-            const imageUrl = apiService.getImageUrl(user.profileImage);
-            setProfileImageUrl(`${imageUrl}?t=${Date.now()}`);
+            setProfileImageUrl(toSidebarImageUrl(user.profileImage));
           }
           
           // Then fetch fresh data from API
@@ -90,9 +98,9 @@ export default function SideBar() {
             setUserData(data.user);
             console.log('User data set:', data.user); // Debug log
             if (data.user.profileImage) {
-              const imageUrl = apiService.getImageUrl(data.user.profileImage);
+              const imageUrl = toSidebarImageUrl(data.user.profileImage);
               console.log('Generated image URL:', imageUrl); // Debug log
-              setProfileImageUrl(`${imageUrl}?t=${Date.now()}`);
+              setProfileImageUrl(imageUrl);
             } else {
               console.log('No profile image found for user'); // Debug log
               setProfileImageUrl(null);

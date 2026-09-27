@@ -59,7 +59,7 @@ const login = async (req, res) => {
     }
     catch (error) {
         console.error(`Invalid User: ${(0, errors_1.getErrorMessage)(error)}`);
-        res.status(200).json({ success: false, message: 'Invalid User' });
+        res.status((0, errors_1.getErrorStatus)(error)).json({ success: false, message: (0, errors_1.getErrorMessage)(error) });
     }
 };
 exports.login = login;
