@@ -32,11 +32,16 @@ const Login = () => {
             return;
         }
         try {
-            const user = await apiService.loginUser({ loginUsername, loginPassword });
-            localStorage.setItem('user', JSON.stringify(user.user));
+            const response = await apiService.loginUser({ loginUsername, loginPassword });
+            if (!response?.success || !response?.user) {
+                throw new Error(response?.message || 'Invalid username or password');
+            }
+
+            localStorage.setItem('user', JSON.stringify(response.user));
             toast.success('Login successful!');
         } catch (err) {
-            toast.error(err.message);
+            const message = err instanceof Error ? err.message : 'Login failed. Please try again.';
+            toast.error(message);
         }
     };
 

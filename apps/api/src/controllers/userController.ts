@@ -23,7 +23,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.status(200).json({ success: true, message: 'User Logged In successfully', user });
   } catch (error) {
     console.error(`Invalid User: ${getErrorMessage(error)}`);
-    res.status(200).json({ success: false, message: 'Invalid User' });
+    res.status(getErrorStatus(error)).json({ success: false, message: getErrorMessage(error) });
   }
 };
 

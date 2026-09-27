@@ -21,9 +21,21 @@ const localOrigins = new Set([
   'http://127.0.0.1:4173',
 ]);
 
+const configuredOrigins = new Set(
+  (process.env.CORS_ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+);
+
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || process.env.NODE_ENV !== 'production' || localOrigins.has(origin)) {
+    if (
+      !origin
+      || process.env.NODE_ENV !== 'production'
+      || localOrigins.has(origin)
+      || configuredOrigins.has(origin)
+    ) {
       callback(null, true);
       return;
     }
