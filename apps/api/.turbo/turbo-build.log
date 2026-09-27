@@ -1,0 +1,9 @@
+[2m$ dotenv -e ../../.env -- prisma generate && tsc -p tsconfig.json[22m
+[2mPrisma schema loaded from prisma/schema.prisma[22m
+
+✔ Generated [1mPrisma Client[22m (v6.19.3)[2m to ./../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client[22m in 100ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
